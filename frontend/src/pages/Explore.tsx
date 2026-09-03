@@ -98,7 +98,10 @@ export function Explore() {
       {/* NAV */}
       <nav className="sticky top-0 z-50 bg-paper/80 backdrop-blur-md border-b border-ink/5">
         <div className="flex items-center justify-between px-5 sm:px-6 md:px-12 py-4 max-w-7xl mx-auto">
-          <Link to="/" className="font-display text-xl md:text-2xl font-bold text-ink tracking-tight">BRIDGE</Link>
+          <Link to="/" className="flex items-center gap-2">
+            <img src="/logo.png" alt="" className="h-7 md:h-8" />
+            <span className="font-display text-xl md:text-2xl font-bold text-ink tracking-tight">BRIDGE</span>
+          </Link>
           <NavAuth />
         </div>
       </nav>
