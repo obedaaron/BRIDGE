@@ -1,0 +1,38 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #1A1A17;
+  --color-paper: #FBF7F1;
+  --color-gold: #C99A3C;
+  --color-signal: #33478C;
+  --color-charcoal: #1A1A17;
+
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "SF Mono", SFMono-Regular, ui-monospace, Menlo, Consolas, monospace;
+}
+
+body {
+  background-color: var(--color-paper);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-signal text-white font-semibold px-6 py-3 rounded-lg hover:bg-signal/90 transition disabled:opacity-60;
+  }
+  .btn-secondary {
+    @apply bg-transparent text-ink font-semibold px-6 py-3 rounded-lg border border-ink/20 hover:bg-ink/5 transition disabled:opacity-60;
+  }
+  .btn-dark {
+    @apply bg-ink text-paper font-semibold px-6 py-3 rounded-lg hover:bg-ink/90 transition disabled:opacity-60;
+  }
+  .card {
+    @apply bg-white border border-ink/8 rounded-2xl p-5 shadow-sm hover:shadow-md transition;
+  }
+  .input-field {
+    @apply w-full border border-ink/15 rounded-xl p-3 bg-white focus:outline-none focus:ring-2 focus:ring-signal/30 focus:border-signal transition;
+  }
+}
