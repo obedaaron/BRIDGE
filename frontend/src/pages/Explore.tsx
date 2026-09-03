@@ -77,9 +77,9 @@ export function Explore() {
 
     return (
       <div className="flex items-center gap-2 md:gap-4">
-        <Link to="/dashboard" className="text-sm font-medium text-ink/70 hover:text-ink px-3 py-2 transition-colors hidden sm:flex items-center gap-1.5">
+        <Link to="/dashboard" className="text-sm font-medium text-ink/70 hover:text-ink p-2 sm:px-3 sm:py-2 transition-colors flex items-center gap-1.5" title={user.role === "vendor" ? "My Store" : "List Your Business"}>
           <Store className="w-4 h-4" strokeWidth={1.5} />
-          {user.role === "vendor" ? "My Store" : "List Your Business"}
+          <span className="hidden md:inline">{user.role === "vendor" ? "My Store" : "List Your Business"}</span>
         </Link>
         <Link to="/messages" className="text-sm font-medium text-ink/70 hover:text-ink p-2 transition-colors flex items-center gap-1.5" title="Messages">
           <MessageCircle className="w-4 h-4" strokeWidth={1.5} />
