@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   ShieldCheck, Link2, MapPin, Scissors, Zap, Camera, Shirt,
-  UtensilsCrossed, Wrench, Sparkles, Hammer, Star, MessageCircle,
-  Send, Globe, ArrowUpRight, Menu, X
+  UtensilsCrossed, Wrench, Sparkles, Hammer,
+  ArrowUpRight, Menu, X
 } from "lucide-react";
 import { SignboardTag } from "../components/SignboardTag";
 
