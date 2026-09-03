@@ -29,8 +29,8 @@ const whyBridge = [
 const footerLinks = {
   Product: [{ label: "Explore vendors", to: "/explore" }, { label: "List your business", to: "/signup" }, { label: "How it works", to: "/#how-it-works" }],
   Categories: [{ label: "Tailoring", to: "/explore" }, { label: "Electrical", to: "/explore" }, { label: "Photography", to: "/explore" }, { label: "Fashion", to: "/explore" }],
-  Company: [{ label: "About", to: "#" }, { label: "Contact", to: "#" }, { label: "Careers", to: "#" }],
-  Legal: [{ label: "Terms of Service", to: "#" }, { label: "Privacy Policy", to: "#" }],
+  Company: [{ label: "About", to: "/about" }, { label: "Contact", to: "/contact" }, { label: "Careers", to: "/careers" }],
+  Legal: [{ label: "Terms of Service", to: "/terms" }, { label: "Privacy Policy", to: "/privacy" }],
 };
 
 export function Landing() {
@@ -82,7 +82,12 @@ export function Landing() {
         scrolled ? "bg-paper/90 backdrop-blur-md border-b border-ink/5" : "bg-transparent"
       }`}>
         <div className="flex items-center justify-between px-5 sm:px-6 md:px-12 py-4 md:py-5 max-w-7xl mx-auto">
-          <img src="/logo.png" alt="BRIDGE" className={`h-7 md:h-9 transition-all duration-500 ${scrolled ? "" : "invert"}`} />
+          <Link to="/" className="flex items-center gap-2">
+            <img src="/logo.png" alt="" className={`h-7 md:h-9 transition-all duration-500 ${scrolled ? "" : "invert"}`} />
+            <span className={`font-display text-lg md:text-xl font-bold tracking-tight transition-colors duration-500 ${
+              scrolled ? "text-ink" : "text-paper"
+            }`}>BRIDGE</span>
+          </Link>
 
           {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-3">
@@ -191,7 +196,7 @@ export function Landing() {
       </section>
 
       {/* CATEGORIES */}
-      <section id="categories" className="bg-ink py-16 sm:py-20 md:py-32 overflow-hidden">
+      <section id="categories" className="relative bg-ink py-16 sm:py-20 md:py-32 overflow-hidden">
         <div className="absolute -top-24 -right-24 w-[500px] h-[500px] bg-signal/15 rounded-full blur-3xl opacity-40" />
         <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gold/10 rounded-full blur-3xl opacity-30" />
 
@@ -325,9 +330,9 @@ export function Landing() {
               <span className="w-1 h-1 rounded-full bg-paper/30" />
               <span>Built for local businesses.</span>
               <span className="w-1 h-1 rounded-full bg-paper/30 hidden sm:block" />
-              <Link to="#" className="hover:text-paper hidden sm:block">Privacy Policy</Link>
+              <Link to="/privacy" className="hover:text-paper hidden sm:block">Privacy Policy</Link>
               <span className="w-1 h-1 rounded-full bg-paper/30 hidden sm:block" />
-              <Link to="#" className="hover:text-paper hidden sm:block">Terms of Service</Link>
+              <Link to="/terms" className="hover:text-paper hidden sm:block">Terms of Service</Link>
             </div>
             <span>Made in Nigeria 🇳🇬</span>
           </div>
