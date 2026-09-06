@@ -81,11 +81,11 @@ router.patch("/me/publish", requireAuth, async (req, res) => {
   const requiredChecks = await pool.query(
     `select type from vendor_verifications
      where vendor_id = (select id from vendors where user_id = $1)
-       and type in ('kyc', 'kyb') and status = 'approved'`,
+       and type in ('kyc', 'location') and status = 'approved'`,
     [req.user!.userId]
   );
   const approvedTypes = new Set(requiredChecks.rows.map((row) => row.type));
-  const missing = ["kyc", "kyb"].filter((type) => !approvedTypes.has(type));
+  const missing = ["kyc", "location"].filter((type) => !approvedTypes.has(type));
   const contact = await pool.query("select email_verified_at, phone_verified_at from users where id = $1", [req.user!.userId]);
   if (!contact.rows[0]?.email_verified_at) missing.push("email verification");
   if (!contact.rows[0]?.phone_verified_at) missing.push("phone verification");

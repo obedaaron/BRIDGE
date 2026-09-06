@@ -24,13 +24,13 @@ router.get("/publish-readiness", requireAuth, async (req, res) => {
   const vendorId = await getOwnVendorId(req.user!.userId);
   if (!vendorId) return res.status(404).json({ error: "Create your store first" });
   const result = await pool.query(
-    "select type, status from vendor_verifications where vendor_id = $1 and type in ('kyc', 'kyb') order by created_at desc",
+    "select type, status from vendor_verifications where vendor_id = $1 and type in ('kyc', 'location') order by created_at desc",
     [vendorId]
   );
   const latest = new Map<string, string>();
   result.rows.forEach((row) => { if (!latest.has(row.type)) latest.set(row.type, row.status); });
   const contactResult = await pool.query("select email_verified_at, phone_verified_at from users where id = $1", [req.user!.userId]);
-  const missing = ["kyc", "kyb"].filter((type) => latest.get(type) !== "approved");
+  const missing = ["kyc", "location"].filter((type) => latest.get(type) !== "approved");
   if (!contactResult.rows[0]?.email_verified_at) missing.push("email");
   if (!contactResult.rows[0]?.phone_verified_at) missing.push("phone");
   res.json({ canPublish: missing.length === 0, missing, checks: Object.fromEntries(latest) });
@@ -71,10 +71,10 @@ router.post("/", requireAuth, async (req, res) => {
   if (!vendorId) return res.status(404).json({ error: "Create your store before requesting verification" });
 
   const { type, documentUrl } = req.body;
-  const validTypes = ["identity", "business", "location", "skill", "bridge", "kyb"];
+  const validTypes = ["identity", "business", "location", "skill", "bridge"];
   if (!validTypes.includes(type)) return res.status(400).json({ error: "Invalid verification type" });
-  if (type === "kyb" && (typeof documentUrl !== "string" || !documentUrl.startsWith(`private/verifications/${req.user!.userId}/`))) {
-    return res.status(400).json({ error: "Upload CAC or address evidence before submitting KYB" });
+  if (type === "location" && (typeof documentUrl !== "string" || !documentUrl.startsWith(`private/verifications/${req.user!.userId}/`))) {
+    return res.status(400).json({ error: "Upload address evidence before submitting location verification" });
   }
 
   const existing = await pool.query(
@@ -88,7 +88,7 @@ router.post("/", requireAuth, async (req, res) => {
   const result = await pool.query(
     `insert into vendor_verifications (vendor_id, type, document_url, status, provider, provider_status, metadata)
      values ($1, $2, $3, 'pending', 'manual_review', 'submitted', $4) returning *`,
-    [vendorId, type, documentUrl || null, JSON.stringify(type === "kyb" ? { cac_number: req.body.cacNumber || null } : {})]
+    [vendorId, type, documentUrl || null, JSON.stringify({})]
   );
   res.status(201).json({ verification: result.rows[0] });
 });

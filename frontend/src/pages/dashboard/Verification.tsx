@@ -7,8 +7,7 @@ import { ShieldCheck, AlertCircle, Clock, CheckCircle2, Upload, Loader2 } from "
 
 const types = [
   { key: "kyc", label: "Identity check (KYC)", hint: "Submit your NIN card or slip and a clear face photo for a trained BRIDGE reviewer to check." },
-  { key: "kyb", label: "Business check (KYB)", hint: "Submit your CAC registration or business-address evidence for admin review." },
-  { key: "location", label: "Location Verified", hint: "Optional: a utility bill or shop photo confirming your address." },
+  { key: "location", label: "Location check", hint: "Required: submit a recent utility bill, tenancy agreement, or clear storefront photo confirming your business address." },
   { key: "skill", label: "Skill Verified", hint: "Optional: a certification or portfolio relevant to your trade." },
 ];
 
@@ -24,7 +23,6 @@ export function Verification() {
   const [nin, setNin] = useState("");
   const [selfie, setSelfie] = useState("");
   const [consent, setConsent] = useState(false);
-  const [cacNumber, setCacNumber] = useState("");
   const [submitting, setSubmitting] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [contact, setContact] = useState({ email: false, phone: false, phoneNumber: "", emailAddress: "" });
@@ -54,7 +52,7 @@ export function Verification() {
       } else {
         await apiFetch("/verifications", {
           method: "POST",
-          body: JSON.stringify({ type, documentUrl: documents[type] || null, cacNumber: type === "kyb" ? cacNumber : undefined }),
+          body: JSON.stringify({ type, documentUrl: documents[type] || null }),
         });
       }
       load();
@@ -83,7 +81,7 @@ export function Verification() {
             Verification.
           </h1>
           <p className="mt-3 text-ink/40 max-w-md text-base sm:text-lg">
-            Verified stores get more trust — and more customers. Complete all four checks below.
+            Complete identity, location, email, and phone verification before publishing your store. Skill verification is optional.
           </p>
         </div>
 
@@ -148,9 +146,8 @@ export function Verification() {
                 {canSubmit && t.key !== "kyc" && (
                   <div className="flex flex-col sm:flex-row gap-3">
                     <div className="flex-1">
-                      {t.key === "kyb" && <input className="input-field mb-3" placeholder="CAC registration number (if registered)" value={cacNumber} onChange={(e) => setCacNumber(e.target.value)} />}
                       <FileUpload
-                        label="Upload document"
+                        label={t.key === "location" ? "Upload address evidence" : "Upload supporting document"}
                         value={documents[t.key] || ""}
                         onChange={(url) => setDocuments({ ...documents, [t.key]: url })}
                         uploadPath="/uploads/verification-document"
@@ -158,7 +155,7 @@ export function Verification() {
                     </div>
                     <button
                       onClick={() => handleSubmit(t.key)}
-                      disabled={submitting === t.key}
+                      disabled={submitting === t.key || (t.key === "location" && !documents.location)}
                       className="inline-flex items-center justify-center gap-2 bg-ink text-paper font-medium px-5 py-2.5 rounded-xl text-sm hover:bg-ink/90 transition-colors disabled:opacity-50 shrink-0"
                     >
                       {submitting === t.key ? (
