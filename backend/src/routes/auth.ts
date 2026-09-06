@@ -4,7 +4,7 @@ import { pool } from "../db";
 import { signToken } from "../utils/jwt";
 import { requireAuth } from "../middleware/auth";
 import crypto from "crypto";
-import { KycProviderNotConfiguredError, sendDojahOtp } from "../services/dojah";
+import { ContactDeliveryNotConfiguredError, sendVerificationEmail, sendVerificationSms } from "../services/contactDelivery";
 
 const router = Router();
 
@@ -80,11 +80,13 @@ router.post("/contact-verification/send", requireAuth, async (req, res) => {
   if (recent.rows[0]) return res.status(429).json({ error: "Wait one minute before requesting another code" });
   const code = crypto.randomInt(100000, 1000000).toString();
   try {
-    const providerReference = await sendDojahOtp({ destination, channel: type === "phone" ? "sms" : "email", code });
+    const providerReference = type === "phone"
+      ? await sendVerificationSms({ destination, code })
+      : await sendVerificationEmail({ destination, code });
     await pool.query("insert into contact_verification_challenges (user_id, type, destination, code_hash, provider_reference, expires_at) values ($1, $2, $3, $4, $5, now() + interval '10 minutes')", [req.user!.userId, type, destination, crypto.createHash("sha256").update(code).digest("hex"), providerReference]);
     if (type === "phone") await pool.query("update users set phone = $1 where id = $2", [destination, req.user!.userId]);
     res.json({ message: "Verification code sent" });
-  } catch (err) { res.status(err instanceof KycProviderNotConfiguredError ? 503 : 502).json({ error: err instanceof Error ? err.message : "Could not send verification code" }); }
+  } catch (err) { res.status(err instanceof ContactDeliveryNotConfiguredError ? 503 : 502).json({ error: err instanceof Error ? err.message : "Could not send verification code" }); }
 });
 
 router.post("/contact-verification/confirm", requireAuth, async (req, res) => {
