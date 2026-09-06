@@ -36,15 +36,32 @@ router.get("/conversations/mine", requireAuth, async (req, res) => {
     `select c.*, v.business_name as vendor_name, v.slug as vendor_slug, v.logo_url as vendor_logo,
             u.full_name as customer_name, u.email as customer_email,
             (select body from messages m where m.conversation_id = c.id order by m.created_at desc limit 1) as last_message,
-            (select created_at from messages m where m.conversation_id = c.id order by m.created_at desc limit 1) as last_message_at
+            (select created_at from messages m where m.conversation_id = c.id order by m.created_at desc limit 1) as last_message_at,
+            case when c.vendor_id = $2 then coalesce(u.full_name, u.email) else v.business_name end as counterpart_name,
+            case when c.vendor_id = $2 then 'customer' else 'vendor' end as counterpart_type,
+            (select count(*)::int from messages m where m.conversation_id = c.id and m.sender_id <> $1 and m.created_at > coalesce(r.last_read_at, c.created_at)) as unread_count
      from conversations c
      join vendors v on v.id = c.vendor_id
      join users u on u.id = c.customer_id
+     left join conversation_read_receipts r on r.conversation_id = c.id and r.user_id = $1
      where c.customer_id = $1 or c.vendor_id = $2
      order by last_message_at desc nulls last, c.created_at desc`,
     [req.user!.userId, vendorId]
   );
   res.json({ conversations: result.rows });
+});
+
+router.get("/unread-count", requireAuth, async (req, res) => {
+  const vendorId = await getOwnVendorId(req.user!.userId);
+  const result = await pool.query(
+    `select count(*)::int as unread_count from messages m
+     join conversations c on c.id = m.conversation_id
+     left join conversation_read_receipts r on r.conversation_id = c.id and r.user_id = $1
+     where (c.customer_id = $1 or c.vendor_id = $2) and m.sender_id <> $1
+       and m.created_at > coalesce(r.last_read_at, c.created_at)`,
+    [req.user!.userId, vendorId]
+  );
+  res.json({ unreadCount: Number(result.rows[0]?.unread_count || 0) });
 });
 
 async function assertParticipant(conversationId: string, userId: string) {
@@ -60,9 +77,24 @@ router.get("/conversations/:id/messages", requireAuth, async (req, res) => {
   const conversation = await assertParticipant(req.params.id as string, req.user!.userId);
   if (!conversation) return res.status(404).json({ error: "Conversation not found" });
 
+  const ownVendorId = await getOwnVendorId(req.user!.userId);
   const vendorResult = await pool.query("select business_name, slug from vendors where id = $1", [conversation.vendor_id]);
+  const customerResult = ownVendorId === conversation.vendor_id ? await pool.query("select full_name, email from users where id = $1", [conversation.customer_id]) : null;
   const result = await pool.query("select * from messages where conversation_id = $1 order by created_at asc", [req.params.id]);
-  res.json({ conversation: { vendor_name: vendorResult.rows[0]?.business_name, vendor_slug: vendorResult.rows[0]?.slug }, messages: result.rows });
+  await pool.query(
+    `insert into conversation_read_receipts (conversation_id, user_id, last_read_at) values ($1, $2, now())
+     on conflict (conversation_id, user_id) do update set last_read_at = excluded.last_read_at`,
+    [conversation.id, req.user!.userId]
+  );
+  res.json({
+    conversation: {
+      vendor_name: vendorResult.rows[0]?.business_name,
+      counterpart_name: customerResult ? (customerResult.rows[0]?.full_name || customerResult.rows[0]?.email) : vendorResult.rows[0]?.business_name,
+      vendor_slug: vendorResult.rows[0]?.slug,
+      viewer_is_vendor: ownVendorId === conversation.vendor_id,
+    },
+    messages: result.rows,
+  });
 });
 
 router.post("/conversations/:id/messages", requireAuth, async (req, res) => {

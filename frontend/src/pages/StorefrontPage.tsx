@@ -5,6 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import { SignboardTag } from "../components/SignboardTag";
 import { StarRating } from "../components/StarRating";
 import { ReviewsSection } from "../components/ReviewsSection";
+import { useCart } from "../context/CartContext";
 import {
   Phone, MessageCircle, MapPin, ArrowUpRight,
   Package, Share2, Loader2, Store
@@ -17,6 +18,8 @@ interface Listing {
   type: string;
   price: number | null;
   currency: string;
+  image_url: string | null;
+  stock_quantity: number | null;
 }
 
 interface Vendor {
@@ -31,12 +34,17 @@ interface Vendor {
   logo_url: string | null;
   avg_rating: number | null;
   review_count: number;
+  completed_transactions: number;
+  repeat_customers: number;
+  reliability_score: number;
+  gold_tick: boolean;
 }
 
 export function StorefrontPage() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { add, items } = useCart();
   const [vendor, setVendor] = useState<Vendor | null | undefined>(undefined);
   const [listings, setListings] = useState<Listing[]>([]);
   const [copied, setCopied] = useState(false);
@@ -118,6 +126,7 @@ export function StorefrontPage() {
             <Link to="/explore" className="text-sm font-medium bg-ink text-paper px-4 sm:px-5 py-2.5 rounded-full hover:bg-ink/90 transition-colors">
               Explore
             </Link>
+            <Link to="/cart" className="text-sm text-ink/60">Cart ({items.length})</Link>
           </div>
         </div>
       </nav>
@@ -152,6 +161,7 @@ export function StorefrontPage() {
                 <SignboardTag color={vendor.verification_status === "unverified" ? "signal" : "gold"}>
                   {vendor.verification_status.replace("_", " ")}
                 </SignboardTag>
+                {vendor.gold_tick && <SignboardTag color="gold">Gold trusted seller</SignboardTag>}
                 {vendor.avg_rating !== null && (
                   <div className="flex items-center gap-1.5">
                     <StarRating value={vendor.avg_rating} size="sm" />
@@ -174,6 +184,11 @@ export function StorefrontPage() {
                   {vendor.description}
                 </p>
               )}
+              <div className="flex flex-wrap gap-3 text-xs text-paper/55 mb-6">
+                <span><strong className="text-paper">{vendor.reliability_score}%</strong> reliability score</span>
+                <span><strong className="text-paper">{vendor.completed_transactions}</strong> completed BRIDGE deals</span>
+                <span><strong className="text-paper">{vendor.repeat_customers}</strong> repeat customers</span>
+              </div>
 
               <div className="flex flex-wrap gap-2 sm:gap-3">
                 {vendor.phone && (
@@ -247,12 +262,12 @@ export function StorefrontPage() {
                 key={l.id}
                 className="group bg-white rounded-2xl border border-ink/5 overflow-hidden hover:-translate-y-1 hover:shadow-xl hover:border-ink/10 transition-all duration-300"
               >
-                <div className={`w-full h-40 sm:h-48 flex items-center justify-center ${
+                <div className={`w-full h-40 sm:h-48 flex items-center justify-center overflow-hidden ${
                   i % 3 === 0 ? "bg-signal/5" : i % 3 === 1 ? "bg-gold/5" : "bg-ink/5"
                 }`}>
-                  <Package className={`w-8 h-8 ${
+                  {l.image_url ? <img src={l.image_url} alt={l.title} className="w-full h-full object-cover" /> : <Package className={`w-8 h-8 ${
                     i % 3 === 0 ? "text-signal/20" : i % 3 === 1 ? "text-gold/20" : "text-ink/10"
-                  }`} strokeWidth={1.5} />
+                  }`} strokeWidth={1.5} />}
                 </div>
 
                 <div className="p-5 sm:p-6">
@@ -274,6 +289,8 @@ export function StorefrontPage() {
                   ) : (
                     <p className="text-sm text-ink/30">Price on request</p>
                   )}
+                  {l.stock_quantity !== null && <p className="text-xs text-ink/35 mt-2">{l.stock_quantity > 0 ? `${l.stock_quantity} available` : "Out of stock"}</p>}
+                  {l.price !== null && <button onClick={() => add({ listingId: l.id, vendorSlug: slug!, vendorName: vendor.business_name, title: l.title, price: Number(l.price), currency: l.currency, imageUrl: l.image_url })} disabled={l.stock_quantity === 0} className="mt-4 text-xs px-3 py-2 rounded-full bg-ink text-paper disabled:opacity-40">{l.stock_quantity === 0 ? "Out of stock" : "Add to cart"}</button>}
                 </div>
               </div>
             ))}

@@ -11,9 +11,16 @@ import verificationRoutes from "./routes/verifications";
 import adminRoutes from "./routes/admin";
 import messageRoutes from "./routes/messages";
 import reviewRoutes from "./routes/reviews";
+import orderRoutes from "./routes/orders";
+import paymentRoutes, { paystackWebhookHandler } from "./routes/payments";
+import subscriptionRoutes from "./routes/subscriptions";
+import uploadRoutes from "./routes/uploads";
+import walletRoutes from "./routes/wallet";
+import promotionRoutes from "./routes/promotions";
 
 const app = express();
 app.use(cors());
+app.post("/payments/paystack/webhook", express.raw({ type: "application/json" }), paystackWebhookHandler);
 app.use(express.json());
 
 app.get("/", (req, res) => res.json({ status: "BRIDGE API is running" }));
@@ -27,6 +34,12 @@ app.use("/verifications", verificationRoutes);
 app.use("/admin", adminRoutes);
 app.use("/messages", messageRoutes);
 app.use("/reviews", reviewRoutes);
+app.use("/orders", orderRoutes);
+app.use("/payments", paymentRoutes);
+app.use("/subscriptions", subscriptionRoutes);
+app.use("/uploads", uploadRoutes);
+app.use("/wallet", walletRoutes);
+app.use("/promotions", promotionRoutes);
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => console.log(`BRIDGE server running on http://localhost:${PORT}`));

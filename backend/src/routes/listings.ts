@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { pool } from "../db";
 import { requireAuth } from "../middleware/auth";
+import { getVendorPlan } from "../services/plans";
 
 const router = Router();
 
@@ -21,14 +22,19 @@ router.post("/", requireAuth, async (req, res) => {
   const vendorId = await getOwnVendorId(req.user!.userId);
   if (!vendorId) return res.status(404).json({ error: "Create your store before adding listings" });
 
-  const { title, description, type, price, categoryId } = req.body;
+  const { title, description, type, price, categoryId, imageUrl, stockQuantity } = req.body;
   if (!title || !type) return res.status(400).json({ error: "Title and type are required" });
+  const plan = await getVendorPlan(vendorId);
+  if (plan.listingLimit !== null) {
+    const count = await pool.query("select count(*)::int as count from listings where vendor_id = $1", [vendorId]);
+    if (Number(count.rows[0]?.count || 0) >= plan.listingLimit) return res.status(403).json({ error: `${plan.label} plan allows up to ${plan.listingLimit} listings. Upgrade to add more.` });
+  }
 
   try {
     const result = await pool.query(
-      `insert into listings (vendor_id, category_id, title, description, type, price)
-       values ($1, $2, $3, $4, $5, $6) returning *`,
-      [vendorId, categoryId || null, title, description || null, type, price || null]
+      `insert into listings (vendor_id, category_id, title, description, type, price, image_url, stock_quantity)
+       values ($1, $2, $3, $4, $5, $6, $7, $8) returning *`,
+      [vendorId, categoryId || null, title, description || null, type, price || null, imageUrl || null, stockQuantity ?? null]
     );
     res.status(201).json({ listing: result.rows[0] });
   } catch (err) {

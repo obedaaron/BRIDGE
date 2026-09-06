@@ -2,11 +2,16 @@ import type { ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { Menu, X, LogOut, ArrowUpRight } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { apiFetch } from "../lib/api";
 
 const navItems = [
   { label: "Overview", path: "/dashboard" },
   { label: "Listings", path: "/dashboard/listings" },
+  { label: "Orders", path: "/dashboard/orders" },
+  { label: "Plans & billing", path: "/dashboard/plans" },
+  { label: "Wallet", path: "/dashboard/wallet" },
+  { label: "Promotions", path: "/dashboard/promotions" },
   { label: "Messages", path: "/messages" },
   { label: "Verification", path: "/dashboard/verification" },
   { label: "Settings", path: "/dashboard/settings" },
@@ -16,6 +21,14 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    const loadUnread = () => apiFetch("/messages/unread-count").then((data) => setUnreadCount(data.unreadCount)).catch(() => undefined);
+    loadUnread();
+    const timer = window.setInterval(loadUnread, 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   return (
     <div className="min-h-screen bg-paper text-ink font-body">
@@ -36,11 +49,11 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
                 key={item.path}
                 to={item.path}
                 onClick={() => setMobileOpen(false)}
-                className={`px-4 py-3 rounded-xl text-base font-medium transition ${
+                className={`px-4 py-3 rounded-xl text-base font-medium transition flex items-center gap-2 ${
                   location.pathname === item.path ? "bg-signal text-paper font-semibold" : "text-paper/60 hover:text-paper hover:bg-white/5"
                 }`}
               >
-                {item.label}
+                <span>{item.label}</span>{item.path === "/messages" && unreadCount > 0 && <span className="ml-auto min-w-5 h-5 px-1 rounded-full bg-signal text-ink text-[10px] flex items-center justify-center">{unreadCount > 99 ? "99+" : unreadCount}</span>}
               </Link>
             ))}
           </nav>
@@ -80,13 +93,13 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
                   <Link
                     key={item.path}
                     to={item.path}
-                    className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                    className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center gap-2 ${
                       isActive
                         ? "bg-signal text-paper font-semibold"
                         : "text-paper/50 hover:text-paper hover:bg-white/5"
                     }`}
                   >
-                    {item.label}
+                    <span>{item.label}</span>{item.path === "/messages" && unreadCount > 0 && <span className="ml-auto min-w-5 h-5 px-1 rounded-full bg-signal text-ink text-[10px] flex items-center justify-center">{unreadCount > 99 ? "99+" : unreadCount}</span>}
                   </Link>
                 );
               })}

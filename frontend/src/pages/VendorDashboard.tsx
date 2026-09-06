@@ -35,6 +35,7 @@ export function VendorDashboard() {
   const [saving, setSaving] = useState(false);
   const [toggling, setToggling] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [acceptedVendorTerms, setAcceptedVendorTerms] = useState(false);
 
   function loadVendor() {
     apiFetch("/vendors/me").then((data) => setVendor(data.vendor)).catch(() => setVendor(null));
@@ -50,7 +51,7 @@ export function VendorDashboard() {
     setError("");
     setSaving(true);
     try {
-      const data = await apiFetch("/vendors", { method: "POST", body: JSON.stringify({ ...form, lat, lng }) });
+      const data = await apiFetch("/vendors", { method: "POST", body: JSON.stringify({ ...form, lat, lng, acceptedVendorTerms }) });
       setVendor(data.vendor);
     } catch (err: any) {
       setError(err.message);
@@ -60,10 +61,13 @@ export function VendorDashboard() {
   }
 
   async function handleTogglePublish() {
+    setError("");
     setToggling(true);
     try {
       const data = await apiFetch("/vendors/me/publish", { method: "PATCH" });
       setVendor(data.vendor);
+    } catch (err: any) {
+      setError(err.message);
     } finally {
       setToggling(false);
     }
@@ -196,10 +200,12 @@ export function VendorDashboard() {
               </div>
             </div>
 
+            <label className="flex items-start gap-3 text-sm text-ink/60 cursor-pointer"><input type="checkbox" checked={acceptedVendorTerms} onChange={(e) => setAcceptedVendorTerms(e.target.checked)} className="mt-1" /><span>I agree to the <Link to="/terms" className="text-signal underline">Seller Terms</Link> and <Link to="/buyer-protection" className="text-signal underline">Buyer Protection & Disputes Policy</Link>.</span></label>
+
             <button
               className="w-full sm:w-auto self-start bg-ink text-paper font-medium px-8 py-4 rounded-xl hover:bg-ink/90 transition-colors flex items-center justify-center gap-2 mt-2 disabled:opacity-50"
               type="submit"
-              disabled={saving}
+              disabled={saving || !acceptedVendorTerms}
             >
               {saving ? (
                 <>

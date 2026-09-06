@@ -12,6 +12,8 @@ interface Listing {
   type: string;
   price: number | null;
   is_active: boolean;
+  image_url: string | null;
+  stock_quantity: number | null;
 }
 
 interface Category {
@@ -23,7 +25,7 @@ export function Listings() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ title: "", description: "", type: "product", price: "", categoryId: "" });
+  const [form, setForm] = useState({ title: "", description: "", type: "product", price: "", categoryId: "", imageUrl: "", stockQuantity: "" });
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -43,9 +45,9 @@ export function Listings() {
     try {
       await apiFetch("/listings", {
         method: "POST",
-        body: JSON.stringify({ ...form, price: form.price ? Number(form.price) : null }),
+      body: JSON.stringify({ ...form, price: form.price ? Number(form.price) : null, stockQuantity: form.stockQuantity ? Number(form.stockQuantity) : null }),
       });
-      setForm({ title: "", description: "", type: "product", price: "", categoryId: "" });
+      setForm({ title: "", description: "", type: "product", price: "", categoryId: "", imageUrl: "", stockQuantity: "" });
       setShowForm(false);
       loadListings();
     } catch (err: any) {
@@ -117,6 +119,15 @@ export function Listings() {
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
                   required
                 />
+              </div>
+
+              <div>
+                <label className="block text-xs uppercase tracking-[0.2em] text-ink/40 mb-2">Product image URL</label>
+                <input className="w-full bg-ink/5 border border-ink/10 rounded-xl px-5 py-4 text-ink placeholder:text-ink/20 outline-none focus:border-signal/50" placeholder="https://…" type="url" value={form.imageUrl} onChange={(e) => setForm({ ...form, imageUrl: e.target.value })} />
+              </div>
+              <div>
+                <label className="block text-xs uppercase tracking-[0.2em] text-ink/40 mb-2">Stock quantity</label>
+                <input className="w-full bg-ink/5 border border-ink/10 rounded-xl px-5 py-4 text-ink placeholder:text-ink/20 outline-none focus:border-signal/50" placeholder="Leave blank for services" type="number" min="0" value={form.stockQuantity} onChange={(e) => setForm({ ...form, stockQuantity: e.target.value })} />
               </div>
 
               <div className="sm:col-span-2">
@@ -209,6 +220,8 @@ export function Listings() {
                   </div>
                   <SignboardTag color={l.type === "service" ? "gold" : "signal"}>{l.type}</SignboardTag>
                 </div>
+
+                {l.stock_quantity !== null && <p className="text-xs text-ink/35 mb-3">{l.stock_quantity} in stock</p>}
 
                 {l.description && (
                   <p className="text-sm text-ink/50 line-clamp-2 leading-relaxed mb-4">{l.description}</p>

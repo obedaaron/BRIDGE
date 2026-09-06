@@ -13,7 +13,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<User>;
-  signup: (email: string, password: string, fullName: string) => Promise<void>;
+  signup: (email: string, password: string, fullName: string, acceptedTerms: boolean) => Promise<void>;
   logout: () => void;
 }
 
@@ -45,10 +45,10 @@ async function login(email: string, password: string) {
   return data.user;
 }
 
-  async function signup(email: string, password: string, fullName: string) {
+  async function signup(email: string, password: string, fullName: string, acceptedTerms: boolean) {
     const data = await apiFetch("/auth/signup", {
       method: "POST",
-      body: JSON.stringify({ email, password, fullName }),
+      body: JSON.stringify({ email, password, fullName, acceptedTerms }),
     });
     localStorage.setItem("token", data.token);
     setUser(data.user);

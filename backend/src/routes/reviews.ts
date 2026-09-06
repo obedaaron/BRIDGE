@@ -9,11 +9,10 @@ async function getVendorBySlug(slug: string) {
   return result.rows[0] || null;
 }
 
-// Anti-fake-review gate: a customer can only review a vendor they've
-// actually messaged. Cheap to check since conversations already exist.
-async function hasConversationWith(customerId: string, vendorId: string) {
+// Reviews must represent a completed BRIDGE transaction, not a conversation.
+async function hasCompletedOrderWith(customerId: string, vendorId: string) {
   const result = await pool.query(
-    "select id from conversations where customer_id = $1 and vendor_id = $2",
+    "select id from marketplace_orders where buyer_id = $1 and vendor_id = $2 and status = 'completed' limit 1",
     [customerId, vendorId]
   );
   return result.rows.length > 0;
@@ -48,9 +47,9 @@ router.post("/:slug", requireAuth, async (req, res) => {
     return res.status(400).json({ error: "Rating must be a whole number from 1 to 5" });
   }
 
-  const canReview = await hasConversationWith(req.user!.userId, vendor.id);
+  const canReview = await hasCompletedOrderWith(req.user!.userId, vendor.id);
   if (!canReview) {
-    return res.status(403).json({ error: "You can only review vendors you've messaged" });
+    return res.status(403).json({ error: "You can only review a vendor after completing a BRIDGE order" });
   }
 
   try {

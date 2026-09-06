@@ -1,0 +1,22 @@
+import { Link, useNavigate } from "react-router-dom";
+import { Minus, Plus, ShoppingCart, Trash2 } from "lucide-react";
+import { useCart } from "../context/CartContext";
+import { apiFetch } from "../lib/api";
+import { useEffect, useMemo, useState } from "react";
+
+export function Cart() {
+  const { items, total, setQuantity, remove, clear } = useCart(); const navigate = useNavigate(); const [error, setError] = useState(""); const [loading, setLoading] = useState(false);
+  const [pricing, setPricing] = useState({ platformFeeBps: 500, processingFeeBps: 150, processingFeeFixedKobo: 0, processingFeeCapKobo: 0 });
+  useEffect(() => { apiFetch("/orders/pricing-policy").then(setPricing).catch(() => undefined); }, []);
+  const quote = useMemo(() => {
+    const platformFee = Math.round(total * pricing.platformFeeBps / 10_000);
+    const protectedAmount = total + platformFee;
+    const processingFee = Math.min(
+      Math.ceil((protectedAmount + pricing.processingFeeFixedKobo) * pricing.processingFeeBps / (10_000 - pricing.processingFeeBps)) + pricing.processingFeeFixedKobo,
+      pricing.processingFeeCapKobo || Number.MAX_SAFE_INTEGER,
+    );
+    return { platformFee, processingFee, buyerTotal: protectedAmount + processingFee };
+  }, [pricing, total]);
+  async function checkout() { setError(""); setLoading(true); try { const data = await apiFetch("/orders/catalog-checkout", { method: "POST", body: JSON.stringify({ items: items.map((item) => ({ listingId: item.listingId, quantity: item.quantity })) }) }); clear(); navigate(`/messages/${data.order.conversation_id}`); } catch (err: any) { setError(err.message); } finally { setLoading(false); } }
+  return <div className="min-h-screen bg-paper text-ink font-body"><nav className="px-6 md:px-12 py-5 border-b border-ink/10"><Link to="/explore" className="font-display font-semibold">BRIDGE</Link></nav><main className="max-w-3xl mx-auto px-6 py-10"><p className="text-xs font-semibold uppercase tracking-[0.2em] text-signal mb-3">Protected checkout</p><h1 className="font-display text-4xl font-semibold">Your cart.</h1>{items.length === 0 ? <div className="py-16 text-center"><ShoppingCart className="w-8 h-8 mx-auto text-ink/20 mb-3" /><p className="text-ink/50">Your cart is empty.</p><Link to="/explore" className="inline-block mt-4 text-signal">Explore stores</Link></div> : <><div className="grid gap-3 mt-8">{items.map((item) => <div key={item.listingId} className="bg-white border border-ink/5 rounded-2xl p-4 flex items-center gap-4">{item.imageUrl && <img src={item.imageUrl} alt="" className="w-14 h-14 rounded-xl object-cover" />}<div className="flex-1"><p className="font-medium">{item.title}</p><p className="text-xs text-ink/40">{item.vendorName}</p><p className="font-mono text-sm mt-1">₦{item.price.toLocaleString()}</p></div><div className="flex items-center gap-2"><button onClick={() => setQuantity(item.listingId, item.quantity - 1)} className="p-1"><Minus className="w-4 h-4" /></button><span className="w-5 text-center text-sm">{item.quantity}</span><button onClick={() => setQuantity(item.listingId, item.quantity + 1)} className="p-1"><Plus className="w-4 h-4" /></button><button onClick={() => remove(item.listingId)} className="p-1 text-signal"><Trash2 className="w-4 h-4" /></button></div></div>)}</div>{error && <p className="text-sm text-signal mt-4">{error}</p>}<div className="mt-6 rounded-2xl bg-white border border-ink/10 p-5 text-sm space-y-2"><div className="flex justify-between"><span className="text-ink/50">Seller prices</span><span>₦{total.toLocaleString()}</span></div><div className="flex justify-between"><span className="text-ink/50">BRIDGE Buyer Protection (5%)</span><span>₦{quote.platformFee.toLocaleString()}</span></div><div className="flex justify-between"><span className="text-ink/50">Paystack processing fee</span><span>₦{quote.processingFee.toLocaleString()}</span></div><div className="flex justify-between border-t border-ink/10 pt-3 font-medium"><span>Total due</span><span className="font-mono text-lg">₦{quote.buyerTotal.toLocaleString()}</span></div><p className="text-xs text-ink/40 pt-1">The seller receives their listed price in full after you confirm delivery.</p></div><div className="mt-6 flex items-center justify-end"><button onClick={checkout} disabled={loading} className="btn-primary px-5 py-3 disabled:opacity-50">{loading ? "Preparing…" : `Pay ₦${quote.buyerTotal.toLocaleString()} securely`}</button></div></>}</main></div>;
+}

@@ -8,6 +8,7 @@ const navItems = [
   { label: "Overview", path: "/admin" },
   { label: "Verifications", path: "/admin/verifications" },
   { label: "Vendors", path: "/admin/vendors" },
+  { label: "Fraud alerts", path: "/admin/fraud-alerts" },
 ];
 
 export function AdminLayout({ children }: { children: ReactNode }) {

@@ -17,6 +17,7 @@ interface Vendor {
   logo_url: string | null;
   avg_rating: number | null;
   review_count: number;
+  is_promoted?: boolean;
 }
 
 interface Category {
@@ -208,6 +209,7 @@ export function Explore() {
                       )}
                     </div>
                   </div>
+                  {v.is_promoted && <span className="text-[10px] font-semibold uppercase tracking-wider text-signal">Featured</span>}
                   <SignboardTag color={v.verification_status === "unverified" ? "signal" : "gold"}>
                     {v.verification_status === "unverified" ? "New" : "Verified"}
                   </SignboardTag>

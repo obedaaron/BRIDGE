@@ -24,7 +24,7 @@ export function Signup() {
     }
     setLoading(true);
     try {
-      await signup(email, password, fullName);
+      await signup(email, password, fullName, agreed);
       navigate("/explore");
     } catch (err: any) {
       setError(err.message);
@@ -96,7 +96,7 @@ export function Signup() {
             </div>
             <input type="checkbox" className="absolute inset-0 opacity-0 cursor-pointer" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
           </div>
-          <span>I agree to BRIDGE's Terms of Service and Privacy Policy</span>
+          <span>I agree to BRIDGE's <Link to="/terms" className="underline text-paper hover:text-signal">Terms of Service</Link> and <Link to="/privacy" className="underline text-paper hover:text-signal">Privacy Policy</Link></span>
         </label>
 
         <button
