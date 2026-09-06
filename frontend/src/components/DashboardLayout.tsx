@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { Menu, X, LogOut, ArrowUpRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { apiFetch } from "../lib/api";
+import { BrandLink } from "./BrandLink";
 
 const navItems = [
   { label: "Overview", path: "/dashboard" },
@@ -34,7 +35,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
     <div className="min-h-screen bg-paper text-ink font-body">
       {/* Mobile header */}
       <div className="lg:hidden flex items-center justify-between px-5 py-4 border-b border-ink/5 bg-paper sticky top-0 z-40">
-        <Link to="/" className="font-display text-xl font-bold text-ink tracking-tight">BRIDGE</Link>
+        <BrandLink />
         <button onClick={() => setMobileOpen(!mobileOpen)} className="p-2 text-ink/60">
           {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
         </button>
@@ -78,9 +79,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
           <div className="sidebar-grain absolute inset-0 pointer-events-none" />
 
           <div className="relative z-10 flex flex-col h-full">
-            <Link to="/" className="mb-1 inline-block">
-              <img src="/logo.png" alt="BRIDGE" className="h-8 invert opacity-90" />
-            </Link>
+            <BrandLink tone="paper" className="mb-1 opacity-90" />
             <Link to="/explore" className="text-xs text-paper/40 hover:text-paper mb-10 inline-flex items-center gap-1 transition-colors">
               <ArrowUpRight className="w-3 h-3 rotate-[-135deg]" strokeWidth={2} />
               Browse marketplace

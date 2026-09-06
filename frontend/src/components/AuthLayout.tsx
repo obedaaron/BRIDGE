@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { Link } from "react-router-dom";
 import { SignboardTag } from "./SignboardTag";
+import { BrandLink } from "./BrandLink";
 
 export function AuthLayout({ title, subtitle, children, footer }: { title: string; subtitle: string; children: ReactNode; footer: ReactNode }) {
   return (
@@ -27,9 +27,7 @@ export function AuthLayout({ title, subtitle, children, footer }: { title: strin
       <div className="relative z-10 min-h-screen grid md:grid-cols-2">
         {/* Left: Form */}
         <div className="flex flex-col justify-center px-6 md:px-16 lg:px-24 py-12 relative">
-          <Link to="/" className="font-display text-xl font-bold text-paper mb-12 md:mb-16 opacity-80 hover:opacity-100 transition-opacity">
-            BRIDGE
-          </Link>
+          <BrandLink tone="paper" className="mb-12 md:mb-16 opacity-80 hover:opacity-100 transition-opacity" />
 
           <h1 className="font-display text-4xl md:text-5xl lg:text-6xl font-semibold text-paper leading-[0.95] tracking-tight">
             {title}

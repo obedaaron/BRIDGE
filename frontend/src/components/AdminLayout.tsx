@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { Menu, X, LogOut } from "lucide-react";
 import { useState } from "react";
+import { BrandLink } from "./BrandLink";
 
 const navItems = [
   { label: "Overview", path: "/admin" },
@@ -20,7 +21,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
     <div className="min-h-screen bg-paper text-ink font-body">
       {/* Mobile header */}
       <div className="lg:hidden flex items-center justify-between px-5 py-4 border-b border-ink/5 bg-paper sticky top-0 z-40">
-        <Link to="/" className="font-display text-xl font-bold text-ink tracking-tight">BRIDGE</Link>
+        <BrandLink />
         <button onClick={() => setMobileOpen(!mobileOpen)} className="p-2 text-ink/60">
           {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
         </button>
@@ -63,9 +64,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
           <div className="sidebar-grain absolute inset-0 pointer-events-none" />
 
           <div className="relative z-10 flex flex-col h-full">
-            <Link to="/" className="mb-1 inline-block">
-              <img src="/logo.png" alt="BRIDGE" className="h-8 invert opacity-90" />
-            </Link>
+            <BrandLink tone="paper" className="mb-1 opacity-90" />
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold mb-10">Admin</p>
 
             <nav className="flex flex-col gap-1">

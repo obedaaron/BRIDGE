@@ -1,11 +1,9 @@
 import { pool } from "../db";
 
 export const planFeatures = {
-  free: { tier: "free", amountKobo: 0, currency: "USD", label: "Free", listingLimit: 10, promotionLimit: 0, customization: "Basic storefront" },
-  // The database column keeps its legacy name, but this value is always the
-  // provider's minor unit (cents for USD, kobo for NGN).
-  standard: { tier: "standard", amountKobo: Number(process.env.STANDARD_PLAN_AMOUNT_MINOR || 4500), currency: process.env.SUBSCRIPTION_CURRENCY || "USD", label: "Standard", listingLimit: 50, promotionLimit: 2, customization: "Expanded storefront" },
-  premium: { tier: "premium", amountKobo: Number(process.env.PREMIUM_PLAN_AMOUNT_MINOR || 8000), currency: process.env.SUBSCRIPTION_CURRENCY || "USD", label: "Premium", listingLimit: null, promotionLimit: null, customization: "Full storefront" },
+  free: { tier: "free", amountKobo: 0, currency: "NGN", label: "Free", listingLimit: 10, promotionLimit: 0, customization: "Basic storefront" },
+  standard: { tier: "standard", amountKobo: Number(process.env.STANDARD_PLAN_AMOUNT_KOBO || 450000), currency: "NGN", label: "Standard", listingLimit: 50, promotionLimit: 2, customization: "Expanded storefront" },
+  premium: { tier: "premium", amountKobo: Number(process.env.PREMIUM_PLAN_AMOUNT_KOBO || 800000), currency: "NGN", label: "Premium", listingLimit: null, promotionLimit: null, customization: "Full storefront" },
 } as const;
 
 export type PlanTier = keyof typeof planFeatures;

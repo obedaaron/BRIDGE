@@ -4,7 +4,7 @@ import { apiFetch } from "../lib/api";
 import { SignboardTag } from "../components/SignboardTag";
 import { StarRating } from "../components/StarRating";
 import { useAuth } from "../context/AuthContext";
-import { Search, MapPin, ArrowUpRight, Store, LogOut, MessageCircle } from "lucide-react";
+import { Search, MapPin, ArrowUpRight, Store, LogOut, MessageCircle, Crosshair } from "lucide-react";
 
 interface Vendor {
   id: string;
@@ -18,6 +18,7 @@ interface Vendor {
   avg_rating: number | null;
   review_count: number;
   is_promoted?: boolean;
+  distance_km?: number | null;
 }
 
 interface Category {
@@ -33,6 +34,8 @@ export function Explore() {
   const [city, setCity] = useState("");
   const [activeCategory, setActiveCategory] = useState("");
   const [loading, setLoading] = useState(true);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [locationMessage, setLocationMessage] = useState("");
 
   useEffect(() => {
     apiFetch("/categories").then((data) => setCategories(data.categories));
@@ -44,20 +47,32 @@ export function Explore() {
     if (q) params.set("q", q);
     if (city) params.set("city", city);
     if (activeCategory) params.set("category", activeCategory);
+    if (userLocation) { params.set("lat", String(userLocation.lat)); params.set("lng", String(userLocation.lng)); }
 
     apiFetch(`/search?${params.toString()}`)
       .then((data) => setVendors(data.vendors))
+      .catch(() => setVendors([]))
       .finally(() => setLoading(false));
   }
 
   useEffect(() => {
     search();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeCategory]);
+  }, [activeCategory, userLocation]);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     search();
+  }
+
+  function findNearby() {
+    if (!navigator.geolocation) return setLocationMessage("Your browser does not support location services.");
+    setLocationMessage("Finding nearby vendors…");
+    navigator.geolocation.getCurrentPosition(
+      (position) => { setUserLocation({ lat: position.coords.latitude, lng: position.coords.longitude }); setLocationMessage("Showing vendors nearest to you."); },
+      () => setLocationMessage("We could not access your location. Allow location access and try again."),
+      { enableHighAccuracy: true, timeout: 10_000, maximumAge: 60_000 },
+    );
   }
 
   function NavAuth() {
@@ -115,7 +130,7 @@ export function Explore() {
             Find a vendor.
           </h1>
           <p className="mt-3 text-ink/40 max-w-md text-base sm:text-lg">
-            Search verified businesses across Nigeria. Filter by city or category.
+            Search verified businesses across Nigeria, or let BRIDGE recommend vendors nearest to you.
           </p>
         </div>
 
@@ -146,8 +161,10 @@ export function Explore() {
             >
               Search <ArrowUpRight className="w-4 h-4" strokeWidth={2} />
             </button>
+            <button type="button" onClick={findNearby} className="border border-ink/15 text-ink font-medium px-4 py-3 rounded-xl hover:bg-ink/5 transition-colors text-sm inline-flex items-center justify-center gap-2"><Crosshair className="w-4 h-4" strokeWidth={2} />Nearby</button>
           </div>
         </form>
+        {locationMessage && <p className="-mt-5 mb-6 text-sm text-ink/50 inline-flex items-center gap-1.5"><MapPin className="w-4 h-4 text-signal" />{locationMessage}</p>}
 
         {/* CATEGORY FILTERS */}
         <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
@@ -175,7 +192,7 @@ export function Explore() {
               <Search className="w-6 h-6 text-ink/20" strokeWidth={1.5} />
             </div>
             <p className="text-ink/40 font-medium mb-1">No vendors found</p>
-            <p className="text-ink/30 text-sm">Try a different search or category.</p>
+            <p className="text-ink/30 text-sm">Try a different search, category, or nearby search.</p>
           </div>
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
@@ -207,6 +224,7 @@ export function Explore() {
                           {[v.city, v.state].filter(Boolean).join(", ")}
                         </p>
                       )}
+                      {v.distance_km !== null && v.distance_km !== undefined && <p className="text-[11px] text-signal mt-1 font-medium">{v.distance_km < 1 ? "Less than 1 km away" : `${v.distance_km} km away`}</p>}
                     </div>
                   </div>
                   {v.is_promoted && <span className="text-[10px] font-semibold uppercase tracking-wider text-signal">Featured</span>}

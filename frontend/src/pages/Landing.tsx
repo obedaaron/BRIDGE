@@ -27,7 +27,7 @@ const whyBridge = [
 ];
 
 const footerLinks = {
-  Product: [{ label: "Explore vendors", to: "/explore" }, { label: "List your business", to: "/signup" }, { label: "How it works", to: "/#how-it-works" }],
+  Product: [{ label: "Explore vendors", to: "/explore" }, { label: "List your business", to: "/signup" }, { label: "How it works", to: "/how-it-works" }],
   Categories: [{ label: "Tailoring", to: "/explore" }, { label: "Electrical", to: "/explore" }, { label: "Photography", to: "/explore" }, { label: "Fashion", to: "/explore" }],
   Company: [{ label: "About", to: "/about" }, { label: "Contact", to: "/contact" }, { label: "Careers", to: "/careers" }],
   Legal: [{ label: "Terms of Service", to: "/terms" }, { label: "Privacy Policy", to: "/privacy" }],

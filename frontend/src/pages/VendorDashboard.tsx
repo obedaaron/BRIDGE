@@ -26,7 +26,7 @@ export function VendorDashboard() {
   const [vendor, setVendor] = useState<Vendor | null | undefined>(undefined);
   const [listingCount, setListingCount] = useState(0);
   const [form, setForm] = useState({
-    businessName: "", description: "", phone: "", whatsapp: "", city: "", state: "",
+    businessName: "", description: "", phone: "", city: "", state: "",
     address: "", categoryId: "", logoUrl: "",
   });
   const [lat, setLat] = useState<number | null>(null);
@@ -154,15 +154,6 @@ export function VendorDashboard() {
                 />
               </div>
 
-              <div>
-                <label className="block text-xs uppercase tracking-[0.2em] text-ink/40 mb-2">WhatsApp</label>
-                <input
-                  className="w-full bg-ink/5 border border-ink/10 rounded-xl px-5 py-4 text-ink placeholder:text-ink/20 outline-none focus:border-signal/50 focus:bg-ink/[0.07] transition-all"
-                  placeholder="080..."
-                  value={form.whatsapp}
-                  onChange={(e) => setForm({ ...form, whatsapp: e.target.value })}
-                />
-              </div>
 
               <div>
                 <label className="block text-xs uppercase tracking-[0.2em] text-ink/40 mb-2">City</label>

@@ -1,66 +1,78 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Crosshair, MapPin } from "lucide-react";
 
-interface Suggestion {
-  place_name: string;
-  center: [number, number];
+type MapInstance = { flyTo: (options: unknown) => void; getZoom: () => number; on: (event: string, listener: (event: { lngLat: { lat: number; lng: number } }) => void) => void; remove: () => void; };
+type MarkerInstance = { setLngLat: (point: [number, number]) => MarkerInstance; addTo: (map: MapInstance) => MarkerInstance; };
+type MapLibreApi = { Map: new (options: unknown) => MapInstance; Marker: new (options?: unknown) => MarkerInstance; };
+
+declare global { interface Window { maplibregl?: MapLibreApi; } }
+
+let mapLibreLoader: Promise<MapLibreApi> | null = null;
+function loadMapLibre() {
+  if (window.maplibregl) return Promise.resolve(window.maplibregl);
+  if (mapLibreLoader) return mapLibreLoader;
+  mapLibreLoader = new Promise((resolve, reject) => {
+    const css = document.createElement("link"); css.rel = "stylesheet"; css.href = "https://unpkg.com/maplibre-gl@5/dist/maplibre-gl.css"; document.head.appendChild(css);
+    const script = document.createElement("script"); script.src = "https://unpkg.com/maplibre-gl@5/dist/maplibre-gl.js"; script.async = true;
+    script.onload = () => window.maplibregl ? resolve(window.maplibregl) : reject(new Error("MapLibre did not load"));
+    script.onerror = () => reject(new Error("MapLibre could not load")); document.head.appendChild(script);
+  });
+  return mapLibreLoader;
 }
 
-export function AddressPicker({
-  address, onAddressChange, lat, lng, onLocationChange,
-}: {
+export function AddressPicker({ address, onAddressChange, lat, lng, onLocationChange }: {
   address: string;
-  onAddressChange: (v: string) => void;
+  onAddressChange: (value: string) => void;
   lat: number | null;
   lng: number | null;
   onLocationChange: (lat: number, lng: number) => void;
 }) {
-  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
-  const token = import.meta.env.VITE_MAPBOX_TOKEN;
+  const [mapError, setMapError] = useState("");
+  const mapNode = useRef<HTMLDivElement>(null);
+  const map = useRef<MapInstance | null>(null);
+  const marker = useRef<MarkerInstance | null>(null);
 
-  async function handleInput(value: string) {
-    onAddressChange(value);
-    if (value.length < 3 || !token) {
-      setSuggestions([]);
-      return;
-    }
-    const res = await fetch(
-      `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(value)}.json?access_token=${token}&country=NG&limit=5`
+  function setPin(nextLat: number, nextLng: number) {
+    onLocationChange(nextLat, nextLng);
+    if (!map.current || !window.maplibregl) return;
+    const point: [number, number] = [nextLng, nextLat];
+    if (!marker.current) marker.current = new window.maplibregl.Marker({ color: "#BE3D2A" }).setLngLat(point).addTo(map.current);
+    else marker.current.setLngLat(point);
+    map.current.flyTo({ center: point, zoom: Math.max(map.current.getZoom(), 14), essential: true });
+  }
+
+  useEffect(() => {
+    if (!mapNode.current || map.current) return;
+    let active = true;
+    let instance: MapInstance | null = null;
+    loadMapLibre().then((mapLibre) => {
+      if (!active || !mapNode.current) return;
+      const point: [number, number] = lng !== null && lat !== null ? [lng, lat] : [8.6753, 9.082];
+      instance = new mapLibre.Map({ container: mapNode.current, style: "https://tiles.openfreemap.org/styles/liberty", center: point, zoom: lng !== null && lat !== null ? 14 : 5.2 });
+      map.current = instance;
+      if (lng !== null && lat !== null) marker.current = new mapLibre.Marker({ color: "#BE3D2A" }).setLngLat(point).addTo(instance);
+      instance.on("click", (event) => setPin(event.lngLat.lat, event.lngLat.lng));
+    }).catch(() => setMapError("The map could not load. Please refresh and try again."));
+    return () => { active = false; instance?.remove(); map.current = null; marker.current = null; };
+  // The map is created once; later pin changes are handled by setPin.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function useMyLocation() {
+    if (!navigator.geolocation) return setMapError("Location services are not supported by this browser.");
+    setMapError("");
+    navigator.geolocation.getCurrentPosition(
+      (position) => setPin(position.coords.latitude, position.coords.longitude),
+      () => setMapError("We could not access your location. Allow location access or place the pin manually."),
+      { enableHighAccuracy: true, timeout: 10_000, maximumAge: 60_000 },
     );
-    const data = await res.json();
-    setSuggestions(data.features || []);
   }
 
-  function selectSuggestion(s: Suggestion) {
-    onAddressChange(s.place_name);
-    onLocationChange(s.center[1], s.center[0]);
-    setSuggestions([]);
-  }
-
-  return (
-    <div className="relative">
-      <label className="block text-sm font-medium mb-2">Address (optional)</label>
-      <input
-        className="w-full border-2 border-charcoal p-3 bg-paper focus:outline-none focus:ring-2 focus:ring-gold"
-        placeholder="Start typing your address..."
-        value={address}
-        onChange={(e) => handleInput(e.target.value)}
-      />
-      {suggestions.length > 0 && (
-        <ul className="absolute z-10 w-full bg-paper border-2 border-charcoal border-t-0 max-h-48 overflow-y-auto">
-          {suggestions.map((s, i) => (
-            <li key={i} onClick={() => selectSuggestion(s)} className="p-2 text-sm hover:bg-gold/30 cursor-pointer">
-              {s.place_name}
-            </li>
-          ))}
-        </ul>
-      )}
-      {lat && lng && (
-        <img
-          src={`https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+BE3D2A(${lng},${lat})/${lng},${lat},14,0/500x200@2x?access_token=${token}`}
-          alt="Map preview"
-          className="mt-3 border-2 border-charcoal w-full"
-        />
-      )}
-    </div>
-  );
+  return <div>
+    <div className="flex items-center justify-between gap-3 mb-2"><label className="block text-sm font-medium">Address & map pin (optional)</label><button type="button" onClick={useMyLocation} className="text-xs font-medium text-signal inline-flex items-center gap-1 hover:text-ink"><Crosshair className="w-3.5 h-3.5" />Use my location</button></div>
+    <input className="w-full border-2 border-charcoal p-3 bg-paper focus:outline-none focus:ring-2 focus:ring-gold" placeholder="Enter your address or landmark" value={address} onChange={(event) => onAddressChange(event.target.value)} />
+    <div ref={mapNode} className="mt-3 h-56 w-full overflow-hidden rounded-xl border-2 border-charcoal" />
+    <p className="text-xs text-ink/40 mt-2 inline-flex items-center gap-1"><MapPin className="w-3.5 h-3.5" />Use your location or tap the map to place your store pin.</p>
+    {mapError && <p className="mt-2 text-xs text-signal">{mapError}</p>}
+  </div>;
 }

@@ -26,6 +26,7 @@ import { Plans } from "./pages/dashboard/Plans";
 import { Wallet } from "./pages/dashboard/Wallet";
 import { Legal } from "./pages/Legal";
 import { Promotions } from "./pages/dashboard/Promotions";
+import { CompanyPage, ContactPage } from "./pages/Company";
 
 export default function App() {
   return (
@@ -43,6 +44,10 @@ export default function App() {
           <Route path="/buyer-protection" element={<Legal />} />
           <Route path="/store/:slug" element={<StorefrontPage />} />
           <Route path="/explore" element={<Explore />} />
+          <Route path="/about" element={<CompanyPage />} />
+          <Route path="/how-it-works" element={<CompanyPage />} />
+          <Route path="/careers" element={<CompanyPage />} />
+          <Route path="/contact" element={<ContactPage />} />
 
           {/* Vendor Dashboard */}
           <Route
