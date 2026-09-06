@@ -59,9 +59,9 @@ export async function initializePaystackPayment({ orderId, email, amountKobo }: 
   return { reference: result.data.reference, authorizationUrl: result.data.authorization_url };
 }
 
-export async function initializePaystackSubscription(input: { email: string; amountKobo: number; planCode: string; vendorId: string }) {
+export async function initializePaystackSubscription(input: { email: string; amountKobo: number; currency: string; planCode: string; vendorId: string }) {
   const callbackUrl = process.env.PAYSTACK_SUBSCRIPTION_CALLBACK_URL || `${process.env.FRONTEND_URL || "http://localhost:5173"}/dashboard/plans`;
-  const result = await paystackFetch("/transaction/initialize", { method: "POST", body: JSON.stringify({ email: input.email, amount: String(input.amountKobo), plan: input.planCode, callback_url: callbackUrl, metadata: { kind: "vendor_subscription", vendor_id: input.vendorId } }) });
+  const result = await paystackFetch("/transaction/initialize", { method: "POST", body: JSON.stringify({ email: input.email, amount: String(input.amountKobo), currency: input.currency, plan: input.planCode, callback_url: callbackUrl, metadata: { kind: "vendor_subscription", vendor_id: input.vendorId } }) });
   if (!result.data?.reference || !result.data.authorization_url) throw new Error("Paystack did not return a subscription checkout link");
   return { reference: result.data.reference, authorizationUrl: result.data.authorization_url };
 }

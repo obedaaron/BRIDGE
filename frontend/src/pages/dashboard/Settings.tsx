@@ -22,6 +22,8 @@ export function Settings() {
   const [payout, setPayout] = useState({ bankCode: "", accountNumber: "" });
   const [savedPayout, setSavedPayout] = useState<{ bank_name: string | null; account_name: string | null; account_last4: string } | null>(null);
   const [savingPayout, setSavingPayout] = useState(false);
+  const [banksLoading, setBanksLoading] = useState(true);
+  const [banksError, setBanksError] = useState("");
 
   useEffect(() => {
     apiFetch("/vendors/me").then((data) => {
@@ -40,7 +42,10 @@ export function Settings() {
       }
     });
     apiFetch("/vendors/me/payout-account").then((data) => setSavedPayout(data.account)).catch(() => undefined);
-    apiFetch("/vendors/payout-banks").then((data) => setBanks(data.banks.filter((bank: { active: boolean }) => bank.active))).catch(() => undefined);
+    apiFetch("/vendors/payout-banks")
+      .then((data) => setBanks(data.banks.filter((bank: { active: boolean }) => bank.active)))
+      .catch((err) => setBanksError(err.message || "Could not load the bank list."))
+      .finally(() => setBanksLoading(false));
   }, []);
 
   async function handleSubmit(e: FormEvent) {
@@ -202,9 +207,10 @@ export function Settings() {
           <p className="mt-2 text-sm text-ink/45 max-w-xl">Your bank details are verified with Paystack. BRIDGE stores only the payout recipient reference and the last four account digits.</p>
           {savedPayout && <div className="mt-4 bg-ink/5 rounded-xl px-4 py-3 text-sm"><span className="font-medium">{savedPayout.bank_name || "Bank account"}</span> · {savedPayout.account_name || "Verified account"} · **** {savedPayout.account_last4}</div>}
           <form onSubmit={savePayoutAccount} className="mt-5 grid sm:grid-cols-2 gap-4">
-            <select required value={payout.bankCode} onChange={(e) => setPayout({ ...payout, bankCode: e.target.value })} className="bg-ink/5 border border-ink/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-signal/50"><option value="">Select bank</option>{banks.map((bank) => <option key={bank.code} value={bank.code}>{bank.name}</option>)}</select>
+            <select required disabled={banksLoading} value={payout.bankCode} onChange={(e) => setPayout({ ...payout, bankCode: e.target.value })} className="min-h-12 w-full touch-manipulation appearance-auto bg-ink/5 border border-ink/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-signal/50"><option value="">{banksLoading ? "Loading banks…" : "Select bank"}</option>{banks.map((bank) => <option key={bank.code} value={bank.code}>{bank.name}</option>)}</select>
             <input required inputMode="numeric" pattern="[0-9]{10}" maxLength={10} value={payout.accountNumber} onChange={(e) => setPayout({ ...payout, accountNumber: e.target.value.replace(/\D/g, "") })} placeholder="10-digit account number" className="bg-ink/5 border border-ink/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-signal/50" />
-            <button disabled={savingPayout || banks.length === 0} className="sm:col-span-2 w-full sm:w-auto justify-self-start bg-ink text-paper px-5 py-3 rounded-xl text-sm disabled:opacity-50">{savingPayout ? "Verifying…" : savedPayout ? "Change payout account" : "Verify payout account"}</button>
+            {banksError && <p className="sm:col-span-2 text-sm text-signal">{banksError}</p>}
+            <button disabled={savingPayout || banksLoading || banks.length === 0} className="sm:col-span-2 w-full sm:w-auto justify-self-start bg-ink text-paper px-5 py-3 rounded-xl text-sm disabled:opacity-50">{savingPayout ? "Verifying…" : savedPayout ? "Change payout account" : "Verify payout account"}</button>
           </form>
         </section>
       </div>

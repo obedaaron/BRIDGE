@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import type { ReactNode } from "react";
-import { apiFetch } from "../lib/api";
+import { ApiError, apiFetch } from "../lib/api";
 
 interface User {
   id: string;
@@ -31,7 +31,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     apiFetch("/auth/me")
       .then((data) => setUser(data.user))
-      .catch(() => localStorage.removeItem("token"))
+      // A network or deployment problem must not sign a customer out. Only the
+      // API can invalidate a session by explicitly returning 401/403.
+      .catch((error) => {
+        if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
+          localStorage.removeItem("token");
+          setUser(null);
+        }
+      })
       .finally(() => setLoading(false));
   }, []);
 
