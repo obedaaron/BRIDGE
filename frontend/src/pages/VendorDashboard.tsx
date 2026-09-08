@@ -242,7 +242,7 @@ export function VendorDashboard() {
             </div>
 
             {/* Actions */}
-            <div className="flex flex-wrap gap-2 sm:gap-3">
+            <div className="flex flex-wrap gap-2 sm:gap-3" translate="no">
               <button
                 onClick={handleTogglePublish}
                 disabled={toggling}
@@ -257,7 +257,7 @@ export function VendorDashboard() {
                 ) : (
                   <Power className="w-3.5 h-3.5 sm:w-4 sm:h-4" strokeWidth={1.5} />
                 )}
-                {toggling ? "Updating..." : vendor.is_published ? "Unpublish" : "Publish store"}
+                <span>{toggling ? "Updating..." : vendor.is_published ? "Unpublish" : "Publish store"}</span>
               </button>
 
               <button
@@ -268,17 +268,17 @@ export function VendorDashboard() {
                 {copied ? "Copied!" : "Copy link"}
               </button>
 
-              {vendor.is_published && (
-                <a
-                  href={`/store/${vendor.slug}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 sm:gap-2 bg-transparent text-paper font-medium px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm border border-paper/20 hover:bg-paper/5 transition-colors"
-                >
-                  <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4" strokeWidth={1.5} />
-                  View
-                </a>
-              )}
+              <a
+                href={`/store/${vendor.slug}`}
+                target="_blank"
+                rel="noreferrer"
+                aria-hidden={!vendor.is_published}
+                tabIndex={vendor.is_published ? 0 : -1}
+                className={`inline-flex items-center gap-1.5 sm:gap-2 bg-transparent text-paper font-medium px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm border border-paper/20 hover:bg-paper/5 transition-colors ${vendor.is_published ? "" : "hidden"}`}
+              >
+                <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4" strokeWidth={1.5} />
+                <span>View</span>
+              </a>
             </div>
           </div>
         </div>
