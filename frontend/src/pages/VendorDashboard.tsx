@@ -22,6 +22,11 @@ interface Vendor {
   is_published: boolean;
 }
 
+interface PublishReadiness {
+  canPublish: boolean;
+  missing: string[];
+}
+
 export function VendorDashboard() {
   const [vendor, setVendor] = useState<Vendor | null | undefined>(undefined);
   const [listingCount, setListingCount] = useState(0);
@@ -36,13 +41,19 @@ export function VendorDashboard() {
   const [toggling, setToggling] = useState(false);
   const [copied, setCopied] = useState(false);
   const [acceptedVendorTerms, setAcceptedVendorTerms] = useState(false);
+  const [publishReadiness, setPublishReadiness] = useState<PublishReadiness | null>(null);
 
   function loadVendor() {
     apiFetch("/vendors/me").then((data) => setVendor(data.vendor)).catch(() => setVendor(null));
   }
 
+  function loadPublishReadiness() {
+    apiFetch("/verifications/publish-readiness").then((data) => setPublishReadiness(data)).catch(() => setPublishReadiness(null));
+  }
+
   useEffect(() => {
     loadVendor();
+    loadPublishReadiness();
     apiFetch("/listings/mine").then((data) => setListingCount(data.listings.length)).catch(() => {});
   }, []);
 
@@ -53,6 +64,7 @@ export function VendorDashboard() {
     try {
       const data = await apiFetch("/vendors", { method: "POST", body: JSON.stringify({ ...form, lat, lng, acceptedVendorTerms }) });
       setVendor(data.vendor);
+      loadPublishReadiness();
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -66,6 +78,7 @@ export function VendorDashboard() {
     try {
       const data = await apiFetch("/vendors/me/publish", { method: "PATCH" });
       setVendor(data.vendor);
+      loadPublishReadiness();
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -218,6 +231,18 @@ export function VendorDashboard() {
   return (
     <DashboardLayout>
       <div className="max-w-5xl mx-auto">
+        {error && (
+          <div className="mb-6 flex flex-col gap-3 rounded-xl border border-signal/20 bg-signal/10 px-4 py-3 text-sm text-signal sm:flex-row sm:items-center sm:justify-between">
+            <p className="font-medium">{error}</p>
+            <Link to="/dashboard/verification" className="shrink-0 font-semibold underline underline-offset-2">Complete verification</Link>
+          </div>
+        )}
+        {!vendor.is_published && publishReadiness && !publishReadiness.canPublish && (
+          <div className="mb-6 flex flex-col gap-3 rounded-xl border border-ink/10 bg-ink/[0.03] px-4 py-3 text-sm text-ink/65 sm:flex-row sm:items-center sm:justify-between">
+            <p>Before publishing, complete: <span className="font-medium text-ink">{publishReadiness.missing.map((item) => item.replace(/\b\w/g, (letter) => letter.toUpperCase())).join(", ")}</span>.</p>
+            <Link to="/dashboard/verification" className="shrink-0 font-semibold text-signal underline underline-offset-2">Open verification</Link>
+          </div>
+        )}
         {/* Header card */}
         <div className="relative bg-ink rounded-2xl sm:rounded-3xl p-6 sm:p-8 md:p-10 mb-6 sm:mb-8 overflow-hidden">
           <div className="absolute -top-20 -right-20 w-64 h-64 bg-signal/20 rounded-full blur-3xl opacity-40" />
