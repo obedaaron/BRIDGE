@@ -3,7 +3,27 @@ import { useState } from "react";
 export function LogoUpload({ value, onChange }: { value: string; onChange: (dataUrl: string) => void }) {
   const [error, setError] = useState("");
 
-  function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+  async function compressLogo(file: File) {
+    const source = URL.createObjectURL(file);
+    try {
+      const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const nextImage = new Image();
+        nextImage.onload = () => resolve(nextImage);
+        nextImage.onerror = () => reject(new Error("Failed to read image."));
+        nextImage.src = source;
+      });
+      const scale = Math.min(1, 480 / Math.max(image.width, image.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(image.width * scale));
+      canvas.height = Math.max(1, Math.round(image.height * scale));
+      canvas.getContext("2d")?.drawImage(image, 0, 0, canvas.width, canvas.height);
+      return canvas.toDataURL("image/webp", 0.8);
+    } finally {
+      URL.revokeObjectURL(source);
+    }
+  }
+
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
     setError("");
@@ -13,10 +33,11 @@ export function LogoUpload({ value, onChange }: { value: string; onChange: (data
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => onChange(reader.result as string);
-    reader.onerror = () => setError("Failed to read image.");
-    reader.readAsDataURL(file);
+    try {
+      onChange(await compressLogo(file));
+    } catch {
+      setError("Failed to prepare image.");
+    }
   }
 
   return (

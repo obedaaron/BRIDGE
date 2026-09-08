@@ -6,7 +6,7 @@ import { CategorySelect } from "../../components/CategorySelect";
 import { LogoUpload } from "../../components/LogoUpload";
 import { AddressPicker } from "../../components/AddressPicker";
 import { NIGERIAN_STATES } from "../../lib/states";
-import { ArrowUpRight, CheckCircle2, AlertCircle, Loader2, Search } from "lucide-react";
+import { ArrowUpRight, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 
 export function Settings() {
   const [form, setForm] = useState({
@@ -221,19 +221,17 @@ export function Settings() {
           <form onSubmit={savePayoutAccount} className="mt-5 grid sm:grid-cols-2 gap-4">
             <div className="relative">
               <label className="sr-only" htmlFor="payout-bank-search">Search for your bank</label>
-              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-ink/35" aria-hidden="true" />
               <input
                 id="payout-bank-search"
-                type="search"
+                type="text"
                 autoComplete="off"
                 disabled={banksLoading}
                 value={bankSearch}
                 onChange={(e) => { setBankSearch(e.target.value); setPayout({ ...payout, bankCode: "" }); }}
-                placeholder={banksLoading ? "Loading banks…" : "Type your bank name"}
-                className="min-h-12 w-full bg-ink/5 border border-ink/10 rounded-xl py-3 pl-11 pr-4 text-sm outline-none focus:border-signal/50"
-                aria-describedby="payout-bank-help"
+                placeholder={banksLoading ? "Loading banks…" : "Search bank (e.g. GT)"}
+                className="w-full bg-ink/5 border border-ink/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-signal/50"
               />
-              {!banksLoading && bankSearch.trim() && (
+              {!banksLoading && bankSearch.trim().length >= 2 && (
                 <div className="absolute z-10 mt-2 max-h-56 w-full overflow-y-auto rounded-xl border border-ink/10 bg-paper p-1 shadow-lg">
                   {banks.filter((bank) => bank.name.toLowerCase().includes(bankSearch.trim().toLowerCase())).slice(0, 12).map((bank) => (
                     <button key={bank.code} type="button" onClick={() => { setPayout({ ...payout, bankCode: bank.code }); setBankSearch(bank.name); }} className="block w-full rounded-lg px-3 py-2.5 text-left text-sm hover:bg-ink/5 focus:bg-ink/5 focus:outline-none">
@@ -243,7 +241,6 @@ export function Settings() {
                   {banks.filter((bank) => bank.name.toLowerCase().includes(bankSearch.trim().toLowerCase())).length === 0 && <p className="px-3 py-2.5 text-sm text-ink/45">No matching bank found.</p>}
                 </div>
               )}
-              <p id="payout-bank-help" className="mt-2 text-xs text-ink/40">Type the first 2–3 letters of your bank, then select it from the results.</p>
             </div>
             <input required inputMode="numeric" pattern="[0-9]{10}" maxLength={10} value={payout.accountNumber} onChange={(e) => setPayout({ ...payout, accountNumber: e.target.value.replace(/\D/g, "") })} placeholder="10-digit account number" className="bg-ink/5 border border-ink/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-signal/50" />
             {banksError && <div className="sm:col-span-2 flex flex-wrap items-center gap-3 text-sm text-signal"><p>{banksError}</p><button type="button" onClick={loadBanks} disabled={banksLoading} className="underline underline-offset-2 disabled:opacity-50">Try again</button></div>}
