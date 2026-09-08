@@ -22,7 +22,7 @@ router.post("/", requireAuth, async (req, res) => {
   const vendorId = await getOwnVendorId(req.user!.userId);
   if (!vendorId) return res.status(404).json({ error: "Create your store before adding listings" });
 
-  const { title, description, type, price, categoryId, imageUrl, stockQuantity } = req.body;
+  const { title, description, type, price, imageUrl, stockQuantity } = req.body;
   if (!title || !type) return res.status(400).json({ error: "Title and type are required" });
   const plan = await getVendorPlan(vendorId);
   if (plan.listingLimit !== null) {
@@ -34,7 +34,7 @@ router.post("/", requireAuth, async (req, res) => {
     const result = await pool.query(
       `insert into listings (vendor_id, category_id, title, description, type, price, image_url, stock_quantity)
        values ($1, $2, $3, $4, $5, $6, $7, $8) returning *`,
-      [vendorId, categoryId || null, title, description || null, type, price || null, imageUrl || null, stockQuantity ?? null]
+      [vendorId, null, title, description || null, type, price || null, imageUrl || null, stockQuantity ?? null]
     );
     res.status(201).json({ listing: result.rows[0] });
   } catch (err) {

@@ -17,8 +17,7 @@ router.get("/", async (req, res) => {
               then round((ST_Distance(v.location, ST_SetSRID(ST_MakePoint($5, $4), 4326)::geography) / 1000)::numeric, 1)
               else null end as distance_km
 from vendors v
-left join listings l on l.vendor_id = v.id
-left join categories c on c.id = l.category_id
+left join categories c on c.id = v.category_id
 left join (
   select vendor_id, round(avg(rating)::numeric, 1) as avg_rating, count(*) as review_count
   from reviews

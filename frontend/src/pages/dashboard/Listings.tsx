@@ -3,6 +3,7 @@ import type { FormEvent } from "react";
 import { apiFetch } from "../../lib/api";
 import { DashboardLayout } from "../../components/DashboardLayout";
 import { SignboardTag } from "../../components/SignboardTag";
+import { LogoUpload } from "../../components/LogoUpload";
 import { ArrowUpRight, Package, Trash2, Plus, X, Loader2 } from "lucide-react";
 
 interface Listing {
@@ -16,16 +17,10 @@ interface Listing {
   stock_quantity: number | null;
 }
 
-interface Category {
-  id: string;
-  name: string;
-}
-
 export function Listings() {
   const [listings, setListings] = useState<Listing[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ title: "", description: "", type: "product", price: "", categoryId: "", imageUrl: "", stockQuantity: "" });
+  const [form, setForm] = useState({ title: "", description: "", type: "product", price: "", imageUrl: "", stockQuantity: "" });
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -35,7 +30,6 @@ export function Listings() {
 
   useEffect(() => {
     loadListings();
-    apiFetch("/categories").then((data) => setCategories(data.categories));
   }, []);
 
   async function handleCreate(e: FormEvent) {
@@ -47,7 +41,7 @@ export function Listings() {
         method: "POST",
       body: JSON.stringify({ ...form, price: form.price ? Number(form.price) : null, stockQuantity: form.stockQuantity ? Number(form.stockQuantity) : null }),
       });
-      setForm({ title: "", description: "", type: "product", price: "", categoryId: "", imageUrl: "", stockQuantity: "" });
+      setForm({ title: "", description: "", type: "product", price: "", imageUrl: "", stockQuantity: "" });
       setShowForm(false);
       loadListings();
     } catch (err: any) {
@@ -121,10 +115,7 @@ export function Listings() {
                 />
               </div>
 
-              <div>
-                <label className="block text-xs uppercase tracking-[0.2em] text-ink/40 mb-2">Product image URL</label>
-                <input className="w-full bg-ink/5 border border-ink/10 rounded-xl px-5 py-4 text-ink placeholder:text-ink/20 outline-none focus:border-signal/50" placeholder="https://…" type="url" value={form.imageUrl} onChange={(e) => setForm({ ...form, imageUrl: e.target.value })} />
-              </div>
+              <LogoUpload label="Product photo" emptyLabel="No photo" value={form.imageUrl} onChange={(imageUrl) => setForm({ ...form, imageUrl })} />
               <div>
                 <label className="block text-xs uppercase tracking-[0.2em] text-ink/40 mb-2">Stock quantity</label>
                 <input className="w-full bg-ink/5 border border-ink/10 rounded-xl px-5 py-4 text-ink placeholder:text-ink/20 outline-none focus:border-signal/50" placeholder="Leave blank for services" type="number" min="0" value={form.stockQuantity} onChange={(e) => setForm({ ...form, stockQuantity: e.target.value })} />
@@ -164,19 +155,6 @@ export function Listings() {
                 />
               </div>
 
-              <div className="sm:col-span-2">
-                <label className="block text-xs uppercase tracking-[0.2em] text-ink/40 mb-2">Category</label>
-                <select
-                  className="w-full bg-ink/5 border border-ink/10 rounded-xl px-5 py-4 text-ink outline-none focus:border-signal/50 focus:bg-ink/[0.07] transition-all appearance-none"
-                  value={form.categoryId}
-                  onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
-                >
-                  <option value="">No category</option>
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
-              </div>
             </div>
 
             <button

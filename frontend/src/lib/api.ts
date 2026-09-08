@@ -10,7 +10,8 @@ export class ApiError extends Error {
   }
 }
 
-const REQUEST_TIMEOUT_MS = 30_000;
+// Render services can take longer than 30 seconds to wake after inactivity.
+const REQUEST_TIMEOUT_MS = 60_000;
 
 async function request(url: string, options: RequestInit) {
   const controller = new AbortController();
@@ -18,7 +19,7 @@ async function request(url: string, options: RequestInit) {
   try {
     return await fetch(url, { ...options, signal: controller.signal });
   } catch (error) {
-    if (controller.signal.aborted) throw new ApiError("BRIDGE is taking too long to respond. Please try again.", 504);
+    if (controller.signal.aborted) throw new ApiError("BRIDGE is taking too long to respond. The server may be waking up—please try again.", 504);
     if (error instanceof TypeError) throw new ApiError("BRIDGE could not connect to the server. Check your connection and try again.", 0);
     throw error;
   } finally {

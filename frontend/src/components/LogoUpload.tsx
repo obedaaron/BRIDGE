@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-export function LogoUpload({ value, onChange }: { value: string; onChange: (dataUrl: string) => void }) {
+export function LogoUpload({ value, onChange, label = "Store logo", emptyLabel = "No logo" }: { value: string; onChange: (dataUrl: string) => void; label?: string; emptyLabel?: string }) {
   const [error, setError] = useState("");
 
   async function compressLogo(file: File) {
@@ -42,13 +42,13 @@ export function LogoUpload({ value, onChange }: { value: string; onChange: (data
 
   return (
     <div>
-      <label className="block text-sm font-medium mb-2">Store logo</label>
+      <label className="block text-sm font-medium mb-2">{label}</label>
       <div className="flex items-center gap-4">
         {value ? (
           <img src={value} alt="Logo" className="w-16 h-16 object-cover border-2 border-charcoal" />
         ) : (
           <div className="w-16 h-16 border-2 border-dashed border-charcoal/40 flex items-center justify-center text-xs text-charcoal/40">
-            No logo
+            {emptyLabel}
           </div>
         )}
         <label className="text-sm bg-paper border-2 border-charcoal px-3 py-2 cursor-pointer hover:bg-charcoal hover:text-paper transition">
