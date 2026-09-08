@@ -27,6 +27,8 @@ import { Wallet } from "./pages/dashboard/Wallet";
 import { Legal } from "./pages/Legal";
 import { Promotions } from "./pages/dashboard/Promotions";
 import { CompanyPage, ContactPage } from "./pages/Company";
+import { NotFound } from "./pages/NotFound";
+import { ResetPassword } from "./pages/ResetPassword";
 
 export default function App() {
   return (
@@ -39,6 +41,7 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/terms" element={<Legal />} />
           <Route path="/privacy" element={<Legal />} />
           <Route path="/buyer-protection" element={<Legal />} />
@@ -76,6 +79,7 @@ export default function App() {
           <Route path="/admin/verifications" element={<AdminRoute><AdminVerifications /></AdminRoute>} />
           <Route path="/admin/vendors" element={<AdminRoute><AdminVendors /></AdminRoute>} />
           <Route path="/admin/fraud-alerts" element={<AdminRoute><FraudAlerts /></AdminRoute>} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </CartProvider>
       </AuthProvider>

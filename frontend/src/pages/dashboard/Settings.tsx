@@ -6,7 +6,7 @@ import { CategorySelect } from "../../components/CategorySelect";
 import { LogoUpload } from "../../components/LogoUpload";
 import { AddressPicker } from "../../components/AddressPicker";
 import { NIGERIAN_STATES } from "../../lib/states";
-import { ArrowUpRight, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { ArrowUpRight, CheckCircle2, AlertCircle, Loader2, Search } from "lucide-react";
 
 export function Settings() {
   const [form, setForm] = useState({
@@ -20,10 +20,20 @@ export function Settings() {
   const [saving, setSaving] = useState(false);
   const [banks, setBanks] = useState<{ name: string; code: string }[]>([]);
   const [payout, setPayout] = useState({ bankCode: "", accountNumber: "" });
+  const [bankSearch, setBankSearch] = useState("");
   const [savedPayout, setSavedPayout] = useState<{ bank_name: string | null; account_name: string | null; account_last4: string } | null>(null);
   const [savingPayout, setSavingPayout] = useState(false);
   const [banksLoading, setBanksLoading] = useState(true);
   const [banksError, setBanksError] = useState("");
+
+  function loadBanks() {
+    setBanksLoading(true);
+    setBanksError("");
+    apiFetch("/vendors/payout-banks")
+      .then((data) => setBanks(data.banks.filter((bank: { active: boolean }) => bank.active)))
+      .catch((err) => setBanksError(err.message || "Could not load the bank list."))
+      .finally(() => setBanksLoading(false));
+  }
 
   useEffect(() => {
     apiFetch("/vendors/me").then((data) => {
@@ -42,10 +52,7 @@ export function Settings() {
       }
     });
     apiFetch("/vendors/me/payout-account").then((data) => setSavedPayout(data.account)).catch(() => undefined);
-    apiFetch("/vendors/payout-banks")
-      .then((data) => setBanks(data.banks.filter((bank: { active: boolean }) => bank.active)))
-      .catch((err) => setBanksError(err.message || "Could not load the bank list."))
-      .finally(() => setBanksLoading(false));
+    loadBanks();
   }, []);
 
   async function handleSubmit(e: FormEvent) {
@@ -65,8 +72,13 @@ export function Settings() {
   }
 
   async function savePayoutAccount(e: FormEvent) {
-    e.preventDefault(); setError(""); setSavingPayout(true);
-    try { const data = await apiFetch("/vendors/me/payout-account", { method: "PUT", body: JSON.stringify(payout) }); setSavedPayout(data.account); setPayout({ bankCode: "", accountNumber: "" }); }
+    e.preventDefault(); setError("");
+    if (!payout.bankCode) {
+      setError("Search for and select your bank before verifying the account.");
+      return;
+    }
+    setSavingPayout(true);
+    try { const data = await apiFetch("/vendors/me/payout-account", { method: "PUT", body: JSON.stringify(payout) }); setSavedPayout(data.account); setPayout({ bankCode: "", accountNumber: "" }); setBankSearch(""); }
     catch (err: any) { setError(err.message); } finally { setSavingPayout(false); }
   }
 
@@ -207,9 +219,34 @@ export function Settings() {
           <p className="mt-2 text-sm text-ink/45 max-w-xl">Your bank details are verified with Paystack. BRIDGE stores only the payout recipient reference and the last four account digits.</p>
           {savedPayout && <div className="mt-4 bg-ink/5 rounded-xl px-4 py-3 text-sm"><span className="font-medium">{savedPayout.bank_name || "Bank account"}</span> · {savedPayout.account_name || "Verified account"} · **** {savedPayout.account_last4}</div>}
           <form onSubmit={savePayoutAccount} className="mt-5 grid sm:grid-cols-2 gap-4">
-            <select required disabled={banksLoading} value={payout.bankCode} onChange={(e) => setPayout({ ...payout, bankCode: e.target.value })} className="min-h-12 w-full touch-manipulation appearance-auto bg-ink/5 border border-ink/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-signal/50"><option value="">{banksLoading ? "Loading banks…" : "Select bank"}</option>{banks.map((bank) => <option key={bank.code} value={bank.code}>{bank.name}</option>)}</select>
+            <div className="relative">
+              <label className="sr-only" htmlFor="payout-bank-search">Search for your bank</label>
+              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-ink/35" aria-hidden="true" />
+              <input
+                id="payout-bank-search"
+                type="search"
+                autoComplete="off"
+                disabled={banksLoading}
+                value={bankSearch}
+                onChange={(e) => { setBankSearch(e.target.value); setPayout({ ...payout, bankCode: "" }); }}
+                placeholder={banksLoading ? "Loading banks…" : "Type your bank name"}
+                className="min-h-12 w-full bg-ink/5 border border-ink/10 rounded-xl py-3 pl-11 pr-4 text-sm outline-none focus:border-signal/50"
+                aria-describedby="payout-bank-help"
+              />
+              {!banksLoading && bankSearch.trim() && (
+                <div className="absolute z-10 mt-2 max-h-56 w-full overflow-y-auto rounded-xl border border-ink/10 bg-paper p-1 shadow-lg">
+                  {banks.filter((bank) => bank.name.toLowerCase().includes(bankSearch.trim().toLowerCase())).slice(0, 12).map((bank) => (
+                    <button key={bank.code} type="button" onClick={() => { setPayout({ ...payout, bankCode: bank.code }); setBankSearch(bank.name); }} className="block w-full rounded-lg px-3 py-2.5 text-left text-sm hover:bg-ink/5 focus:bg-ink/5 focus:outline-none">
+                      {bank.name}
+                    </button>
+                  ))}
+                  {banks.filter((bank) => bank.name.toLowerCase().includes(bankSearch.trim().toLowerCase())).length === 0 && <p className="px-3 py-2.5 text-sm text-ink/45">No matching bank found.</p>}
+                </div>
+              )}
+              <p id="payout-bank-help" className="mt-2 text-xs text-ink/40">Type the first 2–3 letters of your bank, then select it from the results.</p>
+            </div>
             <input required inputMode="numeric" pattern="[0-9]{10}" maxLength={10} value={payout.accountNumber} onChange={(e) => setPayout({ ...payout, accountNumber: e.target.value.replace(/\D/g, "") })} placeholder="10-digit account number" className="bg-ink/5 border border-ink/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-signal/50" />
-            {banksError && <p className="sm:col-span-2 text-sm text-signal">{banksError}</p>}
+            {banksError && <div className="sm:col-span-2 flex flex-wrap items-center gap-3 text-sm text-signal"><p>{banksError}</p><button type="button" onClick={loadBanks} disabled={banksLoading} className="underline underline-offset-2 disabled:opacity-50">Try again</button></div>}
             <button disabled={savingPayout || banksLoading || banks.length === 0} className="sm:col-span-2 w-full sm:w-auto justify-self-start bg-ink text-paper px-5 py-3 rounded-xl text-sm disabled:opacity-50">{savingPayout ? "Verifying…" : savedPayout ? "Change payout account" : "Verify payout account"}</button>
           </form>
         </section>

@@ -8,7 +8,7 @@ function required(name: string, message: string) {
   return value;
 }
 
-export async function sendVerificationEmail(input: { destination: string; code: string }) {
+function createEmailTransport() {
   const host = required("SMTP_HOST", "Email verification is not configured yet");
   const user = required("SMTP_USER", "Email verification is not configured yet");
   const pass = required("SMTP_PASS", "Email verification is not configured yet");
@@ -16,17 +16,32 @@ export async function sendVerificationEmail(input: { destination: string; code: 
   const port = Number(process.env.SMTP_PORT || 587);
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new ContactDeliveryNotConfiguredError("Email verification is not configured yet");
 
-  const transporter = nodemailer.createTransport({
+  return { from, transporter: nodemailer.createTransport({
     host,
     port,
     secure: process.env.SMTP_SECURE === "true",
     auth: { user, pass },
-  });
+  }) };
+}
+
+export async function sendVerificationEmail(input: { destination: string; code: string }) {
+  const { from, transporter } = createEmailTransport();
   const result = await transporter.sendMail({
     from,
     to: input.destination,
     subject: "Your BRIDGE verification code",
     text: `Your BRIDGE email verification code is ${input.code}. It expires in 10 minutes. If you did not request this, you can ignore this email.`,
+  });
+  return result.messageId || null;
+}
+
+export async function sendPasswordResetEmail(input: { destination: string; resetUrl: string }) {
+  const { from, transporter } = createEmailTransport();
+  const result = await transporter.sendMail({
+    from,
+    to: input.destination,
+    subject: "Reset your BRIDGE password",
+    text: `Use this link to reset your BRIDGE password: ${input.resetUrl}\n\nThis link expires in 30 minutes. If you did not request a password reset, you can ignore this email.`,
   });
   return result.messageId || null;
 }

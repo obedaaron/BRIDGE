@@ -4,7 +4,7 @@ import { pool } from "../db";
 import { signToken } from "../utils/jwt";
 import { requireAuth } from "../middleware/auth";
 import crypto from "crypto";
-import { ContactDeliveryNotConfiguredError, sendVerificationEmail, sendVerificationSms } from "../services/contactDelivery";
+import { ContactDeliveryNotConfiguredError, sendPasswordResetEmail, sendVerificationEmail, sendVerificationSms } from "../services/contactDelivery";
 
 const router = Router();
 
@@ -60,6 +60,51 @@ router.get("/me", requireAuth, async (req, res) => {
     [req.user!.userId]
   );
   res.json({ user: result.rows[0] });
+});
+
+router.post("/password-reset/request", async (req, res) => {
+  const email = typeof req.body.email === "string" ? req.body.email.trim().toLowerCase() : "";
+  if (!/^\S+@\S+\.\S+$/.test(email)) return res.status(400).json({ error: "Enter a valid email address" });
+  const successMessage = "If an account exists for that email, a reset link is on its way.";
+  try {
+    const userResult = await pool.query("select id, email from users where lower(email) = $1", [email]);
+    const user = userResult.rows[0];
+    if (!user) return res.json({ message: successMessage });
+    const token = crypto.randomBytes(32).toString("hex");
+    const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+    await pool.query("update password_reset_tokens set used_at = now() where user_id = $1 and used_at is null", [user.id]);
+    await pool.query("insert into password_reset_tokens (user_id, token_hash, expires_at) values ($1, $2, now() + interval '30 minutes')", [user.id, tokenHash]);
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+    await sendPasswordResetEmail({ destination: user.email, resetUrl: `${frontendUrl.replace(/\/$/, "")}/reset-password?token=${token}` });
+    res.json({ message: successMessage });
+  } catch (err) {
+    if (err instanceof ContactDeliveryNotConfiguredError) return res.status(503).json({ error: err.message });
+    console.error("Password reset request failed", err);
+    res.status(500).json({ error: "Could not start password reset. Please try again." });
+  }
+});
+
+router.post("/password-reset/confirm", async (req, res) => {
+  const token = typeof req.body.token === "string" ? req.body.token : "";
+  const password = typeof req.body.password === "string" ? req.body.password : "";
+  if (!/^[a-f0-9]{64}$/i.test(token)) return res.status(400).json({ error: "This reset link is invalid or expired" });
+  if (password.length < 8) return res.status(400).json({ error: "Use a password with at least 8 characters" });
+  const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+  const client = await pool.connect();
+  try {
+    await client.query("begin");
+    const tokenResult = await client.query("select id, user_id from password_reset_tokens where token_hash = $1 and used_at is null and expires_at > now() for update", [tokenHash]);
+    const resetToken = tokenResult.rows[0];
+    if (!resetToken) { await client.query("rollback"); return res.status(400).json({ error: "This reset link is invalid or expired" }); }
+    await client.query("update users set password_hash = $1 where id = $2", [await bcrypt.hash(password, 10), resetToken.user_id]);
+    await client.query("update password_reset_tokens set used_at = now() where id = $1", [resetToken.id]);
+    await client.query("commit");
+    res.json({ message: "Your password has been reset. You can now log in." });
+  } catch (err) {
+    await client.query("rollback");
+    console.error("Password reset failed", err);
+    res.status(500).json({ error: "Could not reset password. Please try again." });
+  } finally { client.release(); }
 });
 
 function normaliseNigerianPhone(value: string) {

@@ -10,6 +10,22 @@ export class ApiError extends Error {
   }
 }
 
+const REQUEST_TIMEOUT_MS = 30_000;
+
+async function request(url: string, options: RequestInit) {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } catch (error) {
+    if (controller.signal.aborted) throw new ApiError("BRIDGE is taking too long to respond. Please try again.", 504);
+    if (error instanceof TypeError) throw new ApiError("BRIDGE could not connect to the server. Check your connection and try again.", 0);
+    throw error;
+  } finally {
+    window.clearTimeout(timeout);
+  }
+}
+
 async function readResponse(res: Response) {
   const contentType = res.headers.get("content-type") || "";
   const text = await res.text();
@@ -31,7 +47,7 @@ async function readResponse(res: Response) {
 export async function apiFetch(path: string, options: RequestInit = {}) {
   const token = localStorage.getItem("token");
 
-  const res = await fetch(`${API_URL}${path}`, {
+  const res = await request(`${API_URL}${path}`, {
     ...options,
     headers: {
       "Content-Type": "application/json",
@@ -46,7 +62,7 @@ export async function apiFetch(path: string, options: RequestInit = {}) {
 }
 export async function apiUpload(path: string, formData: FormData) {
   const token = localStorage.getItem("token");
-  const res = await fetch(`${API_URL}${path}`, {
+  const res = await request(`${API_URL}${path}`, {
     method: "POST",
     headers: token ? { Authorization: `Bearer ${token}` } : {},
     body: formData,
