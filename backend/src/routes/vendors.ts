@@ -3,6 +3,7 @@ import { pool } from "../db";
 import { requireAuth } from "../middleware/auth";
 import { slugify } from "../utils/slugify";
 import { createPaystackTransferRecipient, listPaystackBanks } from "../services/paystack";
+import { getVendorPlan } from "../services/plans";
 
 const router = Router();
 
@@ -78,6 +79,15 @@ router.patch("/me", requireAuth, async (req, res) => {
 });
 
 router.patch("/me/publish", requireAuth, async (req, res) => {
+  const vendorResult = await pool.query("select id, is_published, publish_grace_expires_at, publish_grace_used_at from vendors where user_id = $1", [req.user!.userId]);
+  const vendor = vendorResult.rows[0];
+  if (!vendor) return res.status(404).json({ error: "No store found" });
+
+  if (vendor.is_published) {
+    const result = await pool.query("update vendors set is_published = false where id = $1 returning *", [vendor.id]);
+    return res.json({ vendor: result.rows[0] });
+  }
+
   const requiredChecks = await pool.query(
     `select type from vendor_verifications
      where vendor_id = (select id from vendors where user_id = $1)
@@ -89,18 +99,25 @@ router.patch("/me/publish", requireAuth, async (req, res) => {
   const contact = await pool.query("select email_verified_at, phone_verified_at from users where id = $1", [req.user!.userId]);
   if (!contact.rows[0]?.email_verified_at) missing.push("email verification");
   if (!contact.rows[0]?.phone_verified_at) missing.push("phone verification");
-  if (missing.length > 0) {
+  const graceStillActive = vendor.publish_grace_expires_at && new Date(vendor.publish_grace_expires_at).getTime() > Date.now();
+  if (missing.length > 0 && vendor.publish_grace_used_at && !graceStillActive) {
     return res.status(403).json({
-      error: `Store publishing requires ${missing.map((type) => type.toUpperCase()).join(" and ")}. Complete verification before requesting publication.`,
+      error: `Your 7-day publishing grace period has ended. Complete ${missing.map((type) => type.toUpperCase()).join(" and ")} before republishing.`,
       missing,
     });
   }
 
   const result = await pool.query(
-    `update vendors set is_published = not is_published where user_id = $1 returning *`,
-    [req.user!.userId]
+    `update vendors set
+      is_published = true,
+      publish_grace_used_at = case when $2::boolean then coalesce(publish_grace_used_at, now()) else publish_grace_used_at end,
+      publish_grace_expires_at = case
+        when $2::boolean then coalesce(publish_grace_expires_at, now() + interval '7 days')
+        else null
+      end
+     where id = $1 returning *`,
+    [vendor.id, missing.length > 0]
   );
-  if (result.rows.length === 0) return res.status(404).json({ error: "No store found" });
   res.json({ vendor: result.rows[0] });
 });
 
@@ -134,4 +151,24 @@ router.put("/me/payout-account", requireAuth, async (req, res) => {
   } catch (err) { res.status(502).json({ error: err instanceof Error ? err.message : "Could not verify payout account" }); }
 });
 
+router.patch("/me/delivery", requireAuth, async (req, res) => {
+  const feeNaira = Number(req.body.outOfCityDeliveryFeeNaira);
+  if (!Number.isFinite(feeNaira) || feeNaira < 0 || feeNaira > 1000000) return res.status(400).json({ error: "Enter a valid out-of-city delivery fee" });
+  const result = await pool.query("update vendors set out_of_city_delivery_fee_kobo = $1 where user_id = $2 returning out_of_city_delivery_fee_kobo", [Math.round(feeNaira * 100), req.user!.userId]);
+  if (!result.rows[0]) return res.status(404).json({ error: "No store found" });
+  res.json({ delivery: result.rows[0] });
+});
+
+router.patch("/me/storefront", requireAuth, async (req, res) => {
+  const vendorResult = await pool.query("select id from vendors where user_id = $1", [req.user!.userId]);
+  const vendor = vendorResult.rows[0];
+  if (!vendor) return res.status(404).json({ error: "No store found" });
+  const plan = await getVendorPlan(vendor.id);
+  if (plan.tier === "free") return res.status(403).json({ error: "Storefront cover, colours, and layouts are available on Standard and Premium." });
+  const coverUrl = typeof req.body.coverUrl === "string" ? req.body.coverUrl.trim() : null;
+  const accentColor = typeof req.body.accentColor === "string" && /^#[0-9a-fA-F]{6}$/.test(req.body.accentColor) ? req.body.accentColor : null;
+  const layout = ["classic", "modern", "minimal"].includes(req.body.layout) ? req.body.layout : "classic";
+  const result = await pool.query("update vendors set storefront_cover_url = $1, storefront_accent_color = $2, storefront_layout = $3 where id = $4 returning storefront_cover_url, storefront_accent_color, storefront_layout", [coverUrl || null, accentColor, layout, vendor.id]);
+  res.json({ storefront: result.rows[0] });
+});
 export default router;

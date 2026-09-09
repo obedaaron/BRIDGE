@@ -7,7 +7,7 @@ import { StarRating } from "../components/StarRating";
 import { ReviewsSection } from "../components/ReviewsSection";
 import { useCart } from "../context/CartContext";
 import {
-  Phone, MessageCircle, MapPin, ArrowUpRight,
+  MessageCircle, MapPin, ArrowUpRight,
   Package, Share2, Loader2, Store
 } from "lucide-react";
 
@@ -38,6 +38,9 @@ interface Vendor {
   repeat_customers: number;
   reliability_score: number;
   gold_tick: boolean;
+  storefront_cover_url: string | null;
+  storefront_accent_color: string | null;
+  storefront_layout: "classic" | "modern" | "minimal";
 }
 
 export function StorefrontPage() {
@@ -110,6 +113,10 @@ export function StorefrontPage() {
     );
   }
 
+  const accentColor = /^#[0-9a-fA-F]{6}$/.test(vendor.storefront_accent_color || "") ? vendor.storefront_accent_color! : "#e8d44d";
+  const layout = vendor.storefront_layout || "classic";
+  const coverUrl = vendor.storefront_cover_url?.replace(/"/g, "%22");
+
   return (
     <div className="min-h-screen bg-paper text-ink font-body">
       <nav className="sticky top-0 z-50 bg-paper/80 backdrop-blur-md border-b border-ink/5">
@@ -131,11 +138,11 @@ export function StorefrontPage() {
         </div>
       </nav>
 
-      <header className="relative bg-ink text-paper overflow-hidden">
+      <header className="relative bg-ink text-paper overflow-hidden" style={coverUrl ? { backgroundImage: `linear-gradient(rgba(20, 20, 20, 0.80), rgba(20, 20, 20, 0.88)), url("${coverUrl}")`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}>
         <div className="absolute -top-24 -right-24 w-72 h-72 bg-signal/20 rounded-full blur-3xl opacity-40" />
         <div className="absolute -bottom-16 -left-16 w-64 h-64 bg-gold/15 rounded-full blur-3xl opacity-30" />
 
-        <div className="relative max-w-6xl mx-auto px-5 sm:px-6 md:px-12 py-12 sm:py-16 md:py-20">
+        <div className={`relative max-w-6xl mx-auto px-5 sm:px-6 md:px-12 ${layout === "minimal" ? "py-9 sm:py-12" : layout === "modern" ? "py-16 sm:py-20 md:py-24" : "py-12 sm:py-16 md:py-20"}`}>
           <div className="flex flex-col sm:flex-row sm:items-start gap-6 sm:gap-8">
             <div className="shrink-0">
               {vendor.logo_url ? (
@@ -191,26 +198,6 @@ export function StorefrontPage() {
               </div>
 
               <div className="flex flex-wrap gap-2 sm:gap-3">
-                {vendor.phone && (
-                  <a
-                    href={`tel:${vendor.phone}`}
-                    className="inline-flex items-center gap-1.5 sm:gap-2 bg-paper text-ink font-medium px-4 sm:px-5 py-2.5 rounded-full text-sm hover:bg-paper/90 transition-colors"
-                  >
-                    <Phone className="w-3.5 h-3.5 sm:w-4 sm:h-4" strokeWidth={2} />
-                    Call
-                  </a>
-                )}
-                {vendor.whatsapp && (
-                  <a
-                    href={`https://wa.me/${vendor.whatsapp.replace(/\D/g, "")}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 sm:gap-2 bg-signal text-ink font-medium px-4 sm:px-5 py-2.5 rounded-full text-sm hover:bg-signal/90 transition-colors"
-                  >
-                    <MessageCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" strokeWidth={2} />
-                    WhatsApp
-                  </a>
-                )}
                 <button
                   onClick={handleMessage}
                   disabled={messaging}
@@ -239,7 +226,7 @@ export function StorefrontPage() {
       <section className="max-w-6xl mx-auto px-5 sm:px-6 md:px-12 py-10 sm:py-14 md:py-16">
         <div className="flex items-end justify-between gap-4 mb-8 sm:mb-10">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-signal mb-3">Inventory</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] mb-3" style={{ color: accentColor }}>Inventory</p>
             <h2 className="font-display text-3xl sm:text-4xl font-semibold text-ink tracking-tight">
               Products &amp; Services
             </h2>
@@ -256,7 +243,7 @@ export function StorefrontPage() {
             <p className="text-ink/30 text-sm">Check back soon for new products and services.</p>
           </div>
         ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+          <div className={`grid sm:grid-cols-2 ${layout === "modern" ? "lg:grid-cols-2" : "lg:grid-cols-3"} gap-4 sm:gap-6`}>
             {listings.map((l, i) => (
               <div
                 key={l.id}
@@ -290,7 +277,7 @@ export function StorefrontPage() {
                     <p className="text-sm text-ink/30">Price on request</p>
                   )}
                   {l.stock_quantity !== null && <p className="text-xs text-ink/35 mt-2">{l.stock_quantity > 0 ? `${l.stock_quantity} available` : "Out of stock"}</p>}
-                  {l.price !== null && <button onClick={() => add({ listingId: l.id, vendorSlug: slug!, vendorName: vendor.business_name, title: l.title, price: Number(l.price), currency: l.currency, imageUrl: l.image_url })} disabled={l.stock_quantity === 0} className="mt-4 text-xs px-3 py-2 rounded-full bg-ink text-paper disabled:opacity-40">{l.stock_quantity === 0 ? "Out of stock" : "Add to cart"}</button>}
+                  {l.price !== null && <button onClick={() => add({ listingId: l.id, vendorSlug: slug!, vendorName: vendor.business_name, title: l.title, price: Number(l.price), currency: l.currency, imageUrl: l.image_url })} disabled={l.stock_quantity === 0} className="mt-4 text-xs px-3 py-2 rounded-full text-ink disabled:opacity-40" style={{ backgroundColor: accentColor }}>{l.stock_quantity === 0 ? "Out of stock" : "Add to cart"}</button>}
                 </div>
               </div>
             ))}

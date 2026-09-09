@@ -6,9 +6,9 @@ import { Check, Loader2 } from "lucide-react";
 
 type Plan = { tier: "free" | "standard" | "premium"; amountKobo: number; currency?: string; label: string; listingLimit: number | null; promotionLimit: number | null; customization: string };
 const fallbackPlans: Plan[] = [
-  { tier: "free", amountKobo: 0, currency: "NGN", label: "Free", listingLimit: 10, promotionLimit: 0, customization: "Basic storefront" },
-  { tier: "standard", amountKobo: 450000, currency: "NGN", label: "Standard", listingLimit: 50, promotionLimit: 2, customization: "Expanded storefront" },
-  { tier: "premium", amountKobo: 800000, currency: "NGN", label: "Premium", listingLimit: null, promotionLimit: null, customization: "Full storefront" },
+  { tier: "free", amountKobo: 0, currency: "NGN", label: "Free", listingLimit: 5, promotionLimit: 0, customization: "Basic logo and store details" },
+  { tier: "standard", amountKobo: 450000, currency: "NGN", label: "Standard", listingLimit: 20, promotionLimit: 2, customization: "Custom cover, colour and layout" },
+  { tier: "premium", amountKobo: 800000, currency: "NGN", label: "Premium", listingLimit: null, promotionLimit: null, customization: "Full storefront customization" },
 ];
 const planPrice = (plan: Plan) => new Intl.NumberFormat("en-US", { style: "currency", currency: plan.currency || "USD", maximumFractionDigits: 0 }).format(plan.amountKobo / 100);
 export function Plans() {

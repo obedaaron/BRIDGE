@@ -18,6 +18,10 @@ export function Settings() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [planTier, setPlanTier] = useState("free");
+  const [deliveryFee, setDeliveryFee] = useState("");
+  const [storefront, setStorefront] = useState({ coverUrl: "", accentColor: "#e8d44d", layout: "classic" });
+  const [savingStorefront, setSavingStorefront] = useState(false);
   const [banks, setBanks] = useState<{ name: string; code: string }[]>([]);
   const [payout, setPayout] = useState({ bankCode: "", accountNumber: "" });
   const [bankSearch, setBankSearch] = useState("");
@@ -49,8 +53,11 @@ export function Settings() {
           categoryId: data.vendor.category_id || "",
           logoUrl: data.vendor.logo_url || "",
         });
+        setDeliveryFee(String(Number(data.vendor.out_of_city_delivery_fee_kobo || 0) / 100));
+        setStorefront({ coverUrl: data.vendor.storefront_cover_url || "", accentColor: data.vendor.storefront_accent_color || "#e8d44d", layout: data.vendor.storefront_layout || "classic" });
       }
     });
+    apiFetch("/subscriptions/mine").then((data) => setPlanTier(data.tier || "free")).catch(() => undefined);
     apiFetch("/vendors/me/payout-account").then((data) => setSavedPayout(data.account)).catch(() => undefined);
     loadBanks();
   }, []);
@@ -71,6 +78,16 @@ export function Settings() {
     }
   }
 
+  async function saveStorefront(e: FormEvent) {
+    e.preventDefault(); setError(""); setSavingStorefront(true);
+    try {
+      await Promise.all([
+        apiFetch("/vendors/me/delivery", { method: "PATCH", body: JSON.stringify({ outOfCityDeliveryFeeNaira: Number(deliveryFee || 0) }) }),
+        planTier === "free" ? Promise.resolve() : apiFetch("/vendors/me/storefront", { method: "PATCH", body: JSON.stringify(storefront) }),
+      ]);
+      setSaved(true); setTimeout(() => setSaved(false), 3000);
+    } catch (err: any) { setError(err.message); } finally { setSavingStorefront(false); }
+  }
   async function savePayoutAccount(e: FormEvent) {
     e.preventDefault(); setError("");
     if (!payout.bankCode) {
@@ -213,6 +230,15 @@ export function Settings() {
           </button>
         </form>
 
+        <section className="mt-12 pt-10 border-t border-ink/10">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-signal mb-3">Delivery & storefront</p>
+          <h2 className="font-display text-2xl font-semibold">Set your delivery rate and look.</h2>
+          <form onSubmit={saveStorefront} className="mt-5 grid sm:grid-cols-2 gap-4">
+            <div className="sm:col-span-2"><label className="block text-xs uppercase tracking-[0.2em] text-ink/40 mb-2">Out-of-city delivery fee (₦)</label><input type="number" min="0" value={deliveryFee} onChange={(e) => setDeliveryFee(e.target.value)} className="input-field w-full" placeholder="0" /><p className="text-xs text-ink/40 mt-2">BRIDGE automatically charges ₦1,500 for delivery within your city. This fee applies outside it.</p></div>
+            {planTier === "free" ? <p className="sm:col-span-2 text-sm text-ink/50 bg-ink/5 rounded-xl p-4">Your Free plan includes your logo and store details. Upgrade to Standard or Premium to add a cover, colours, and layout.</p> : <><div className="sm:col-span-2"><LogoUpload label="Store cover image" emptyLabel="No cover image" value={storefront.coverUrl} onChange={(coverUrl) => setStorefront({ ...storefront, coverUrl })} /></div><label className="text-sm text-ink/60">Accent colour<input type="color" value={storefront.accentColor} onChange={(e) => setStorefront({ ...storefront, accentColor: e.target.value })} className="block mt-2 h-11 w-full" /></label><label className="text-sm text-ink/60">Storefront layout<select value={storefront.layout} onChange={(e) => setStorefront({ ...storefront, layout: e.target.value })} className="input-field w-full mt-2"><option value="classic">Classic</option><option value="modern">Modern</option><option value="minimal">Minimal</option></select></label></>}
+            <button disabled={savingStorefront} className="sm:col-span-2 w-full sm:w-auto justify-self-start bg-ink text-paper px-5 py-3 rounded-xl text-sm disabled:opacity-50">{savingStorefront ? "Saving…" : "Save delivery & storefront"}</button>
+          </form>
+        </section>
         <section className="mt-12 pt-10 border-t border-ink/10">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-signal mb-3">Payout account</p>
           <h2 className="font-display text-2xl font-semibold">Where BRIDGE sends your earnings.</h2>

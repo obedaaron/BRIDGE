@@ -1,9 +1,11 @@
 import { Router } from "express";
 import { pool } from "../db";
+import { expireUnverifiedPublishedStores } from "../services/publishGrace";
 
 const router = Router();
 
 router.get("/", async (req, res) => {
+  await expireUnverifiedPublishedStores();
   const { category, city, q } = req.query;
   const lat = Number(req.query.lat);
   const lng = Number(req.query.lng);

@@ -34,6 +34,7 @@ export function Explore() {
   const [city, setCity] = useState("");
   const [activeCategory, setActiveCategory] = useState("");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [locationMessage, setLocationMessage] = useState("");
 
@@ -43,6 +44,7 @@ export function Explore() {
 
   function search() {
     setLoading(true);
+    setError("");
     const params = new URLSearchParams();
     if (q) params.set("q", q);
     if (city) params.set("city", city);
@@ -51,7 +53,7 @@ export function Explore() {
 
     apiFetch(`/search?${params.toString()}`)
       .then((data) => setVendors(data.vendors))
-      .catch(() => setVendors([]))
+      .catch((err) => { setVendors([]); setError(err.message || "Could not load vendors. Please try again."); })
       .finally(() => setLoading(false));
   }
 
@@ -192,7 +194,7 @@ export function Explore() {
               <Search className="w-6 h-6 text-ink/20" strokeWidth={1.5} />
             </div>
             <p className="text-ink/40 font-medium mb-1">No vendors found</p>
-            <p className="text-ink/30 text-sm">Try a different search, category, or nearby search.</p>
+            <p className="text-ink/30 text-sm">{error || "Try a different search, category, or nearby search."}</p>
           </div>
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">

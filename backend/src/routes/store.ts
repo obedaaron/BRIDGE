@@ -6,7 +6,7 @@ const router = Router();
 router.get("/:slug", async (req, res) => {
   const vendorResult = await pool.query(
     `select id, user_id, business_name, slug, description, logo_url, cover_image_url, phone, whatsapp,
-            email, address, city, state, verification_status, subscription_tier
+            email, address, city, state, verification_status, subscription_tier, storefront_cover_url, storefront_accent_color, storefront_layout, out_of_city_delivery_fee_kobo
      from vendors where slug = $1 and is_published = true`,
     [req.params.slug]
   );

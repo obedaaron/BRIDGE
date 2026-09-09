@@ -55,54 +55,42 @@ router.get("/pricing-policy", (_req, res) => {
 
 router.post("/catalog-checkout", requireAuth, async (req, res) => {
   const items = Array.isArray(req.body.items) ? req.body.items : [];
+  const fulfilmentMethod = typeof req.body.fulfilmentMethod === "string" ? req.body.fulfilmentMethod : "pickup";
+  const pickupLocation = typeof req.body.pickupLocation === "string" ? req.body.pickupLocation.trim() : "";
+  const deliveryAddress = typeof req.body.deliveryAddress === "string" ? req.body.deliveryAddress.trim() : "";
+  const deliveryCity = typeof req.body.deliveryCity === "string" ? req.body.deliveryCity.trim() : "";
+  const deliveryState = typeof req.body.deliveryState === "string" ? req.body.deliveryState.trim() : "";
   if (!items.length || items.length > 30) return res.status(400).json({ error: "Your cart must contain between 1 and 30 items" });
-  const normalized: { listingId: string; quantity: number }[] = items.map((item: unknown) => {
-    const value = item as { listingId?: unknown; quantity?: unknown };
-    return { listingId: typeof value.listingId === "string" ? value.listingId : "", quantity: Number(value.quantity) };
-  });
+  if (!["pickup", "local_delivery", "outside_delivery"].includes(fulfilmentMethod)) return res.status(400).json({ error: "Choose a valid fulfilment method" });
+  if (fulfilmentMethod === "pickup" && !pickupLocation) return res.status(400).json({ error: "Enter your preferred pickup location" });
+  if (fulfilmentMethod !== "pickup" && (!deliveryAddress || !deliveryCity || !deliveryState)) return res.status(400).json({ error: "Enter the delivery address, city, and state" });
+  const normalized: { listingId: string; quantity: number }[] = items.map((item: unknown) => { const value = item as { listingId?: unknown; quantity?: unknown }; return { listingId: typeof value.listingId === "string" ? value.listingId : "", quantity: Number(value.quantity) }; });
   if (normalized.some((item) => !item.listingId || !Number.isInteger(item.quantity) || item.quantity < 1 || item.quantity > 100)) return res.status(400).json({ error: "Cart quantities must be whole numbers between 1 and 100" });
-
   const client = await pool.connect();
   try {
     await client.query("begin");
     const listingIds = normalized.map((item) => item.listingId);
-    const listingsResult = await client.query("select id, vendor_id, title, price, currency, stock_quantity from listings where id = any($1::uuid[]) and is_active = true for update", [listingIds]);
+    const listingsResult = await client.query("select id, vendor_id, title, price, stock_quantity from listings where id = any($1::uuid[]) and is_active = true for update", [listingIds]);
     if (listingsResult.rows.length !== normalized.length) throw new Error("One or more items are no longer available");
-    const listings = new Map(listingsResult.rows.map((listing) => [listing.id, listing]));
-    const vendorIds = new Set(listingsResult.rows.map((listing) => listing.vendor_id));
-    if (vendorIds.size !== 1) throw new Error("A checkout can only contain items from one store");
+    const listings = new Map<string, { id: string; vendor_id: string; title: string; price: string | number | null; stock_quantity: number | null }>(listingsResult.rows.map((listing: { id: string; vendor_id: string; title: string; price: string | number | null; stock_quantity: number | null }) => [listing.id, listing]));
+    if (new Set(listingsResult.rows.map((listing) => listing.vendor_id)).size !== 1) throw new Error("A checkout can only contain items from one store");
     const vendorId = listingsResult.rows[0].vendor_id as string;
-    const vendorOwner = await client.query("select user_id from vendors where id = $1", [vendorId]);
-    if (vendorOwner.rows[0]?.user_id === req.user!.userId) throw new Error("You cannot check out from your own store");
-    let amountKobo = 0;
-    for (const item of normalized) {
-      const listing = listings.get(item.listingId)!;
-      if (listing.price === null) throw new Error(`${listing.title} does not have a fixed price`);
-      if (listing.stock_quantity !== null && listing.stock_quantity < item.quantity) throw new Error(`${listing.title} does not have enough stock`);
-      amountKobo += Math.round(Number(listing.price) * 100) * item.quantity;
-    }
+    const vendorResult = await client.query("select user_id, out_of_city_delivery_fee_kobo from vendors where id = $1", [vendorId]);
+    if (vendorResult.rows[0]?.user_id === req.user!.userId) throw new Error("You cannot check out from your own store");
+    let merchandiseAmountKobo = 0;
+    for (const item of normalized) { const listing = listings.get(item.listingId)!; if (listing.price === null) throw new Error(`${listing.title} does not have a fixed price`); if (listing.stock_quantity !== null && listing.stock_quantity < item.quantity) throw new Error(`${listing.title} does not have enough stock`); merchandiseAmountKobo += Math.round(Number(listing.price) * 100) * item.quantity; }
+    const deliveryFeeKobo = fulfilmentMethod === "local_delivery" ? 150000 : fulfilmentMethod === "outside_delivery" ? Number(vendorResult.rows[0]?.out_of_city_delivery_fee_kobo || 0) : 0;
+    const amountKobo = merchandiseAmountKobo + deliveryFeeKobo;
     const conversationResult = await client.query("select * from conversations where vendor_id = $1 and customer_id = $2", [vendorId, req.user!.userId]);
     const conversation = conversationResult.rows[0] || (await client.query("insert into conversations (vendor_id, customer_id) values ($1, $2) returning *", [vendorId, req.user!.userId])).rows[0];
     const quote = calculateCheckoutAmounts(amountKobo);
-    const orderResult = await client.query(
-      `insert into marketplace_orders (conversation_id, vendor_id, buyer_id, seller_id, title, amount_kobo, currency, status, accepted_at, platform_fee_kobo, processing_fee_kobo, seller_amount_kobo, buyer_total_kobo)
-       values ($1, $2, $3, (select user_id from vendors where id = $2), $4, $5, 'NGN', 'accepted', now(), $6, $7, $8, $9) returning *`,
-      [conversation.id, vendorId, req.user!.userId, `${normalized.length} item${normalized.length === 1 ? "" : "s"} from catalog`, amountKobo, quote.platformFeeKobo, quote.processingFeeKobo, quote.sellerAmountKobo, quote.buyerTotalKobo]
-    );
+    const orderResult = await client.query(`insert into marketplace_orders (conversation_id, vendor_id, buyer_id, seller_id, title, amount_kobo, currency, status, accepted_at, platform_fee_kobo, processing_fee_kobo, seller_amount_kobo, buyer_total_kobo, fulfilment_method, delivery_fee_kobo, pickup_location, delivery_address, delivery_city, delivery_state) values ($1, $2, $3, (select user_id from vendors where id = $2), $4, $5, 'NGN', 'accepted', now(), $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) returning *`, [conversation.id, vendorId, req.user!.userId, `${normalized.length} item${normalized.length === 1 ? "" : "s"} from catalog`, amountKobo, quote.platformFeeKobo, quote.processingFeeKobo, quote.sellerAmountKobo, quote.buyerTotalKobo, fulfilmentMethod, deliveryFeeKobo, pickupLocation || null, deliveryAddress || null, deliveryCity || null, deliveryState || null]);
     const order = orderResult.rows[0];
-    for (const item of normalized) {
-      const listing = listings.get(item.listingId)!;
-      await client.query("insert into marketplace_order_items (order_id, listing_id, title, quantity, unit_amount_kobo) values ($1, $2, $3, $4, $5)", [order.id, listing.id, listing.title, item.quantity, Math.round(Number(listing.price) * 100)]);
-    }
+    for (const item of normalized) { const listing = listings.get(item.listingId)!; await client.query("insert into marketplace_order_items (order_id, listing_id, title, quantity, unit_amount_kobo) values ($1, $2, $3, $4, $5)", [order.id, listing.id, listing.title, item.quantity, Math.round(Number(listing.price) * 100)]); }
     await client.query("insert into marketplace_order_events (order_id, actor_id, event_type, note) values ($1, $2, 'accepted', 'Buyer created a catalog checkout')", [order.id, req.user!.userId]);
-    await client.query("commit");
-    res.status(201).json({ order });
-  } catch (err) {
-    await client.query("rollback");
-    res.status(400).json({ error: err instanceof Error ? err.message : "Could not create catalog checkout" });
-  } finally { client.release(); }
+    await client.query("commit"); res.status(201).json({ order });
+  } catch (err) { await client.query("rollback"); res.status(400).json({ error: err instanceof Error ? err.message : "Could not create catalog checkout" }); } finally { client.release(); }
 });
-
 router.post("/conversations/:conversationId/proposals", requireAuth, async (req, res) => {
   const { conversation, vendorId } = await getConversationForUser(req.params.conversationId as string, req.user!.userId);
   if (!conversation) return res.status(404).json({ error: "Conversation not found" });
@@ -252,4 +240,14 @@ router.post("/:id/disputes", requireAuth, async (req, res) => {
   res.status(201).json({ order: result.rows[0] });
 });
 
+router.post("/:id/contact", requireAuth, async (req, res) => {
+  const name = typeof req.body.name === "string" ? req.body.name.trim() : "";
+  const phone = typeof req.body.phone === "string" ? req.body.phone.replace(/\s/g, "") : "";
+  if (name.length < 2 || name.length > 120) return res.status(400).json({ error: "Enter the recipient's name" });
+  if (!/^\+?\d{10,15}$/.test(phone)) return res.status(400).json({ error: "Enter a valid phone number" });
+  const result = await pool.query("update marketplace_orders set buyer_contact_name = $1, buyer_contact_phone = $2, buyer_contact_submitted_at = now(), updated_at = now() where id = $3 and buyer_id = $4 and status in ('paid', 'in_progress', 'delivered', 'completed') returning *", [name, phone, req.params.id, req.user!.userId]);
+  if (!result.rows[0]) return res.status(409).json({ error: "Your contact can be shared after payment is confirmed" });
+  await pool.query("insert into marketplace_order_events (order_id, actor_id, event_type, note) values ($1, $2, 'buyer_contact_submitted', 'Buyer submitted delivery contact details')", [req.params.id, req.user!.userId]);
+  res.json({ order: result.rows[0] });
+});
 export default router;
