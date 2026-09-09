@@ -103,7 +103,7 @@ export function Settings() {
     <DashboardLayout>
       <div className="max-w-3xl mx-auto">
         <div className="mb-10">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-signal mb-3">Settings</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#2E8B72] mb-3">Settings</p>
           <h1 className="font-display text-4xl sm:text-5xl font-semibold text-ink tracking-tight leading-[0.95]">
             Store settings.
           </h1>
@@ -114,9 +114,9 @@ export function Settings() {
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           {error && (
-            <div className="bg-signal/10 border border-signal/20 rounded-xl px-4 py-3 flex items-center gap-3">
-              <AlertCircle className="w-4 h-4 text-signal shrink-0" strokeWidth={2} />
-              <p className="text-signal text-sm font-medium">{error}</p>
+            <div className="bg-[#dce9df]/10 border border-[#2E8B72]/20 rounded-xl px-4 py-3 flex items-center gap-3">
+              <AlertCircle className="w-4 h-4 text-[#2E8B72] shrink-0" strokeWidth={2} />
+              <p className="text-[#2E8B72] text-sm font-medium">{error}</p>
             </div>
           )}
           {saved && (
@@ -132,7 +132,7 @@ export function Settings() {
             <div className="sm:col-span-2">
               <label className="block text-xs uppercase tracking-[0.2em] text-ink/40 mb-2">Business name</label>
               <input
-                className="w-full bg-ink/5 border border-ink/10 rounded-xl px-5 py-4 text-ink placeholder:text-ink/20 outline-none focus:border-signal/50 focus:bg-ink/[0.07] transition-all"
+                className="w-full bg-ink/5 border border-ink/10 rounded-xl px-5 py-4 text-ink placeholder:text-ink/20 outline-none focus:border-[#2E8B72]/50 focus:bg-ink/[0.07] transition-all"
                 placeholder="e.g. David's Fashion House"
                 value={form.businessName}
                 onChange={(e) => setForm({ ...form, businessName: e.target.value })}
@@ -142,7 +142,7 @@ export function Settings() {
             <div className="sm:col-span-2">
               <label className="block text-xs uppercase tracking-[0.2em] text-ink/40 mb-2">Description</label>
               <textarea
-                className="w-full bg-ink/5 border border-ink/10 rounded-xl px-5 py-4 text-ink placeholder:text-ink/20 outline-none focus:border-signal/50 focus:bg-ink/[0.07] transition-all resize-none"
+                className="w-full bg-ink/5 border border-ink/10 rounded-xl px-5 py-4 text-ink placeholder:text-ink/20 outline-none focus:border-[#2E8B72]/50 focus:bg-ink/[0.07] transition-all resize-none"
                 placeholder="Tell customers what you do..."
                 rows={3}
                 value={form.description}
@@ -158,7 +158,7 @@ export function Settings() {
             <div>
               <label className="block text-xs uppercase tracking-[0.2em] text-ink/40 mb-2">Phone</label>
               <input
-                className="w-full bg-ink/5 border border-ink/10 rounded-xl px-5 py-4 text-ink placeholder:text-ink/20 outline-none focus:border-signal/50 focus:bg-ink/[0.07] transition-all"
+                className="w-full bg-ink/5 border border-ink/10 rounded-xl px-5 py-4 text-ink placeholder:text-ink/20 outline-none focus:border-[#2E8B72]/50 focus:bg-ink/[0.07] transition-all"
                 placeholder="080..."
                 value={form.phone}
                 onChange={(e) => setForm({ ...form, phone: e.target.value })}
@@ -168,7 +168,7 @@ export function Settings() {
             <div>
               <label className="block text-xs uppercase tracking-[0.2em] text-ink/40 mb-2">WhatsApp</label>
               <input
-                className="w-full bg-ink/5 border border-ink/10 rounded-xl px-5 py-4 text-ink placeholder:text-ink/20 outline-none focus:border-signal/50 focus:bg-ink/[0.07] transition-all"
+                className="w-full bg-ink/5 border border-ink/10 rounded-xl px-5 py-4 text-ink placeholder:text-ink/20 outline-none focus:border-[#2E8B72]/50 focus:bg-ink/[0.07] transition-all"
                 placeholder="080..."
                 value={form.whatsapp}
                 onChange={(e) => setForm({ ...form, whatsapp: e.target.value })}
@@ -178,7 +178,7 @@ export function Settings() {
             <div>
               <label className="block text-xs uppercase tracking-[0.2em] text-ink/40 mb-2">City</label>
               <input
-                className="w-full bg-ink/5 border border-ink/10 rounded-xl px-5 py-4 text-ink placeholder:text-ink/20 outline-none focus:border-signal/50 focus:bg-ink/[0.07] transition-all"
+                className="w-full bg-ink/5 border border-ink/10 rounded-xl px-5 py-4 text-ink placeholder:text-ink/20 outline-none focus:border-[#2E8B72]/50 focus:bg-ink/[0.07] transition-all"
                 placeholder="e.g. Lagos"
                 value={form.city}
                 onChange={(e) => setForm({ ...form, city: e.target.value })}
@@ -188,7 +188,7 @@ export function Settings() {
             <div>
               <label className="block text-xs uppercase tracking-[0.2em] text-ink/40 mb-2">State</label>
               <select
-                className="w-full bg-ink/5 border border-ink/10 rounded-xl px-5 py-4 text-ink outline-none focus:border-signal/50 focus:bg-ink/[0.07] transition-all appearance-none"
+                className="w-full bg-ink/5 border border-ink/10 rounded-xl px-5 py-4 text-ink outline-none focus:border-[#2E8B72]/50 focus:bg-ink/[0.07] transition-all appearance-none"
                 value={form.state}
                 onChange={(e) => setForm({ ...form, state: e.target.value })}
               >
@@ -213,7 +213,7 @@ export function Settings() {
           </div>
 
           <button
-            className="w-full sm:w-auto self-start bg-ink text-paper font-medium px-8 py-4 rounded-xl hover:bg-ink/90 transition-colors flex items-center justify-center gap-2 mt-4 disabled:opacity-50"
+            className="w-full sm:w-auto self-start bg-[#2E8B72] text-paper font-medium px-8 py-4 rounded-xl hover:bg-[#206653] transition-colors flex items-center justify-center gap-2 mt-4 disabled:opacity-50"
             type="submit"
             disabled={saving}
           >
@@ -231,16 +231,16 @@ export function Settings() {
         </form>
 
         <section className="mt-12 pt-10 border-t border-ink/10">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-signal mb-3">Delivery & storefront</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#2E8B72] mb-3">Delivery & storefront</p>
           <h2 className="font-display text-2xl font-semibold">Set your delivery rate and look.</h2>
           <form onSubmit={saveStorefront} className="mt-5 grid sm:grid-cols-2 gap-4">
             <div className="sm:col-span-2"><label className="block text-xs uppercase tracking-[0.2em] text-ink/40 mb-2">Out-of-city delivery fee (₦)</label><input type="number" min="0" value={deliveryFee} onChange={(e) => setDeliveryFee(e.target.value)} className="input-field w-full" placeholder="0" /><p className="text-xs text-ink/40 mt-2">BRIDGE automatically charges ₦1,500 for delivery within your city. This fee applies outside it.</p></div>
             {planTier === "free" ? <p className="sm:col-span-2 text-sm text-ink/50 bg-ink/5 rounded-xl p-4">Your Free plan includes your logo and store details. Upgrade to Standard or Premium to add a cover, colours, and layout.</p> : <><div className="sm:col-span-2"><LogoUpload label="Store cover image" emptyLabel="No cover image" value={storefront.coverUrl} onChange={(coverUrl) => setStorefront({ ...storefront, coverUrl })} /></div><label className="text-sm text-ink/60">Accent colour<input type="color" value={storefront.accentColor} onChange={(e) => setStorefront({ ...storefront, accentColor: e.target.value })} className="block mt-2 h-11 w-full" /></label><label className="text-sm text-ink/60">Storefront layout<select value={storefront.layout} onChange={(e) => setStorefront({ ...storefront, layout: e.target.value })} className="input-field w-full mt-2"><option value="classic">Classic</option><option value="modern">Modern</option><option value="minimal">Minimal</option></select></label></>}
-            <button disabled={savingStorefront} className="sm:col-span-2 w-full sm:w-auto justify-self-start bg-ink text-paper px-5 py-3 rounded-xl text-sm disabled:opacity-50">{savingStorefront ? "Saving…" : "Save delivery & storefront"}</button>
+            <button disabled={savingStorefront} className="sm:col-span-2 w-full sm:w-auto justify-self-start bg-[#2E8B72] text-paper px-5 py-3 rounded-xl text-sm disabled:opacity-50">{savingStorefront ? "Saving…" : "Save delivery & storefront"}</button>
           </form>
         </section>
         <section className="mt-12 pt-10 border-t border-ink/10">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-signal mb-3">Payout account</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#2E8B72] mb-3">Payout account</p>
           <h2 className="font-display text-2xl font-semibold">Where BRIDGE sends your earnings.</h2>
           <p className="mt-2 text-sm text-ink/45 max-w-xl">Your bank details are verified with Paystack. BRIDGE stores only the payout recipient reference and the last four account digits.</p>
           {savedPayout && <div className="mt-4 bg-ink/5 rounded-xl px-4 py-3 text-sm"><span className="font-medium">{savedPayout.bank_name || "Bank account"}</span> · {savedPayout.account_name || "Verified account"} · **** {savedPayout.account_last4}</div>}
@@ -255,7 +255,7 @@ export function Settings() {
                 value={bankSearch}
                 onChange={(e) => { setBankSearch(e.target.value); setPayout({ ...payout, bankCode: "" }); }}
                 placeholder={banksLoading ? "Loading banks…" : "Search bank (e.g. GT)"}
-                className="w-full bg-ink/5 border border-ink/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-signal/50"
+                className="w-full bg-ink/5 border border-ink/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#2E8B72]/50"
               />
               {!banksLoading && bankSearch.trim().length >= 2 && (
                 <div className="absolute z-10 mt-2 max-h-56 w-full overflow-y-auto rounded-xl border border-ink/10 bg-paper p-1 shadow-lg">
@@ -268,9 +268,9 @@ export function Settings() {
                 </div>
               )}
             </div>
-            <input required inputMode="numeric" pattern="[0-9]{10}" maxLength={10} value={payout.accountNumber} onChange={(e) => setPayout({ ...payout, accountNumber: e.target.value.replace(/\D/g, "") })} placeholder="10-digit account number" className="bg-ink/5 border border-ink/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-signal/50" />
-            {banksError && <div className="sm:col-span-2 flex flex-wrap items-center gap-3 text-sm text-signal"><p>{banksError}</p><button type="button" onClick={loadBanks} disabled={banksLoading} className="underline underline-offset-2 disabled:opacity-50">Try again</button></div>}
-            <button disabled={savingPayout || banksLoading || banks.length === 0} className="sm:col-span-2 w-full sm:w-auto justify-self-start bg-ink text-paper px-5 py-3 rounded-xl text-sm disabled:opacity-50">{savingPayout ? "Verifying…" : savedPayout ? "Change payout account" : "Verify payout account"}</button>
+            <input required inputMode="numeric" pattern="[0-9]{10}" maxLength={10} value={payout.accountNumber} onChange={(e) => setPayout({ ...payout, accountNumber: e.target.value.replace(/\D/g, "") })} placeholder="10-digit account number" className="bg-ink/5 border border-ink/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#2E8B72]/50" />
+            {banksError && <div className="sm:col-span-2 flex flex-wrap items-center gap-3 text-sm text-[#2E8B72]"><p>{banksError}</p><button type="button" onClick={loadBanks} disabled={banksLoading} className="underline underline-offset-2 disabled:opacity-50">Try again</button></div>}
+            <button disabled={savingPayout || banksLoading || banks.length === 0} className="sm:col-span-2 w-full sm:w-auto justify-self-start bg-[#2E8B72] text-paper px-5 py-3 rounded-xl text-sm disabled:opacity-50">{savingPayout ? "Verifying…" : savedPayout ? "Change payout account" : "Verify payout account"}</button>
           </form>
         </section>
       </div>

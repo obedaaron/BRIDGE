@@ -1,263 +1,36 @@
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState, type FormEvent } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { apiFetch } from "../lib/api";
 import { SignboardTag } from "../components/SignboardTag";
 import { StarRating } from "../components/StarRating";
 import { useAuth } from "../context/AuthContext";
-import { Search, MapPin, ArrowUpRight, Store, LogOut, MessageCircle, Crosshair } from "lucide-react";
+import { ArrowUpRight, Crosshair, LogOut, MapPin, MessageCircle, Search, Store } from "lucide-react";
 
-interface Vendor {
-  id: string;
-  business_name: string;
-  slug: string;
-  description: string | null;
-  city: string | null;
-  state: string | null;
-  verification_status: string;
-  logo_url: string | null;
-  avg_rating: number | null;
-  review_count: number;
-  is_promoted?: boolean;
-  distance_km?: number | null;
-}
+interface Vendor { id: string; business_name: string; slug: string; description: string | null; city: string | null; state: string | null; verification_status: string; logo_url: string | null; avg_rating: number | null; review_count: number; is_promoted?: boolean; distance_km?: number | null; }
+interface Category { id: string; name: string; slug: string; }
 
-interface Category {
-  id: string;
-  name: string;
-  slug: string;
+function ExploreNavigation() {
+  const { user, logout } = useAuth();
+  return <nav className="sticky top-0 z-50 border-b border-ink/10 bg-paper/95 backdrop-blur"><div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-6 md:px-12"><Link to="/" className="flex items-center gap-2"><img src="/logo.png" alt="" className="h-8 w-8 object-contain" /><span className="font-display text-xl font-bold tracking-tight">BRIDGE</span></Link>{user ? <div className="flex items-center gap-1 sm:gap-3"><Link to="/messages" className="inline-flex min-h-10 items-center gap-2 px-3 text-sm font-medium text-ink/65 hover:text-ink"><MessageCircle className="h-4 w-4" /><span className="hidden sm:inline">Messages</span></Link><Link to="/dashboard" className="inline-flex min-h-10 items-center gap-2 px-3 text-sm font-medium text-ink/65 hover:text-ink"><Store className="h-4 w-4" /><span className="hidden sm:inline">Dashboard</span></Link><button onClick={logout} className="inline-flex min-h-10 items-center gap-2 px-3 text-sm font-medium text-ink/65 hover:text-ink"><LogOut className="h-4 w-4" /><span className="hidden md:inline">Log out</span></button></div> : <div className="flex items-center gap-2"><Link to="/login" className="hidden px-3 py-2 text-sm font-medium text-ink/65 hover:text-ink sm:block">Log in</Link><Link to="/signup" className="rounded-lg bg-[#2E8B72] px-4 py-2.5 text-sm font-semibold text-paper hover:bg-[#206653]">List your business</Link></div>}</div></nav>;
 }
 
 export function Explore() {
+  const [searchParams] = useSearchParams();
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [q, setQ] = useState("");
-  const [city, setCity] = useState("");
-  const [activeCategory, setActiveCategory] = useState("");
+  const [q, setQ] = useState(() => searchParams.get("q") ?? "");
+  const [city, setCity] = useState(() => searchParams.get("city") ?? "");
+  const [activeCategory, setActiveCategory] = useState(() => searchParams.get("category") ?? "");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [locationMessage, setLocationMessage] = useState("");
 
-  useEffect(() => {
-    apiFetch("/categories").then((data) => setCategories(data.categories));
-  }, []);
+  useEffect(() => { apiFetch("/categories").then((data) => setCategories(data.categories)); }, []);
+  function search() { setLoading(true); setError(""); const params = new URLSearchParams(); if (q) params.set("q", q); if (city) params.set("city", city); if (activeCategory) params.set("category", activeCategory); if (userLocation) { params.set("lat", String(userLocation.lat)); params.set("lng", String(userLocation.lng)); } apiFetch(`/search?${params.toString()}`).then((data) => setVendors(data.vendors)).catch((err) => { setVendors([]); setError(err.message || "Could not load businesses. Please try again."); }).finally(() => setLoading(false)); }
+  useEffect(() => { search(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [activeCategory, userLocation]);
+  function handleSubmit(event: FormEvent) { event.preventDefault(); search(); }
+  function findNearby() { if (!navigator.geolocation) { setLocationMessage("Your browser does not support location services."); return; } setLocationMessage("Finding businesses near you."); navigator.geolocation.getCurrentPosition((position) => { setUserLocation({ lat: position.coords.latitude, lng: position.coords.longitude }); setLocationMessage("Showing businesses nearest to you."); }, () => setLocationMessage("We could not access your location. Allow access and try again."), { enableHighAccuracy: true, timeout: 10_000, maximumAge: 60_000 }); }
 
-  function search() {
-    setLoading(true);
-    setError("");
-    const params = new URLSearchParams();
-    if (q) params.set("q", q);
-    if (city) params.set("city", city);
-    if (activeCategory) params.set("category", activeCategory);
-    if (userLocation) { params.set("lat", String(userLocation.lat)); params.set("lng", String(userLocation.lng)); }
-
-    apiFetch(`/search?${params.toString()}`)
-      .then((data) => setVendors(data.vendors))
-      .catch((err) => { setVendors([]); setError(err.message || "Could not load vendors. Please try again."); })
-      .finally(() => setLoading(false));
-  }
-
-  useEffect(() => {
-    search();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeCategory, userLocation]);
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    search();
-  }
-
-  function findNearby() {
-    if (!navigator.geolocation) return setLocationMessage("Your browser does not support location services.");
-    setLocationMessage("Finding nearby vendors…");
-    navigator.geolocation.getCurrentPosition(
-      (position) => { setUserLocation({ lat: position.coords.latitude, lng: position.coords.longitude }); setLocationMessage("Showing vendors nearest to you."); },
-      () => setLocationMessage("We could not access your location. Allow location access and try again."),
-      { enableHighAccuracy: true, timeout: 10_000, maximumAge: 60_000 },
-    );
-  }
-
-  function NavAuth() {
-    const { user, logout } = useAuth();
-
-    if (!user) {
-      return (
-        <div className="flex items-center gap-2 md:gap-3">
-          <Link to="/login" className="text-sm font-medium text-ink/60 hover:text-ink px-3 py-2 transition-colors hidden sm:block">
-            Log in
-          </Link>
-          <Link to="/signup" className="text-sm font-medium bg-ink text-paper px-4 md:px-5 py-2.5 rounded-full hover:bg-ink/90 transition-colors">
-            Get Started
-          </Link>
-        </div>
-      );
-    }
-
-    return (
-      <div className="flex items-center gap-2 md:gap-4">
-        <Link to="/dashboard" className="text-sm font-medium text-ink/70 hover:text-ink p-2 sm:px-3 sm:py-2 transition-colors flex items-center gap-1.5" title={user.role === "vendor" ? "My Store" : "List Your Business"}>
-          <Store className="w-4 h-4" strokeWidth={1.5} />
-          <span className="hidden md:inline">{user.role === "vendor" ? "My Store" : "List Your Business"}</span>
-        </Link>
-        <Link to="/messages" className="text-sm font-medium text-ink/70 hover:text-ink p-2 transition-colors flex items-center gap-1.5" title="Messages">
-          <MessageCircle className="w-4 h-4" strokeWidth={1.5} />
-          <span className="hidden md:inline">Messages</span>
-        </Link>
-        <button onClick={logout} className="text-sm text-ink/40 hover:text-signal transition-colors flex items-center gap-1.5 px-3 py-2">
-          <LogOut className="w-4 h-4" strokeWidth={1.5} />
-          <span className="hidden sm:inline">Log out</span>
-        </button>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-paper text-ink font-body">
-      {/* NAV */}
-      <nav className="sticky top-0 z-50 bg-paper/80 backdrop-blur-md border-b border-ink/5">
-        <div className="flex items-center justify-between px-5 sm:px-6 md:px-12 py-4 max-w-7xl mx-auto">
-          <Link to="/" className="flex items-center gap-2">
-            <img src="/logo.png" alt="" className="h-7 md:h-8" />
-            <span className="font-display text-xl md:text-2xl font-bold text-ink tracking-tight">BRIDGE</span>
-          </Link>
-          <NavAuth />
-        </div>
-      </nav>
-
-      {/* HERO SEARCH */}
-      <div className="px-5 sm:px-6 md:px-12 pt-10 sm:pt-14 pb-8 max-w-7xl mx-auto">
-        <div className="mb-8 sm:mb-10">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-signal mb-3">Marketplace</p>
-          <h1 className="font-display text-4xl sm:text-5xl md:text-6xl font-semibold text-ink tracking-tight leading-[0.95]">
-            Find a vendor.
-          </h1>
-          <p className="mt-3 text-ink/40 max-w-md text-base sm:text-lg">
-            Search verified businesses across Nigeria, or let BRIDGE recommend vendors nearest to you.
-          </p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="mb-8">
-          <div className="bg-white rounded-2xl border border-ink/10 p-2 shadow-sm flex flex-col sm:flex-row gap-2">
-            <div className="flex-1 flex items-center px-4 py-2.5 gap-3">
-              <Search className="w-4 h-4 text-ink/30 shrink-0" strokeWidth={2} />
-              <input
-                className="w-full bg-transparent outline-none text-ink placeholder:text-ink/25 text-sm"
-                placeholder="Search businesses..."
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-              />
-            </div>
-            <div className="h-px sm:h-auto sm:w-px bg-ink/10 mx-2 sm:mx-0" />
-            <div className="sm:w-44 flex items-center px-4 py-2.5 gap-3">
-              <MapPin className="w-4 h-4 text-ink/30 shrink-0" strokeWidth={2} />
-              <input
-                className="w-full bg-transparent outline-none text-ink placeholder:text-ink/25 text-sm"
-                placeholder="City"
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-              />
-            </div>
-            <button
-              type="submit"
-              className="bg-ink text-paper font-medium px-6 py-3 rounded-xl hover:bg-ink/90 transition-colors text-sm flex items-center justify-center gap-2"
-            >
-              Search <ArrowUpRight className="w-4 h-4" strokeWidth={2} />
-            </button>
-            <button type="button" onClick={findNearby} className="border border-ink/15 text-ink font-medium px-4 py-3 rounded-xl hover:bg-ink/5 transition-colors text-sm inline-flex items-center justify-center gap-2"><Crosshair className="w-4 h-4" strokeWidth={2} />Nearby</button>
-          </div>
-        </form>
-        {locationMessage && <p className="-mt-5 mb-6 text-sm text-ink/50 inline-flex items-center gap-1.5"><MapPin className="w-4 h-4 text-signal" />{locationMessage}</p>}
-
-        {/* CATEGORY FILTERS */}
-        <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
-          <button onClick={() => setActiveCategory("")} className="shrink-0">
-            <SignboardTag color={activeCategory === "" ? "signal" : "ink"}>All</SignboardTag>
-          </button>
-          {categories.map((c) => (
-            <button key={c.id} onClick={() => setActiveCategory(c.slug)} className="shrink-0">
-              <SignboardTag color={activeCategory === c.slug ? "signal" : "gold"}>{c.name}</SignboardTag>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* RESULTS */}
-      <div className="px-5 sm:px-6 md:px-12 pb-16 sm:pb-20 max-w-7xl mx-auto">
-        {loading ? (
-          <div className="py-20 text-center">
-            <div className="w-8 h-8 border-2 border-ink/10 border-t-signal rounded-full animate-spin mx-auto mb-4" />
-            <p className="text-ink/40 text-sm">Loading vendors...</p>
-          </div>
-        ) : vendors.length === 0 ? (
-          <div className="py-20 text-center">
-            <div className="w-16 h-16 rounded-full bg-ink/5 flex items-center justify-center mx-auto mb-4">
-              <Search className="w-6 h-6 text-ink/20" strokeWidth={1.5} />
-            </div>
-            <p className="text-ink/40 font-medium mb-1">No vendors found</p>
-            <p className="text-ink/30 text-sm">{error || "Try a different search, category, or nearby search."}</p>
-          </div>
-        ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            {vendors.map((v) => (
-              <Link
-                key={v.id}
-                to={`/store/${v.slug}`}
-                className="group bg-white rounded-2xl border border-ink/5 p-5 sm:p-6 hover:-translate-y-1 hover:shadow-xl hover:border-ink/10 transition-all duration-300 block"
-              >
-                <div className="flex items-start justify-between gap-3 mb-4">
-                  <div className="flex items-center gap-3 min-w-0">
-                    {v.logo_url ? (
-                      <img
-                        src={v.logo_url}
-                        alt={v.business_name}
-                        className="w-11 h-11 sm:w-12 sm:h-12 rounded-full object-cover border border-ink/5 shrink-0"
-                      />
-                    ) : (
-                      <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-ink/5 flex items-center justify-center text-ink font-display font-bold text-lg shrink-0">
-                        {v.business_name.charAt(0)}
-                      </div>
-                    )}
-                    <div className="min-w-0">
-                      <h3 className="font-display font-bold text-ink text-base sm:text-lg leading-tight truncate">
-                        {v.business_name}
-                      </h3>
-                      {(v.city || v.state) && (
-                        <p className="text-[11px] text-ink/35 mt-0.5 font-mono uppercase tracking-wider truncate">
-                          {[v.city, v.state].filter(Boolean).join(", ")}
-                        </p>
-                      )}
-                      {v.distance_km !== null && v.distance_km !== undefined && <p className="text-[11px] text-signal mt-1 font-medium">{v.distance_km < 1 ? "Less than 1 km away" : `${v.distance_km} km away`}</p>}
-                    </div>
-                  </div>
-                  {v.is_promoted && <span className="text-[10px] font-semibold uppercase tracking-wider text-signal">Featured</span>}
-                  <SignboardTag color={v.verification_status === "unverified" ? "signal" : "gold"}>
-                    {v.verification_status === "unverified" ? "New" : "Verified"}
-                  </SignboardTag>
-                </div>
-
-                {v.avg_rating !== null && (
-                  <div className="flex items-center gap-1.5 mb-2">
-                    <StarRating value={v.avg_rating} size="sm" />
-                    <span className="text-xs text-ink/30 font-mono">
-                      {v.avg_rating} ({v.review_count})
-                    </span>
-                  </div>
-                )}
-
-                {v.description && (
-                  <p className="text-sm text-ink/50 line-clamp-2 leading-relaxed mb-4">
-                    {v.description}
-                  </p>
-                )}
-
-                <div className="flex items-center gap-1 text-xs text-signal font-medium opacity-0 group-hover:opacity-100 transition-opacity">
-                  View storefront <ArrowUpRight className="w-3 h-3" strokeWidth={2} />
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
+  return <div className="min-h-screen bg-[#f4ede2] text-ink font-body"><ExploreNavigation /><main><section className="border-b border-ink/10 bg-[#2E8B72] text-paper"><div className="mx-auto max-w-7xl px-5 py-12 sm:px-6 sm:py-16 md:px-12"><p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#E5B35C]">Business directory</p><div className="mt-4 grid gap-8 md:grid-cols-[1fr_1.2fr] md:items-end"><div><h1 className="max-w-xl font-display text-4xl font-semibold leading-[0.96] tracking-tight sm:text-6xl">Browse shops, not just search results.</h1><p className="mt-5 max-w-lg text-base leading-relaxed text-paper/70">Find a business, see the details that matter, and open its storefront when you are ready.</p></div><form onSubmit={handleSubmit} className="border border-paper/20 bg-paper p-3 text-ink sm:p-4"><div className="grid gap-2 sm:grid-cols-[1fr_11rem_auto]"><label className="flex min-h-12 items-center gap-3 border-b border-ink/15 px-3 sm:border-b-0 sm:border-r"><Search className="h-4 w-4 text-[#C94F36]" /><input className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-ink/40" placeholder="Business or service" value={q} onChange={(event) => setQ(event.target.value)} /></label><label className="flex min-h-12 items-center gap-3 border-b border-ink/15 px-3 sm:border-b-0 sm:border-r"><MapPin className="h-4 w-4 text-[#C94F36]" /><input className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-ink/40" placeholder="City" value={city} onChange={(event) => setCity(event.target.value)} /></label><button className="min-h-12 rounded-md bg-[#C94F36] px-5 text-sm font-semibold text-paper hover:bg-[#ad402b]" type="submit">Search</button></div><button type="button" onClick={findNearby} className="mt-3 inline-flex items-center gap-2 px-3 text-xs font-semibold text-[#2E8B72] hover:underline"><Crosshair className="h-4 w-4" />Use my location</button></form></div>{locationMessage && <p className="mt-5 inline-flex items-center gap-2 border border-paper/20 px-3 py-2 text-sm text-paper/75"><MapPin className="h-4 w-4 text-[#E5B35C]" />{locationMessage}</p>}</div></section><section className="mx-auto max-w-7xl px-5 py-8 sm:px-6 md:px-12"><div className="flex gap-2 overflow-x-auto pb-2"><button onClick={() => setActiveCategory("")} className={`shrink-0 border px-4 py-2 text-sm font-medium ${activeCategory === "" ? "border-[#2E8B72] bg-[#2E8B72] text-paper" : "border-ink/15 bg-paper text-ink/65"}`}>All businesses</button>{categories.map((category) => <button key={category.id} onClick={() => setActiveCategory(category.slug)} className={`shrink-0 border px-4 py-2 text-sm font-medium ${activeCategory === category.slug ? "border-[#2E8B72] bg-[#2E8B72] text-paper" : "border-ink/15 bg-paper text-ink/65"}`}>{category.name}</button>)}</div></section><section className="mx-auto max-w-7xl px-5 pb-16 sm:px-6 md:px-12"><div className="mb-6 flex items-end justify-between gap-4"><div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#2E8B72]">Available storefronts</p><h2 className="mt-2 font-display text-3xl font-semibold tracking-tight sm:text-4xl">{loading ? "Loading businesses" : `${vendors.length} business${vendors.length === 1 ? "" : "es"} to explore`}</h2></div></div>{loading ? <div className="border border-ink/15 bg-paper py-20 text-center text-sm text-ink/50">Loading businesses.</div> : vendors.length === 0 ? <div className="border border-ink/15 bg-paper px-6 py-20 text-center"><Search className="mx-auto h-7 w-7 text-ink/35" /><p className="mt-4 font-display text-2xl font-semibold">No businesses found.</p><p className="mt-2 text-sm text-ink/55">{error || "Try another service, city, or category."}</p></div> : <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">{vendors.map((vendor, index) => <Link key={vendor.id} to={`/store/${vendor.slug}`} className="group overflow-hidden rounded-2xl border border-ink/10 bg-white transition-colors hover:border-ink/25"><div className={`flex h-40 items-center justify-center overflow-hidden sm:h-48 ${index % 3 === 0 ? "bg-[#dce9df]" : index % 3 === 1 ? "bg-[#f4ede2]" : "bg-ink/5"}`}>{vendor.logo_url ? <img src={vendor.logo_url} alt={vendor.business_name} className="h-full w-full object-cover" /> : <Store className={`h-9 w-9 ${index % 3 === 0 ? "text-[#2E8B72]/25" : index % 3 === 1 ? "text-[#C94F36]/25" : "text-ink/15"}`} />}</div><div className="p-5 sm:p-6"><div className="flex items-start justify-between gap-3"><h3 className="font-display text-lg font-bold leading-tight text-ink">{vendor.business_name}</h3><SignboardTag color={vendor.verification_status === "unverified" ? "signal" : "gold"}>{vendor.verification_status === "unverified" ? "New" : "Verified"}</SignboardTag></div><p className="mt-2 flex items-center gap-1 text-xs text-ink/45"><MapPin className="h-3.5 w-3.5" />{[vendor.city, vendor.state].filter(Boolean).join(", ") || "Location not listed"}</p>{vendor.description && <p className="mt-3 line-clamp-2 text-sm leading-relaxed text-ink/55">{vendor.description}</p>}<div className="mt-4 flex items-center justify-between gap-3 border-t border-ink/10 pt-4">{vendor.avg_rating !== null ? <div className="flex items-center gap-1.5"><StarRating value={vendor.avg_rating} size="sm" /><span className="text-xs text-ink/45">{vendor.avg_rating} ({vendor.review_count})</span></div> : <span className="text-xs text-ink/40">View store details</span>}<span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[#2E8B72] text-paper"><ArrowUpRight className="h-4 w-4" /></span></div>{vendor.distance_km !== null && vendor.distance_km !== undefined && <p className="mt-3 text-xs font-medium text-[#2E8B72]">{vendor.distance_km < 1 ? "Less than 1 km away" : `${vendor.distance_km} km away`}</p>}</div></Link>)}</div>}</section></main></div>;
 }

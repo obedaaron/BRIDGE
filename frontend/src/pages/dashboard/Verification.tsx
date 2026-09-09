@@ -76,7 +76,7 @@ export function Verification() {
     <DashboardLayout>
       <div className="max-w-3xl mx-auto">
         <div className="mb-10">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-signal mb-3">Trust</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#2E8B72] mb-3">Trust</p>
           <h1 className="font-display text-4xl sm:text-5xl font-semibold text-ink tracking-tight leading-[0.95]">
             Verification.
           </h1>
@@ -86,15 +86,15 @@ export function Verification() {
         </div>
 
         {error && (
-          <div className="bg-signal/10 border border-signal/20 rounded-xl px-4 py-3 mb-6 flex items-center gap-3">
-            <AlertCircle className="w-4 h-4 text-signal shrink-0" strokeWidth={2} />
-            <p className="text-signal text-sm font-medium">{error}</p>
+          <div className="bg-[#dce9df]/10 border border-[#2E8B72]/20 rounded-xl px-4 py-3 mb-6 flex items-center gap-3">
+            <AlertCircle className="w-4 h-4 text-[#2E8B72] shrink-0" strokeWidth={2} />
+            <p className="text-[#2E8B72] text-sm font-medium">{error}</p>
           </div>
         )}
 
-        <section className="mb-8 bg-white rounded-2xl border border-ink/5 p-5 sm:p-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-signal mb-2">Account security</p><h2 className="font-display text-2xl font-semibold">Verify your contact details.</h2><p className="text-sm text-ink/45 mt-2 mb-5">Both checks are required before a vendor can become fully trusted.</p>
-          <div className="grid sm:grid-cols-2 gap-5">{(["email", "phone"] as const).map((type) => <div key={type} className="rounded-xl bg-ink/[0.03] p-4"><div className="flex items-center justify-between"><p className="font-medium capitalize">{type}</p><SignboardTag color={contact[type] ? "gold" : "signal"}>{contact[type] ? "Verified" : "Required"}</SignboardTag></div>{type === "email" ? <p className="text-xs text-ink/40 mt-2 truncate">{contact.emailAddress}</p> : <input className="input-field mt-3" inputMode="tel" placeholder="08012345678" value={contact.phoneNumber} onChange={(e) => setContact({ ...contact, phoneNumber: e.target.value })} />}{!contact[type] && <><button onClick={() => sendContact(type)} disabled={sendingContact !== null || (type === "phone" && !contact.phoneNumber)} className="mt-3 text-xs px-3 py-2 bg-ink text-paper rounded-lg disabled:opacity-50">{sendingContact === `${type}-send` ? "Sending…" : "Send 6-digit code"}</button><div className="flex gap-2 mt-3"><input className="input-field text-sm" inputMode="numeric" maxLength={6} placeholder="Code" value={codes[type]} onChange={(e) => setCodes({ ...codes, [type]: e.target.value.replace(/\D/g, "") })} /><button onClick={() => confirmContact(type)} disabled={sendingContact !== null || codes[type].length !== 6} className="text-xs px-3 py-2 border border-ink/15 rounded-lg disabled:opacity-50">Verify</button></div></>}</div>)}</div>
+        <section className="mb-8 bg-paper border border-ink/15 rounded-none border border-ink/5 p-5 sm:p-6">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#2E8B72] mb-2">Account security</p><h2 className="font-display text-2xl font-semibold">Verify your contact details.</h2><p className="text-sm text-ink/45 mt-2 mb-5">Both checks are required before a vendor can become fully trusted.</p>
+          <div className="grid sm:grid-cols-2 gap-5">{(["email", "phone"] as const).map((type) => <div key={type} className="rounded-xl bg-ink/[0.03] p-4"><div className="flex items-center justify-between"><p className="font-medium capitalize">{type}</p><SignboardTag color={contact[type] ? "gold" : "signal"}>{contact[type] ? "Verified" : "Required"}</SignboardTag></div>{type === "email" ? <p className="text-xs text-ink/40 mt-2 truncate">{contact.emailAddress}</p> : <input className="input-field mt-3" inputMode="tel" placeholder="08012345678" value={contact.phoneNumber} onChange={(e) => setContact({ ...contact, phoneNumber: e.target.value })} />}{!contact[type] && <><button onClick={() => sendContact(type)} disabled={sendingContact !== null || (type === "phone" && !contact.phoneNumber)} className="mt-3 text-xs px-3 py-2 bg-[#2E8B72] text-paper rounded-lg disabled:opacity-50">{sendingContact === `${type}-send` ? "Sending…" : "Send 6-digit code"}</button><div className="flex gap-2 mt-3"><input className="input-field text-sm" inputMode="numeric" maxLength={6} placeholder="Code" value={codes[type]} onChange={(e) => setCodes({ ...codes, [type]: e.target.value.replace(/\D/g, "") })} /><button onClick={() => confirmContact(type)} disabled={sendingContact !== null || codes[type].length !== 6} className="text-xs px-3 py-2 border border-ink/15 rounded-lg disabled:opacity-50">Verify</button></div></>}</div>)}</div>
         </section>
 
         <div className="grid sm:grid-cols-2 gap-4">
@@ -105,7 +105,7 @@ export function Verification() {
             const StatusIcon = config.icon;
 
             return (
-              <div key={t.key} className="bg-white rounded-2xl border border-ink/5 p-5 sm:p-6 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300">
+              <div key={t.key} className="bg-paper border border-ink/15 rounded-none border border-ink/5 p-5 sm:p-6 transition-colors">
                 <div className="flex items-start justify-between gap-3 mb-3">
                   <div className="w-10 h-10 rounded-xl bg-ink/5 flex items-center justify-center shrink-0">
                     <StatusIcon className="w-5 h-5 text-ink/40" strokeWidth={1.5} />
@@ -135,7 +135,7 @@ export function Verification() {
                     <button
                       onClick={() => handleSubmit(t.key)}
                       disabled={submitting === t.key || nin.length !== 11 || !documents.kyc || !selfie || !consent}
-                      className="inline-flex items-center justify-center gap-2 bg-ink text-paper font-medium px-5 py-2.5 rounded-xl text-sm hover:bg-ink/90 transition-colors disabled:opacity-50"
+                      className="inline-flex items-center justify-center gap-2 bg-[#2E8B72] text-paper font-medium px-5 py-2.5 rounded-xl text-sm hover:bg-[#206653] transition-colors disabled:opacity-50"
                     >
                       {submitting === t.key ? <><Loader2 className="w-4 h-4 animate-spin" strokeWidth={2} />Submitting...</> : <><ShieldCheck className="w-4 h-4" strokeWidth={2} />Submit for review</>}
                     </button>
@@ -156,7 +156,7 @@ export function Verification() {
                     <button
                       onClick={() => handleSubmit(t.key)}
                       disabled={submitting === t.key || (t.key === "location" && !documents.location)}
-                      className="inline-flex items-center justify-center gap-2 bg-ink text-paper font-medium px-5 py-2.5 rounded-xl text-sm hover:bg-ink/90 transition-colors disabled:opacity-50 shrink-0"
+                      className="inline-flex items-center justify-center gap-2 bg-[#2E8B72] text-paper font-medium px-5 py-2.5 rounded-xl text-sm hover:bg-[#206653] transition-colors disabled:opacity-50 shrink-0"
                     >
                       {submitting === t.key ? (
                         <>

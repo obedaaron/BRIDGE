@@ -9,8 +9,7 @@ import { LogoUpload } from "../components/LogoUpload";
 import { AddressPicker } from "../components/AddressPicker";
 import { NIGERIAN_STATES } from "../lib/states";
 import {
-  ArrowUpRight, Copy, Eye, Globe, Package, Power, ShieldCheck,
-  Store, Loader2, TrendingUp, Link2, MapPin, AlertCircle, MessageCircle
+  ArrowUpRight, Copy, Eye, Globe, Power, Loader2, Link2, AlertCircle
 } from "lucide-react";
 
 interface Vendor {
@@ -243,190 +242,18 @@ export function VendorDashboard() {
             <Link to="/dashboard/verification" className="shrink-0 font-semibold text-signal underline underline-offset-2">Open verification</Link>
           </div>
         )}
-        {/* Header card */}
-        <div className="relative bg-ink rounded-2xl sm:rounded-3xl p-6 sm:p-8 md:p-10 mb-6 sm:mb-8 overflow-hidden">
-          <div className="absolute -top-20 -right-20 w-64 h-64 bg-signal/20 rounded-full blur-3xl opacity-40" />
-          <div className="absolute -bottom-16 -left-16 w-52 h-52 bg-gold/15 rounded-full blur-3xl opacity-30" />
-
-          <div className="relative">
-            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
-              <div className="min-w-0">
-                <div className="flex items-center gap-2 mb-2">
-                  <h1 className="font-display text-2xl sm:text-3xl md:text-4xl font-semibold text-paper tracking-tight truncate">
-                    {vendor.business_name}
-                  </h1>
-                </div>
-                <div className="flex items-center gap-2 text-paper/40 text-sm">
-                  <Globe className="w-3.5 h-3.5 shrink-0" strokeWidth={1.5} />
-                  <span className="truncate">bridge.com/store/{vendor.slug}</span>
-                </div>
-              </div>
-              <SignboardTag color={vendor.verification_status === "unverified" ? "signal" : "gold"}>
-                {vendor.verification_status.replace("_", " ")}
-              </SignboardTag>
-            </div>
-
-            {/* Actions */}
-            <div className="flex flex-wrap gap-2 sm:gap-3" translate="no">
-              <button
-                onClick={handleTogglePublish}
-                disabled={toggling}
-                className={`inline-flex items-center gap-1.5 sm:gap-2 font-medium px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm transition-colors disabled:opacity-50 ${
-                  vendor.is_published
-                    ? "bg-paper/10 text-paper border border-paper/10 hover:bg-paper/20"
-                    : "bg-signal text-ink hover:bg-signal/90"
-                }`}
-              >
-                {toggling ? (
-                  <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" strokeWidth={2} />
-                ) : (
-                  <Power className="w-3.5 h-3.5 sm:w-4 sm:h-4" strokeWidth={1.5} />
-                )}
-                <span>{toggling ? "Updating..." : vendor.is_published ? "Unpublish" : "Publish store"}</span>
-              </button>
-
-              <button
-                onClick={handleCopyLink}
-                className="inline-flex items-center gap-1.5 sm:gap-2 bg-paper text-ink font-medium px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm hover:bg-paper/90 transition-colors"
-              >
-                <Copy className="w-3.5 h-3.5 sm:w-4 sm:h-4" strokeWidth={1.5} />
-                {copied ? "Copied!" : "Copy link"}
-              </button>
-
-              <a
-                href={`/store/${vendor.slug}`}
-                target="_blank"
-                rel="noreferrer"
-                aria-hidden={!vendor.is_published}
-                tabIndex={vendor.is_published ? 0 : -1}
-                className={`inline-flex items-center gap-1.5 sm:gap-2 bg-transparent text-paper font-medium px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm border border-paper/20 hover:bg-paper/5 transition-colors ${vendor.is_published ? "" : "hidden"}`}
-              >
-                <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4" strokeWidth={1.5} />
-                <span>View</span>
-              </a>
-            </div>
+        <section className="border border-ink/15 bg-paper">
+          <div className="grid border-b border-ink/15 md:grid-cols-[1fr_auto]">
+            <div className="p-6 sm:p-8"><p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#2E8B72]">Store control centre</p><div className="mt-4 flex flex-wrap items-center gap-3"><h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">{vendor.business_name}</h1><SignboardTag color={vendor.verification_status === "unverified" ? "signal" : "gold"}>{vendor.verification_status.replace("_", " ")}</SignboardTag></div><p className="mt-3 flex items-center gap-2 text-sm text-ink/55"><Globe className="h-4 w-4" />bridge.com/store/{vendor.slug}</p></div>
+            <div className="flex flex-wrap items-center gap-2 p-6 md:border-l md:border-ink/15"><button onClick={handleTogglePublish} disabled={toggling} className={`inline-flex min-h-11 items-center gap-2 px-4 text-sm font-semibold disabled:opacity-50 ${vendor.is_published ? "border border-ink/20 text-ink hover:bg-ink/5" : "bg-[#2E8B72] text-paper hover:bg-[#206653]"}`}>{toggling ? <Loader2 className="h-4 w-4 animate-spin" /> : <Power className="h-4 w-4" />}{toggling ? "Updating" : vendor.is_published ? "Unpublish" : "Publish store"}</button><button onClick={handleCopyLink} className="inline-flex min-h-11 items-center gap-2 border border-ink/20 px-4 text-sm font-semibold hover:bg-ink/5"><Copy className="h-4 w-4" />{copied ? "Copied" : "Copy link"}</button>{vendor.is_published && <a href={`/store/${vendor.slug}`} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center gap-2 px-2 text-sm font-semibold text-[#2E8B72] hover:underline"><Eye className="h-4 w-4" />View store</a>}</div>
           </div>
-        </div>
+          <div className="grid divide-y divide-ink/15 sm:grid-cols-3 sm:divide-x sm:divide-y-0"><div className="p-5"><p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink/45">Store status</p><p className="mt-2 font-display text-2xl font-semibold">{vendor.is_published ? "Live" : "Draft"}</p><p className="mt-1 text-sm text-ink/55">{vendor.is_published ? "Customers can find your storefront." : "Complete the requirements to publish."}</p></div><div className="p-5"><p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink/45">Listings</p><p className="mt-2 font-display text-2xl font-semibold">{listingCount}</p><Link to="/dashboard/listings" className="mt-1 inline-flex text-sm font-semibold text-[#2E8B72] hover:underline">Manage listings</Link></div><div className="p-5"><p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink/45">Current plan</p><p className="mt-2 font-display text-2xl font-semibold capitalize">{vendor.subscription_tier}</p><Link to="/dashboard/plans" className="mt-1 inline-flex text-sm font-semibold text-[#2E8B72] hover:underline">View plan options</Link></div></div>
+        </section>
 
-        {/* Stats grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-8 sm:mb-10">
-          <div className="bg-white rounded-2xl border border-ink/5 p-5 sm:p-6 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-signal/10 flex items-center justify-center mb-3 sm:mb-4">
-              <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5 text-signal" strokeWidth={1.5} />
-            </div>
-            <p className="text-[10px] sm:text-xs uppercase tracking-[0.15em] text-ink/40 mb-1">Plan</p>
-            <p className="font-display text-xl sm:text-2xl md:text-3xl font-semibold text-ink capitalize">{vendor.subscription_tier}</p>
-          </div>
-
-          <div className="bg-white rounded-2xl border border-ink/5 p-5 sm:p-6 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gold/10 flex items-center justify-center mb-3 sm:mb-4">
-              <Store className="w-4 h-4 sm:w-5 sm:h-5 text-gold" strokeWidth={1.5} />
-            </div>
-            <p className="text-[10px] sm:text-xs uppercase tracking-[0.15em] text-ink/40 mb-1">Status</p>
-            <p className="font-display text-xl sm:text-2xl md:text-3xl font-semibold text-ink">{vendor.is_published ? "Live" : "Draft"}</p>
-          </div>
-
-          <div className="bg-white rounded-2xl border border-ink/5 p-5 sm:p-6 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-ink/5 flex items-center justify-center mb-3 sm:mb-4">
-              <Package className="w-4 h-4 sm:w-5 sm:h-5 text-ink/60" strokeWidth={1.5} />
-            </div>
-            <p className="text-[10px] sm:text-xs uppercase tracking-[0.15em] text-ink/40 mb-1">Listings</p>
-            <p className="font-display text-xl sm:text-2xl md:text-3xl font-semibold text-ink">{listingCount}</p>
-          </div>
-
-          <div className="bg-white rounded-2xl border border-ink/5 p-5 sm:p-6 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-signal/10 flex items-center justify-center mb-3 sm:mb-4">
-              <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-signal" strokeWidth={1.5} />
-            </div>
-            <p className="text-[10px] sm:text-xs uppercase tracking-[0.15em] text-ink/40 mb-1">Views</p>
-            <p className="font-display text-xl sm:text-2xl md:text-3xl font-semibold text-ink">—</p>
-          </div>
-        </div>
-
-        {/* Quick links */}
-        <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
-          <Link
-            to="/dashboard/listings"
-            className="group bg-white rounded-2xl border border-ink/5 p-5 sm:p-6 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 flex items-center justify-between"
-          >
-            <div className="flex items-center gap-3 sm:gap-4">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-ink/5 flex items-center justify-center shrink-0 group-hover:bg-signal/10 transition-colors">
-                <Package className="w-5 h-5 sm:w-6 sm:h-6 text-ink/40 group-hover:text-signal transition-colors" strokeWidth={1.5} />
-              </div>
-              <div>
-                <p className="font-display text-base sm:text-lg font-semibold text-ink">Manage listings</p>
-                <p className="text-xs sm:text-sm text-ink/40">Add or edit products & services</p>
-              </div>
-            </div>
-            <ArrowUpRight className="w-4 h-4 sm:w-5 sm:h-5 text-ink/20 group-hover:text-signal group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" strokeWidth={2} />
-          </Link>
-
-          <Link
-            to="/messages"
-            className="group bg-white rounded-2xl border border-ink/5 p-5 sm:p-6 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 flex items-center justify-between"
-          >
-            <div className="flex items-center gap-3 sm:gap-4">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-ink/5 flex items-center justify-center shrink-0 group-hover:bg-signal/10 transition-colors">
-                <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6 text-ink/40 group-hover:text-signal transition-colors" strokeWidth={1.5} />
-              </div>
-              <div>
-                <p className="font-display text-base sm:text-lg font-semibold text-ink">Messages</p>
-                <p className="text-xs sm:text-sm text-ink/40">Chat with customers</p>
-              </div>
-            </div>
-            <ArrowUpRight className="w-4 h-4 sm:w-5 sm:h-5 text-ink/20 group-hover:text-signal group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" strokeWidth={2} />
-          </Link>
-
-          <Link
-            to="/dashboard/verification"
-            className="group bg-white rounded-2xl border border-ink/5 p-5 sm:p-6 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 flex items-center justify-between"
-          >
-            <div className="flex items-center gap-3 sm:gap-4">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-ink/5 flex items-center justify-center shrink-0 group-hover:bg-gold/10 transition-colors">
-                <ShieldCheck className="w-5 h-5 sm:w-6 sm:h-6 text-ink/40 group-hover:text-gold transition-colors" strokeWidth={1.5} />
-              </div>
-              <div>
-                <p className="font-display text-base sm:text-lg font-semibold text-ink">Get verified</p>
-                <p className="text-xs sm:text-sm text-ink/40">Build trust with customers</p>
-              </div>
-            </div>
-            <ArrowUpRight className="w-4 h-4 sm:w-5 sm:h-5 text-ink/20 group-hover:text-gold group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" strokeWidth={2} />
-          </Link>
-
-          <Link
-            to="/dashboard/settings"
-            className="group bg-white rounded-2xl border border-ink/5 p-5 sm:p-6 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 flex items-center justify-between"
-          >
-            <div className="flex items-center gap-3 sm:gap-4">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-ink/5 flex items-center justify-center shrink-0 group-hover:bg-ink/10 transition-colors">
-                <MapPin className="w-5 h-5 sm:w-6 sm:h-6 text-ink/40 group-hover:text-ink transition-colors" strokeWidth={1.5} />
-              </div>
-              <div>
-                <p className="font-display text-base sm:text-lg font-semibold text-ink">Store settings</p>
-                <p className="text-xs sm:text-sm text-ink/40">Update details & location</p>
-              </div>
-            </div>
-            <ArrowUpRight className="w-4 h-4 sm:w-5 sm:h-5 text-ink/20 group-hover:text-ink group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" strokeWidth={2} />
-          </Link>
-
-          <div className="group bg-ink rounded-2xl border border-ink/5 p-5 sm:p-6 flex items-center justify-between">
-            <div className="flex items-center gap-3 sm:gap-4">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-paper/10 flex items-center justify-center shrink-0">
-                <Link2 className="w-5 h-5 sm:w-6 sm:h-6 text-paper/60" strokeWidth={1.5} />
-              </div>
-              <div>
-                <p className="font-display text-base sm:text-lg font-semibold text-paper">Store link</p>
-                <p className="text-xs sm:text-sm text-paper/40 truncate max-w-[180px] sm:max-w-xs">bridge.com/store/{vendor.slug}</p>
-              </div>
-            </div>
-            <button
-              onClick={handleCopyLink}
-              className="text-xs sm:text-sm text-paper/40 hover:text-signal transition-colors font-medium"
-            >
-              {copied ? "Copied" : "Copy"}
-            </button>
-          </div>
-        </div>
+        <section className="mt-8 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+          <div className="border border-ink/15 bg-white p-6 sm:p-7"><p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#C94F36]">Next steps</p><h2 className="mt-3 font-display text-3xl font-semibold tracking-tight">Keep your storefront ready for customers.</h2><div className="mt-6 divide-y divide-ink/15 border-t border-ink/15"><Link to="/dashboard/listings" className="flex items-center justify-between gap-4 py-4"><span><strong className="block text-sm">Add or update listings</strong><span className="mt-1 block text-sm text-ink/55">Show customers what they can buy or book.</span></span><ArrowUpRight className="h-4 w-4 text-[#2E8B72]" /></Link><Link to="/dashboard/verification" className="flex items-center justify-between gap-4 py-4"><span><strong className="block text-sm">Review your verification</strong><span className="mt-1 block text-sm text-ink/55">Make sure your trust details are complete.</span></span><ArrowUpRight className="h-4 w-4 text-[#2E8B72]" /></Link><Link to="/dashboard/settings" className="flex items-center justify-between gap-4 py-4"><span><strong className="block text-sm">Check store details</strong><span className="mt-1 block text-sm text-ink/55">Keep your location, contact, and delivery information current.</span></span><ArrowUpRight className="h-4 w-4 text-[#2E8B72]" /></Link></div></div>
+          <div className="border border-ink/15 bg-[#dce9df] p-6 sm:p-7"><p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#2E8B72]">Store link</p><Link2 className="mt-8 h-7 w-7 text-[#C94F36]" /><p className="mt-5 font-display text-2xl font-semibold">Share one clear address.</p><p className="mt-3 break-all text-sm leading-relaxed text-ink/65">bridge.com/store/{vendor.slug}</p><button onClick={handleCopyLink} className="mt-7 inline-flex min-h-11 items-center gap-2 bg-[#2E8B72] px-4 text-sm font-semibold text-paper hover:bg-[#206653]"><Copy className="h-4 w-4" />{copied ? "Link copied" : "Copy store link"}</button></div>
+        </section>
       </div>
     </DashboardLayout>
   );

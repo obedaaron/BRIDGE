@@ -48,15 +48,15 @@ export function Signup() {
     >
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
         {error && (
-          <div className="bg-signal/10 border border-signal/20 rounded-xl px-4 py-3">
+          <div className="bg-[#f7dfd9] border border-[#C94F36]/25 rounded-xl px-4 py-3">
             <p className="text-signal text-sm font-medium">{error}</p>
           </div>
         )}
 
         <div>
-          <label className="block text-xs uppercase tracking-[0.2em] text-paper/40 mb-2">Full name</label>
+          <label className="block text-xs uppercase tracking-[0.2em] text-ink/55 mb-2">Full name</label>
           <input
-            className="input-field w-full bg-paper/5 border border-paper/10 rounded-xl px-5 py-4 text-paper placeholder:text-paper/20 outline-none focus:border-signal/50 focus:bg-paper/[0.07] transition-all"
+            className="input-field w-full bg-white border border-ink/15 rounded-xl px-5 py-4 text-paper placeholder:text-ink/35 outline-none focus:border-[#2E8B72] focus:bg-white transition-all"
             placeholder="Full name"
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
@@ -65,9 +65,9 @@ export function Signup() {
         </div>
 
         <div>
-          <label className="block text-xs uppercase tracking-[0.2em] text-paper/40 mb-2">Email</label>
+          <label className="block text-xs uppercase tracking-[0.2em] text-ink/55 mb-2">Email</label>
           <input
-            className="input-field w-full bg-paper/5 border border-paper/10 rounded-xl px-5 py-4 text-paper placeholder:text-paper/20 outline-none focus:border-signal/50 focus:bg-paper/[0.07] transition-all"
+            className="input-field w-full bg-white border border-ink/15 rounded-xl px-5 py-4 text-paper placeholder:text-ink/35 outline-none focus:border-[#2E8B72] focus:bg-white transition-all"
             placeholder="Email"
             type="email"
             value={email}
@@ -77,7 +77,7 @@ export function Signup() {
         </div>
 
         <div>
-          <label className="block text-xs uppercase tracking-[0.2em] text-paper/40 mb-2">Password</label>
+          <label className="block text-xs uppercase tracking-[0.2em] text-ink/55 mb-2">Password</label>
           <PasswordInput
             value={password}
             onChange={setPassword}
@@ -85,7 +85,7 @@ export function Signup() {
           />
         </div>
 
-        <label className="flex items-start gap-3 text-sm text-ink/70 text-paper/40 cursor-pointer">
+        <label className="flex items-start gap-3 text-sm text-ink/70 text-ink/55 cursor-pointer">
           <div className="relative flex items-center justify-center mt-0.5">
             <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${agreed ? 'bg-signal border-signal' : 'border-paper/20'}`}>
               {agreed && (
@@ -96,11 +96,11 @@ export function Signup() {
             </div>
             <input type="checkbox" className="absolute inset-0 opacity-0 cursor-pointer" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
           </div>
-          <span>I agree to BRIDGE's <Link to="/terms" className="underline text-paper hover:text-signal">Terms of Service</Link> and <Link to="/privacy" className="underline text-paper hover:text-signal">Privacy Policy</Link></span>
+          <span>I agree to BRIDGE's <Link to="/terms" className="underline text-[#2E8B72] hover:text-[#206653]">Terms of Service</Link> and <Link to="/privacy" className="underline text-[#2E8B72] hover:text-[#206653]">Privacy Policy</Link></span>
         </label>
 
         <button
-          className="btn-primary w-full bg-paper text-ink font-medium py-4 rounded-xl hover:bg-paper/90 transition-colors flex items-center justify-center gap-2 mt-2"
+          className="btn-primary w-full bg-[#2E8B72] text-paper font-semibold py-4 rounded-xl hover:bg-[#206653] transition-colors flex items-center justify-center gap-2 mt-2"
           type="submit"
           disabled={loading}
         >

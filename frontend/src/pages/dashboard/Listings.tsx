@@ -63,7 +63,7 @@ export function Listings() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8 sm:mb-10">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-signal mb-3">Inventory</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#2E8B72] mb-3">Inventory</p>
             <h1 className="font-display text-4xl sm:text-5xl font-semibold text-ink tracking-tight leading-[0.95]">
               Listings.
             </h1>
@@ -76,7 +76,7 @@ export function Listings() {
             className={`inline-flex items-center gap-2 font-medium px-5 py-2.5 rounded-full text-sm transition-colors shrink-0 ${
               showForm
                 ? "bg-ink/5 text-ink border border-ink/10 hover:bg-ink/10"
-                : "bg-ink text-paper hover:bg-ink/90"
+                : "bg-[#2E8B72] text-paper hover:bg-[#206653]"
             }`}
           >
             {showForm ? (
@@ -95,11 +95,11 @@ export function Listings() {
 
         {/* Form */}
         {showForm && (
-          <form onSubmit={handleCreate} className="bg-white rounded-2xl border border-ink/5 p-6 sm:p-8 mb-8 shadow-sm">
+          <form onSubmit={handleCreate} className="bg-paper border border-ink/15 rounded-none border border-ink/5 p-6 sm:p-8 mb-8 shadow-sm">
             <h3 className="font-display text-xl font-semibold text-ink mb-5">New listing</h3>
             {error && (
-              <div className="bg-signal/10 border border-signal/20 rounded-xl px-4 py-3 mb-5">
-                <p className="text-signal text-sm font-medium">{error}</p>
+              <div className="bg-[#dce9df]/10 border border-[#2E8B72]/20 rounded-xl px-4 py-3 mb-5">
+                <p className="text-[#2E8B72] text-sm font-medium">{error}</p>
               </div>
             )}
 
@@ -107,7 +107,7 @@ export function Listings() {
               <div className="sm:col-span-2">
                 <label className="block text-xs uppercase tracking-[0.2em] text-ink/40 mb-2">Title</label>
                 <input
-                  className="w-full bg-ink/5 border border-ink/10 rounded-xl px-5 py-4 text-ink placeholder:text-ink/20 outline-none focus:border-signal/50 focus:bg-ink/[0.07] transition-all"
+                  className="w-full bg-ink/5 border border-ink/10 rounded-xl px-5 py-4 text-ink placeholder:text-ink/20 outline-none focus:border-[#2E8B72]/50 focus:bg-ink/[0.07] transition-all"
                   placeholder="e.g. Ankara Gown"
                   value={form.title}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
@@ -118,13 +118,13 @@ export function Listings() {
               <LogoUpload label="Product photo" emptyLabel="No photo" value={form.imageUrl} onChange={(imageUrl) => setForm({ ...form, imageUrl })} />
               <div>
                 <label className="block text-xs uppercase tracking-[0.2em] text-ink/40 mb-2">Stock quantity</label>
-                <input className="w-full bg-ink/5 border border-ink/10 rounded-xl px-5 py-4 text-ink placeholder:text-ink/20 outline-none focus:border-signal/50" placeholder="Leave blank for services" type="number" min="0" value={form.stockQuantity} onChange={(e) => setForm({ ...form, stockQuantity: e.target.value })} />
+                <input className="w-full bg-ink/5 border border-ink/10 rounded-xl px-5 py-4 text-ink placeholder:text-ink/20 outline-none focus:border-[#2E8B72]/50" placeholder="Leave blank for services" type="number" min="0" value={form.stockQuantity} onChange={(e) => setForm({ ...form, stockQuantity: e.target.value })} />
               </div>
 
               <div className="sm:col-span-2">
                 <label className="block text-xs uppercase tracking-[0.2em] text-ink/40 mb-2">Description</label>
                 <textarea
-                  className="w-full bg-ink/5 border border-ink/10 rounded-xl px-5 py-4 text-ink placeholder:text-ink/20 outline-none focus:border-signal/50 focus:bg-ink/[0.07] transition-all resize-none"
+                  className="w-full bg-ink/5 border border-ink/10 rounded-xl px-5 py-4 text-ink placeholder:text-ink/20 outline-none focus:border-[#2E8B72]/50 focus:bg-ink/[0.07] transition-all resize-none"
                   placeholder="Describe what you're offering..."
                   rows={3}
                   value={form.description}
@@ -135,7 +135,7 @@ export function Listings() {
               <div>
                 <label className="block text-xs uppercase tracking-[0.2em] text-ink/40 mb-2">Type</label>
                 <select
-                  className="w-full bg-ink/5 border border-ink/10 rounded-xl px-5 py-4 text-ink outline-none focus:border-signal/50 focus:bg-ink/[0.07] transition-all appearance-none"
+                  className="w-full bg-ink/5 border border-ink/10 rounded-xl px-5 py-4 text-ink outline-none focus:border-[#2E8B72]/50 focus:bg-ink/[0.07] transition-all appearance-none"
                   value={form.type}
                   onChange={(e) => setForm({ ...form, type: e.target.value })}
                 >
@@ -147,7 +147,7 @@ export function Listings() {
               <div>
                 <label className="block text-xs uppercase tracking-[0.2em] text-ink/40 mb-2">Price (NGN)</label>
                 <input
-                  className="w-full bg-ink/5 border border-ink/10 rounded-xl px-5 py-4 text-ink placeholder:text-ink/20 outline-none focus:border-signal/50 focus:bg-ink/[0.07] transition-all"
+                  className="w-full bg-ink/5 border border-ink/10 rounded-xl px-5 py-4 text-ink placeholder:text-ink/20 outline-none focus:border-[#2E8B72]/50 focus:bg-ink/[0.07] transition-all"
                   placeholder="25000"
                   type="number"
                   value={form.price}
@@ -158,7 +158,7 @@ export function Listings() {
             </div>
 
             <button
-              className="mt-6 bg-ink text-paper font-medium px-6 py-3 rounded-xl hover:bg-ink/90 transition-colors inline-flex items-center gap-2 disabled:opacity-50"
+              className="mt-6 bg-[#2E8B72] text-paper font-medium px-6 py-3 rounded-xl hover:bg-[#206653] transition-colors inline-flex items-center gap-2 disabled:opacity-50"
               type="submit"
               disabled={saving}
             >
@@ -188,7 +188,7 @@ export function Listings() {
         ) : (
           <div className="grid sm:grid-cols-2 gap-4">
             {listings.map((l) => (
-              <div key={l.id} className="bg-white rounded-2xl border border-ink/5 p-5 sm:p-6 group hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300">
+              <div key={l.id} className="bg-paper border border-ink/15 rounded-none border border-ink/5 p-5 sm:p-6 group transition-colors">
                 <div className="flex items-start justify-between gap-3 mb-3">
                   <div className="min-w-0">
                     <h3 className="font-display text-lg font-bold text-ink truncate">{l.title}</h3>
@@ -207,7 +207,7 @@ export function Listings() {
 
                 <button
                   onClick={() => handleDelete(l.id)}
-                  className="inline-flex items-center gap-1.5 text-xs text-ink/30 hover:text-signal transition-colors"
+                  className="inline-flex items-center gap-1.5 text-xs text-ink/30 hover:text-[#2E8B72] transition-colors"
                 >
                   <Trash2 className="w-3.5 h-3.5" strokeWidth={2} />
                   Delete

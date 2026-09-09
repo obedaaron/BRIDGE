@@ -28,7 +28,7 @@ export function ForgotPassword() {
         <p className="text-charcoal/80">If an account exists for <strong>{email}</strong>, a reset link is on its way.</p>
       ) : (
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          {error && <p className="rounded-xl bg-signal/10 border border-signal/20 px-4 py-3 text-sm text-signal">{error}</p>}
+          {error && <p className="rounded-xl bg-[#f7dfd9] border border-[#C94F36]/25 px-4 py-3 text-sm text-signal">{error}</p>}
           <input className="input-field" placeholder="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
           <button className="btn-primary disabled:opacity-50" type="submit" disabled={loading}>{loading ? "Sending…" : "Send reset link"}</button>
         </form>

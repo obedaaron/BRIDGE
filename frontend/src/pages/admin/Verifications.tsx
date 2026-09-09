@@ -59,7 +59,7 @@ export function AdminVerifications() {
       <div className="max-w-3xl mx-auto">
         {/* Header */}
         <div className="mb-8 sm:mb-10">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-signal mb-3">Admin</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#2E8B72] mb-3">Admin</p>
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
             <div>
               <h1 className="font-display text-4xl sm:text-5xl font-semibold text-ink tracking-tight leading-[0.95]">
@@ -80,7 +80,7 @@ export function AdminVerifications() {
             <p className="text-ink/30 text-sm">Loading verifications...</p>
           </div>
         ) : items.length === 0 ? (
-          <div className="py-20 text-center bg-white rounded-2xl border border-ink/5">
+          <div className="py-20 text-center bg-paper border border-ink/15 rounded-none border border-ink/5">
             <div className="w-16 h-16 rounded-full bg-ink/5 flex items-center justify-center mx-auto mb-4">
               <ShieldCheck className="w-6 h-6 text-ink/20" strokeWidth={1.5} />
             </div>
@@ -92,7 +92,7 @@ export function AdminVerifications() {
             {items.map((v) => (
               <div
                 key={v.id}
-                className="group bg-white rounded-2xl border border-ink/5 p-5 sm:p-6 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300"
+                className="group bg-paper border border-ink/15 rounded-none border border-ink/5 p-5 sm:p-6 transition-colors"
               >
                 <div className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-6">
                   {/* Info */}
@@ -115,7 +115,7 @@ export function AdminVerifications() {
                     {v.document_url && (
                       <button
                         onClick={() => viewDocument(v.document_url!)}
-                        className="inline-flex items-center gap-1.5 text-xs sm:text-sm text-signal hover:text-signal/80 transition-colors font-medium mt-1"
+                        className="inline-flex items-center gap-1.5 text-xs sm:text-sm text-[#2E8B72] hover:text-[#2E8B72]/80 transition-colors font-medium mt-1"
                       >
                         <FileText className="w-3.5 h-3.5" strokeWidth={2} />
                         View document
@@ -123,7 +123,7 @@ export function AdminVerifications() {
                     )}
 
                     {v.metadata?.selfie_key && (
-                      <button onClick={() => viewDocument(v.metadata.selfie_key!)} className="inline-flex items-center gap-1.5 text-xs sm:text-sm text-signal hover:text-signal/80 transition-colors font-medium mt-3 ml-4">
+                      <button onClick={() => viewDocument(v.metadata.selfie_key!)} className="inline-flex items-center gap-1.5 text-xs sm:text-sm text-[#2E8B72] hover:text-[#2E8B72]/80 transition-colors font-medium mt-3 ml-4">
                         <UserRound className="w-3.5 h-3.5" strokeWidth={2} /> View face photo
                       </button>
                     )}
@@ -147,7 +147,7 @@ export function AdminVerifications() {
                     <button
                       onClick={() => handleDecision(v.id, "approved")}
                       disabled={acting === v.id}
-                      className="inline-flex items-center gap-1.5 bg-ink text-paper font-medium px-4 sm:px-5 py-2.5 rounded-full text-xs sm:text-sm hover:bg-ink/90 transition-colors disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 bg-[#2E8B72] text-paper font-medium px-4 sm:px-5 py-2.5 rounded-full text-xs sm:text-sm hover:bg-[#206653] transition-colors disabled:opacity-50"
                     >
                       {acting === v.id ? (
                         <Loader2 className="w-3.5 h-3.5 animate-spin" strokeWidth={2} />
@@ -160,7 +160,7 @@ export function AdminVerifications() {
                     <button
                       onClick={() => handleDecision(v.id, "rejected")}
                       disabled={acting === v.id}
-                      className="inline-flex items-center gap-1.5 bg-paper text-signal font-medium px-4 sm:px-5 py-2.5 rounded-full text-xs sm:text-sm border border-signal/20 hover:bg-signal/5 transition-colors disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 bg-paper text-[#2E8B72] font-medium px-4 sm:px-5 py-2.5 rounded-full text-xs sm:text-sm border border-[#2E8B72]/20 hover:bg-[#dce9df]/5 transition-colors disabled:opacity-50"
                     >
                       <X className="w-3.5 h-3.5" strokeWidth={2} />
                       Reject

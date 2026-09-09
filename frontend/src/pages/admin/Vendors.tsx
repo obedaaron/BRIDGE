@@ -40,7 +40,7 @@ export function AdminVendors() {
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-8 sm:mb-10">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-signal mb-3">Admin</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#2E8B72] mb-3">Admin</p>
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
             <div>
               <h1 className="font-display text-4xl sm:text-5xl font-semibold text-ink tracking-tight leading-[0.95]">
@@ -61,7 +61,7 @@ export function AdminVendors() {
             <p className="text-ink/30 text-sm">Loading vendors...</p>
           </div>
         ) : vendors.length === 0 ? (
-          <div className="py-20 text-center bg-white rounded-2xl border border-ink/5">
+          <div className="py-20 text-center bg-paper border border-ink/15 rounded-none border border-ink/5">
             <div className="w-16 h-16 rounded-full bg-ink/5 flex items-center justify-center mx-auto mb-4">
               <Store className="w-6 h-6 text-ink/20" strokeWidth={1.5} />
             </div>
@@ -73,7 +73,7 @@ export function AdminVendors() {
             {vendors.map((v) => (
               <div
                 key={v.id}
-                className="group bg-white rounded-2xl border border-ink/5 p-4 sm:p-5 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300"
+                className="group bg-paper border border-ink/15 rounded-none border border-ink/5 p-4 sm:p-5 transition-colors"
               >
                 <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-5">
                   {/* Avatar */}
@@ -99,7 +99,7 @@ export function AdminVendors() {
                       <Link
                         to={`/store/${v.slug}`}
                         target="_blank"
-                        className="font-display text-lg sm:text-xl font-semibold text-ink hover:text-signal transition-colors truncate"
+                        className="font-display text-lg sm:text-xl font-semibold text-ink hover:text-[#2E8B72] transition-colors truncate"
                       >
                         {v.business_name}
                       </Link>
@@ -135,7 +135,7 @@ export function AdminVendors() {
                       className={`inline-flex items-center gap-1.5 font-medium px-4 py-2 rounded-full text-xs sm:text-sm transition-colors ${
                         v.is_published
                           ? "bg-ink/5 text-ink border border-ink/10 hover:bg-ink/10"
-                          : "bg-signal text-ink hover:bg-signal/90"
+                          : "bg-signal text-ink hover:bg-[#dce9df]/90"
                       }`}
                     >
                       <Power className="w-3.5 h-3.5" strokeWidth={2} />

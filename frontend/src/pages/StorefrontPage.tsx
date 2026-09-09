@@ -100,13 +100,13 @@ export function StorefrontPage() {
 
   if (!vendor) {
     return (
-      <div className="min-h-screen bg-ink text-paper flex flex-col items-center justify-center gap-4 px-6">
-        <div className="w-16 h-16 rounded-full bg-paper/5 flex items-center justify-center mb-2">
+      <div className="min-h-screen bg-[#2E8B72] text-paper flex flex-col items-center justify-center gap-4 px-6">
+        <div className="w-16 h-16 rounded-lg bg-paper/5 flex items-center justify-center mb-2">
           <Store className="w-7 h-7 text-paper/20" strokeWidth={1.5} />
         </div>
         <p className="font-display text-2xl sm:text-3xl font-semibold">Store not found</p>
         <p className="text-paper/40 text-sm max-w-xs text-center">This BRIDGE link doesn't lead to an active storefront.</p>
-        <Link to="/explore" className="mt-2 inline-flex items-center gap-2 bg-paper text-ink font-medium px-6 py-3 rounded-full text-sm hover:bg-paper/90 transition-colors">
+        <Link to="/explore" className="mt-2 inline-flex items-center gap-2 bg-paper text-ink font-medium px-6 py-3 rounded-lg text-sm hover:bg-paper/90 transition-colors">
           Browse marketplace <ArrowUpRight className="w-4 h-4" strokeWidth={2} />
         </Link>
       </div>
@@ -118,8 +118,8 @@ export function StorefrontPage() {
   const coverUrl = vendor.storefront_cover_url?.replace(/"/g, "%22");
 
   return (
-    <div className="min-h-screen bg-paper text-ink font-body">
-      <nav className="sticky top-0 z-50 bg-paper/80 backdrop-blur-md border-b border-ink/5">
+    <div className="min-h-screen bg-[#f4ede2] text-ink font-body">
+      <nav className="sticky top-0 z-50 bg-paper/95 backdrop-blur-md border-b border-ink/10">
         <div className="flex items-center justify-between px-5 sm:px-6 md:px-12 py-4 max-w-6xl mx-auto">
           <Link to="/" className="font-display text-xl font-bold text-ink tracking-tight">BRIDGE</Link>
           <div className="flex items-center gap-2 sm:gap-3">
@@ -130,7 +130,7 @@ export function StorefrontPage() {
               <Share2 className="w-4 h-4" strokeWidth={1.5} />
               <span className="hidden sm:inline">{copied ? "Copied!" : "Share"}</span>
             </button>
-            <Link to="/explore" className="text-sm font-medium bg-ink text-paper px-4 sm:px-5 py-2.5 rounded-full hover:bg-ink/90 transition-colors">
+            <Link to="/explore" className="text-sm font-medium bg-[#2E8B72] text-paper px-4 sm:px-5 py-2.5 rounded-lg hover:bg-[#206653] transition-colors">
               Explore
             </Link>
             <Link to="/cart" className="text-sm text-ink/60">Cart ({items.length})</Link>
@@ -138,9 +138,9 @@ export function StorefrontPage() {
         </div>
       </nav>
 
-      <header className="relative bg-ink text-paper overflow-hidden" style={coverUrl ? { backgroundImage: `linear-gradient(rgba(20, 20, 20, 0.80), rgba(20, 20, 20, 0.88)), url("${coverUrl}")`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}>
-        <div className="absolute -top-24 -right-24 w-72 h-72 bg-signal/20 rounded-full blur-3xl opacity-40" />
-        <div className="absolute -bottom-16 -left-16 w-64 h-64 bg-gold/15 rounded-full blur-3xl opacity-30" />
+      <header className="relative bg-[#2E8B72] text-paper overflow-hidden" style={coverUrl ? { backgroundImage: `linear-gradient(rgba(20, 20, 20, 0.80), rgba(20, 20, 20, 0.88)), url("${coverUrl}")`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}>
+        <div className="absolute -top-24 -right-24 w-72 h-72 bg-[#dce9df]/20 rounded-lg blur-3xl opacity-40" />
+        <div className="absolute -bottom-16 -left-16 w-64 h-64 bg-gold/15 rounded-lg blur-3xl opacity-30" />
 
         <div className={`relative max-w-6xl mx-auto px-5 sm:px-6 md:px-12 ${layout === "minimal" ? "py-9 sm:py-12" : layout === "modern" ? "py-16 sm:py-20 md:py-24" : "py-12 sm:py-16 md:py-20"}`}>
           <div className="flex flex-col sm:flex-row sm:items-start gap-6 sm:gap-8">
@@ -201,7 +201,7 @@ export function StorefrontPage() {
                 <button
                   onClick={handleMessage}
                   disabled={messaging}
-                  className="inline-flex items-center gap-1.5 sm:gap-2 border border-paper/20 text-paper font-medium px-4 sm:px-5 py-2.5 rounded-full text-sm hover:bg-paper/5 transition-colors disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 sm:gap-2 border border-paper/20 text-paper font-medium px-4 sm:px-5 py-2.5 rounded-lg text-sm hover:bg-paper/5 transition-colors disabled:opacity-50"
                 >
                   {messaging ? (
                     <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" strokeWidth={2} />
@@ -212,7 +212,7 @@ export function StorefrontPage() {
                 </button>
                 <button
                   onClick={handleShare}
-                  className="inline-flex items-center gap-1.5 sm:gap-2 border border-paper/20 text-paper font-medium px-4 sm:px-5 py-2.5 rounded-full text-sm hover:bg-paper/5 transition-colors"
+                  className="inline-flex items-center gap-1.5 sm:gap-2 border border-paper/20 text-paper font-medium px-4 sm:px-5 py-2.5 rounded-lg text-sm hover:bg-paper/5 transition-colors"
                 >
                   <Share2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" strokeWidth={2} />
                   {copied ? "Copied!" : "Share"}
@@ -236,7 +236,7 @@ export function StorefrontPage() {
 
         {listings.length === 0 ? (
           <div className="py-16 sm:py-20 text-center bg-white rounded-2xl border border-ink/5">
-            <div className="w-16 h-16 rounded-full bg-ink/5 flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 rounded-lg bg-ink/5 flex items-center justify-center mx-auto mb-4">
               <Package className="w-6 h-6 text-ink/20" strokeWidth={1.5} />
             </div>
             <p className="text-ink/40 font-medium mb-1">Nothing listed yet</p>
@@ -250,10 +250,10 @@ export function StorefrontPage() {
                 className="group bg-white rounded-2xl border border-ink/5 overflow-hidden hover:-translate-y-1 hover:shadow-xl hover:border-ink/10 transition-all duration-300"
               >
                 <div className={`w-full h-40 sm:h-48 flex items-center justify-center overflow-hidden ${
-                  i % 3 === 0 ? "bg-signal/5" : i % 3 === 1 ? "bg-gold/5" : "bg-ink/5"
+                  i % 3 === 0 ? "bg-[#dce9df]/5" : i % 3 === 1 ? "bg-gold/5" : "bg-ink/5"
                 }`}>
                   {l.image_url ? <img src={l.image_url} alt={l.title} className="w-full h-full object-cover" /> : <Package className={`w-8 h-8 ${
-                    i % 3 === 0 ? "text-signal/20" : i % 3 === 1 ? "text-gold/20" : "text-ink/10"
+                    i % 3 === 0 ? "text-[#2E8B72]/20" : i % 3 === 1 ? "text-gold/20" : "text-ink/10"
                   }`} strokeWidth={1.5} />}
                 </div>
 
@@ -277,7 +277,7 @@ export function StorefrontPage() {
                     <p className="text-sm text-ink/30">Price on request</p>
                   )}
                   {l.stock_quantity !== null && <p className="text-xs text-ink/35 mt-2">{l.stock_quantity > 0 ? `${l.stock_quantity} available` : "Out of stock"}</p>}
-                  {l.price !== null && <button onClick={() => add({ listingId: l.id, vendorSlug: slug!, vendorName: vendor.business_name, title: l.title, price: Number(l.price), currency: l.currency, imageUrl: l.image_url })} disabled={l.stock_quantity === 0} className="mt-4 text-xs px-3 py-2 rounded-full text-ink disabled:opacity-40" style={{ backgroundColor: accentColor }}>{l.stock_quantity === 0 ? "Out of stock" : "Add to cart"}</button>}
+                  {l.price !== null && <button onClick={() => add({ listingId: l.id, vendorSlug: slug!, vendorName: vendor.business_name, title: l.title, price: Number(l.price), currency: l.currency, imageUrl: l.image_url })} disabled={l.stock_quantity === 0} className="mt-4 text-xs px-3 py-2 rounded-lg text-ink disabled:opacity-40" style={{ backgroundColor: accentColor }}>{l.stock_quantity === 0 ? "Out of stock" : "Add to cart"}</button>}
                 </div>
               </div>
             ))}
@@ -292,7 +292,7 @@ export function StorefrontPage() {
           <p className="text-xs text-ink/30">
             Powered by <span className="font-display font-semibold text-ink/50">BRIDGE</span>
           </p>
-          <Link to="/explore" className="text-xs text-ink/30 hover:text-signal transition-colors inline-flex items-center gap-1">
+          <Link to="/explore" className="text-xs text-ink/30 hover:text-[#2E8B72] transition-colors inline-flex items-center gap-1">
             Find more vendors <ArrowUpRight className="w-3 h-3" strokeWidth={2} />
           </Link>
         </div>

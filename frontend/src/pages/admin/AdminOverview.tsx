@@ -85,7 +85,7 @@ export function AdminOverview() {
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8 sm:mb-10">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-signal mb-3">Overview</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#2E8B72] mb-3">Overview</p>
           <h1 className="font-display text-4xl sm:text-5xl font-semibold text-ink tracking-tight leading-[0.95]">
             Platform metrics.
           </h1>
@@ -105,7 +105,7 @@ export function AdminOverview() {
         {/* Charts row */}
         <div className="grid lg:grid-cols-3 gap-4 sm:gap-6 mb-8 sm:mb-10">
           {/* Signups line chart */}
-          <div className="lg:col-span-2 bg-white rounded-2xl border border-ink/5 p-5 sm:p-6">
+          <div className="lg:col-span-2 bg-paper border border-ink/15 rounded-none border border-ink/5 p-5 sm:p-6">
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h3 className="font-display text-lg font-semibold text-ink">Vendor signups</h3>
@@ -164,7 +164,7 @@ export function AdminOverview() {
           </div>
 
           {/* Verification donut + stats */}
-          <div className="bg-white rounded-2xl border border-ink/5 p-5 sm:p-6 flex flex-col">
+          <div className="bg-paper border border-ink/15 rounded-none border border-ink/5 p-5 sm:p-6 flex flex-col">
             <h3 className="font-display text-lg font-semibold text-ink mb-1">Verification rate</h3>
             <p className="text-xs text-ink/30 mb-6">Approved vs pending documents</p>
 
@@ -203,7 +203,7 @@ export function AdminOverview() {
         {/* Bottom row */}
         <div className="grid lg:grid-cols-2 gap-4 sm:gap-6">
           {/* Category bar chart */}
-          <div className="bg-white rounded-2xl border border-ink/5 p-5 sm:p-6">
+          <div className="bg-paper border border-ink/15 rounded-none border border-ink/5 p-5 sm:p-6">
             <h3 className="font-display text-lg font-semibold text-ink mb-1">Vendors by category</h3>
             <p className="text-xs text-ink/30 mb-6">Distribution across all business types</p>
 
@@ -226,7 +226,7 @@ export function AdminOverview() {
           </div>
 
           {/* Recent vendors */}
-          <div className="bg-white rounded-2xl border border-ink/5 p-5 sm:p-6">
+          <div className="bg-paper border border-ink/15 rounded-none border border-ink/5 p-5 sm:p-6">
             <div className="flex items-center justify-between mb-5">
               <div>
                 <h3 className="font-display text-lg font-semibold text-ink">Recent signups</h3>
@@ -234,7 +234,7 @@ export function AdminOverview() {
               </div>
               <Link
                 to="/admin/vendors"
-                className="text-xs text-signal hover:text-signal/80 transition-colors font-medium inline-flex items-center gap-1"
+                className="text-xs text-[#2E8B72] hover:text-[#2E8B72]/80 transition-colors font-medium inline-flex items-center gap-1"
               >
                 View all <ArrowUpRight className="w-3 h-3" strokeWidth={2} />
               </Link>
@@ -250,7 +250,7 @@ export function AdminOverview() {
                     <Link
                       to={`/store/${v.slug}`}
                       target="_blank"
-                      className="text-sm font-medium text-ink hover:text-signal transition-colors truncate block"
+                      className="text-sm font-medium text-ink hover:text-[#2E8B72] transition-colors truncate block"
                     >
                       {v.business_name}
                     </Link>
@@ -258,7 +258,7 @@ export function AdminOverview() {
                       <Clock className="w-3 h-3 text-ink/25" strokeWidth={2} />
                       <span className="text-[11px] text-ink/30">{v.created_at}</span>
                       {v.is_published ? (
-                        <span className="inline-flex items-center gap-1 text-[11px] text-signal">
+                        <span className="inline-flex items-center gap-1 text-[11px] text-[#2E8B72]">
                           <CheckCircle2 className="w-3 h-3" strokeWidth={2} />
                           Published
                         </span>
@@ -270,7 +270,7 @@ export function AdminOverview() {
                       )}
                     </div>
                   </div>
-                  <ArrowUpRight className="w-4 h-4 text-ink/15 group-hover:text-signal transition-colors shrink-0" strokeWidth={2} />
+                  <ArrowUpRight className="w-4 h-4 text-ink/15 group-hover:text-[#2E8B72] transition-colors shrink-0" strokeWidth={2} />
                 </div>
               ))}
             </div>
@@ -282,11 +282,11 @@ export function AdminOverview() {
 }
 
 function KpiCard({ label, value, icon: Icon, color }: { label: string; value: number; icon: any; color: "signal" | "gold" | "ink" }) {
-  const bg = { signal: "bg-signal/10", gold: "bg-gold/10", ink: "bg-ink/5" }[color];
-  const text = { signal: "text-signal", gold: "text-gold", ink: "text-ink/60" }[color];
+  const bg = { signal: "bg-[#dce9df]/10", gold: "bg-gold/10", ink: "bg-ink/5" }[color];
+  const text = { signal: "text-[#2E8B72]", gold: "text-gold", ink: "text-ink/60" }[color];
 
   return (
-    <div className="bg-white rounded-2xl border border-ink/5 p-5 sm:p-6 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300">
+    <div className="bg-paper border border-ink/15 rounded-none border border-ink/5 p-5 sm:p-6 transition-colors">
       <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl ${bg} flex items-center justify-center mb-3 sm:mb-4`}>
         <Icon className={`w-4 h-4 sm:w-5 sm:h-5 ${text}`} strokeWidth={1.5} />
       </div>
