@@ -7,6 +7,37 @@ import { hasPayoutBlockingAlert } from "../services/fraud";
 
 const router = Router();
 
+router.get("/overview", requireAdmin, async (_req, res) => {
+  try {
+    const [counts, signups, categories, recent, sales] = await Promise.all([
+      pool.query(`select
+        (select count(*)::int from users) as total_users,
+        (select count(*)::int from vendors) as total_vendors,
+        (select count(*)::int from vendors where is_published) as published_stores,
+        (select count(*)::int from vendors where not is_published) as draft_stores,
+        (select count(*)::int from vendor_verifications where status = 'pending') as pending_verifications,
+        (select count(*)::int from vendor_verifications where status = 'approved') as approved_verifications,
+        (select count(*)::int from listings) as total_listings,
+        (select count(*)::int from marketplace_orders) as total_orders,
+        (select count(*)::int from marketplace_fraud_alerts where status = 'open') as open_fraud_alerts,
+        (select count(*)::int from vendor_wallet_withdrawals where status = 'requested') as pending_withdrawals`),
+      pool.query(`select to_char(month, 'Mon') as month, count(v.id)::int as count
+        from generate_series(date_trunc('month', now()) - interval '11 months', date_trunc('month', now()), interval '1 month') month
+        left join vendors v on v.created_at >= month and v.created_at < month + interval '1 month'
+        group by month order by month`),
+      pool.query(`select coalesce(c.name, 'Uncategorised') as name, count(v.id)::int as count
+        from vendors v left join categories c on c.id = v.category_id
+        group by c.name order by count desc, name asc limit 8`),
+      pool.query(`select id, business_name, slug, created_at, is_published from vendors order by created_at desc limit 6`),
+      pool.query(`select coalesce(sum(buyer_total_kobo), 0)::bigint as completed_volume_kobo
+        from marketplace_orders where status in ('paid', 'in_progress', 'delivered', 'completed')`),
+    ]);
+    res.json({ ...counts.rows[0], completedVolumeKobo: sales.rows[0].completed_volume_kobo, signupsByMonth: signups.rows, vendorsByCategory: categories.rows, recentVendors: recent.rows });
+  } catch (err) {
+    console.error("Admin overview failed", err);
+    res.status(500).json({ error: "Could not load admin analytics" });
+  }
+});
 router.get("/verifications", requireAdmin, async (req, res) => {
   const status = req.query.status as string | undefined;
   const result = await pool.query(

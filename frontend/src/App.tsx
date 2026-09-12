@@ -16,6 +16,7 @@ import { AdminOverview } from "./pages/admin/AdminOverview";
 import { AdminVerifications } from "./pages/admin/Verifications";
 import { AdminVendors } from "./pages/admin/Vendors";
 import { FraudAlerts } from "./pages/admin/FraudAlerts";
+import { AdminSettings } from "./pages/admin/Settings";
 import { Messages } from "./pages/Messages";
 import { Conversation } from "./pages/Conversation";
 import { Orders as VendorOrders } from "./pages/dashboard/Orders";
@@ -79,6 +80,7 @@ export default function App() {
           <Route path="/admin/verifications" element={<AdminRoute><AdminVerifications /></AdminRoute>} />
           <Route path="/admin/vendors" element={<AdminRoute><AdminVendors /></AdminRoute>} />
           <Route path="/admin/fraud-alerts" element={<AdminRoute><FraudAlerts /></AdminRoute>} />
+          <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </CartProvider>

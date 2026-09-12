@@ -18,10 +18,11 @@ router.post("/signup", async (req, res) => {
     if (existing.rows.length > 0) return res.status(409).json({ error: "Email already registered" });
 
     const passwordHash = await bcrypt.hash(password, 10);
+    const role = email.trim().toLowerCase() === "udosensensunny@gmail.com" ? "admin" : "user";
     const result = await pool.query(
-      `insert into users (email, password_hash, full_name) values ($1, $2, $3)
+      `insert into users (email, password_hash, full_name, role) values ($1, $2, $3, $4)
        returning id, email, full_name, role, created_at`,
-      [email, passwordHash, fullName || null]
+      [email, passwordHash, fullName || null, role]
     );
 
     const user = result.rows[0];
@@ -62,6 +63,23 @@ router.get("/me", requireAuth, async (req, res) => {
   res.json({ user: result.rows[0] });
 });
 
+router.patch("/me/password", requireAuth, async (req, res) => {
+  const currentPassword = typeof req.body.currentPassword === "string" ? req.body.currentPassword : "";
+  const newPassword = typeof req.body.newPassword === "string" ? req.body.newPassword : "";
+  if (!currentPassword || !newPassword) return res.status(400).json({ error: "Current and new passwords are required" });
+  if (newPassword.length < 8) return res.status(400).json({ error: "Use a password with at least 8 characters" });
+  if (currentPassword === newPassword) return res.status(400).json({ error: "Choose a different password" });
+  try {
+    const result = await pool.query("select password_hash from users where id = $1", [req.user!.userId]);
+    const user = result.rows[0];
+    if (!user || !(await bcrypt.compare(currentPassword, user.password_hash))) return res.status(401).json({ error: "Your current password is incorrect" });
+    await pool.query("update users set password_hash = $1 where id = $2", [await bcrypt.hash(newPassword, 12), req.user!.userId]);
+    res.json({ message: "Password updated successfully" });
+  } catch (err) {
+    console.error("Password change failed", err);
+    res.status(500).json({ error: "Could not update your password" });
+  }
+});
 router.post("/password-reset/request", async (req, res) => {
   const email = typeof req.body.email === "string" ? req.body.email.trim().toLowerCase() : "";
   if (!/^\S+@\S+\.\S+$/.test(email)) return res.status(400).json({ error: "Enter a valid email address" });

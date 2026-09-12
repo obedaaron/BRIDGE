@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { AdminLayout } from "../../components/AdminLayout";
+import { apiFetch } from "../../lib/api";
 import {
   Store, Users, TrendingUp, Eye, Clock,
   ArrowUpRight, CheckCircle2, AlertCircle
@@ -14,6 +15,10 @@ interface OverviewStats {
   pendingVerifications: number;
   approvedVerifications: number;
   totalListings: number;
+  totalOrders: number;
+  openFraudAlerts: number;
+  pendingWithdrawals: number;
+  completedVolumeKobo: number;
   signupsByMonth: { month: string; count: number }[];
   vendorsByCategory: { name: string; count: number }[];
   recentVendors: { id: string; business_name: string; slug: string; created_at: string; is_published: boolean }[];
@@ -25,42 +30,18 @@ export function AdminOverview() {
 
   useEffect(() => {
     setLoading(true);
-    // Fallback mock data if endpoint doesn't exist yet — swap for real API call
-    const mock: OverviewStats = {
-      totalVendors: 124,
-      totalUsers: 342,
-      publishedStores: 89,
-      draftStores: 35,
-      pendingVerifications: 12,
-      approvedVerifications: 156,
-      totalListings: 412,
-      signupsByMonth: [
-        { month: "Jan", count: 8 }, { month: "Feb", count: 12 },
-        { month: "Mar", count: 18 }, { month: "Apr", count: 15 },
-        { month: "May", count: 22 }, { month: "Jun", count: 28 },
-        { month: "Jul", count: 24 }, { month: "Aug", count: 32 },
-        { month: "Sep", count: 38 }, { month: "Oct", count: 45 },
-        { month: "Nov", count: 41 }, { month: "Dec", count: 48 },
-      ],
-      vendorsByCategory: [
-        { name: "Tailoring", count: 28 }, { name: "Electrical", count: 19 },
-        { name: "Fashion", count: 22 }, { name: "Catering", count: 15 },
-        { name: "Mechanics", count: 12 }, { name: "Photography", count: 14 },
-        { name: "Hair & Beauty", count: 20 }, { name: "Home Repairs", count: 10 },
-      ],
-      recentVendors: [
-        { id: "1", business_name: "David's Fashion House", slug: "davids-fashion", created_at: "2 hours ago", is_published: true },
-        { id: "2", business_name: "Amina Catering", slug: "amina-catering", created_at: "5 hours ago", is_published: false },
-        { id: "3", business_name: "Emeka Electricals", slug: "emeka-electricals", created_at: "1 day ago", is_published: true },
-        { id: "4", business_name: "Chioma Tailoring", slug: "chioma-tailoring", created_at: "2 days ago", is_published: true },
-      ],
-    };
-
-    // Replace with: apiFetch("/admin/overview").then((data) => setStats(data))
-    setTimeout(() => {
-      setStats(mock);
-      setLoading(false);
-    }, 600);
+    apiFetch("/admin/overview")
+      .then((data) => setStats({
+        totalVendors: Number(data.total_vendors || 0), totalUsers: Number(data.total_users || 0),
+        publishedStores: Number(data.published_stores || 0), draftStores: Number(data.draft_stores || 0),
+        pendingVerifications: Number(data.pending_verifications || 0), approvedVerifications: Number(data.approved_verifications || 0),
+        totalListings: Number(data.total_listings || 0), totalOrders: Number(data.total_orders || 0),
+        openFraudAlerts: Number(data.open_fraud_alerts || 0), pendingWithdrawals: Number(data.pending_withdrawals || 0),
+        completedVolumeKobo: Number(data.completedVolumeKobo || 0), signupsByMonth: data.signupsByMonth || [],
+        vendorsByCategory: data.vendorsByCategory || [], recentVendors: data.recentVendors || [],
+      }))
+      .catch(() => setStats(null))
+      .finally(() => setLoading(false));
   }, []);
 
   if (loading || !stats) {
@@ -100,8 +81,14 @@ export function AdminOverview() {
           <KpiCard label="Total users" value={stats.totalUsers} icon={Users} color="ink" />
           <KpiCard label="Published stores" value={stats.publishedStores} icon={Eye} color="gold" />
           <KpiCard label="Total listings" value={stats.totalListings} icon={TrendingUp} color="signal" />
+          <KpiCard label="Marketplace orders" value={stats.totalOrders} icon={Clock} color="ink" />
+          <KpiCard label="Sales volume" value={stats.completedVolumeKobo / 100} prefix="₦" icon={TrendingUp} color="gold" />
         </div>
 
+        <section className="mb-8 sm:mb-10 grid sm:grid-cols-2 gap-3 sm:gap-4">
+          <Link to="/admin/verifications" className="group border border-ink/10 bg-paper p-5 hover:border-[#2E8B72]/40 transition-colors"><p className="text-xs uppercase tracking-[.16em] text-ink/40">Review queue</p><div className="mt-3 flex items-end justify-between gap-4"><div><p className="font-display text-3xl font-semibold">{stats.pendingVerifications}</p><p className="text-sm text-ink/50">verification{stats.pendingVerifications === 1 ? "" : "s"} waiting</p></div><ArrowUpRight className="w-5 h-5 text-[#2E8B72] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" /></div></Link>
+          <Link to="/admin/fraud-alerts" className="group border border-ink/10 bg-paper p-5 hover:border-[#C99A3C]/60 transition-colors"><p className="text-xs uppercase tracking-[.16em] text-ink/40">Trust & safety</p><div className="mt-3 flex items-end justify-between gap-4"><div><p className="font-display text-3xl font-semibold">{stats.openFraudAlerts}</p><p className="text-sm text-ink/50">open fraud alert{stats.openFraudAlerts === 1 ? "" : "s"}</p></div><ArrowUpRight className="w-5 h-5 text-gold group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" /></div></Link>
+        </section>
         {/* Charts row */}
         <div className="grid lg:grid-cols-3 gap-4 sm:gap-6 mb-8 sm:mb-10">
           {/* Signups line chart */}
@@ -281,7 +268,7 @@ export function AdminOverview() {
   );
 }
 
-function KpiCard({ label, value, icon: Icon, color }: { label: string; value: number; icon: any; color: "signal" | "gold" | "ink" }) {
+function KpiCard({ label, value, prefix = "", icon: Icon, color }: { label: string; value: number; prefix?: string; icon: any; color: "signal" | "gold" | "ink" }) {
   const bg = { signal: "bg-[#dce9df]/10", gold: "bg-gold/10", ink: "bg-ink/5" }[color];
   const text = { signal: "text-[#2E8B72]", gold: "text-gold", ink: "text-ink/60" }[color];
 
@@ -291,7 +278,7 @@ function KpiCard({ label, value, icon: Icon, color }: { label: string; value: nu
         <Icon className={`w-4 h-4 sm:w-5 sm:h-5 ${text}`} strokeWidth={1.5} />
       </div>
       <p className="text-[10px] sm:text-xs uppercase tracking-[0.15em] text-ink/40 mb-1">{label}</p>
-      <p className="font-display text-xl sm:text-2xl md:text-3xl font-semibold text-ink">{value.toLocaleString()}</p>
+      <p className="font-display text-xl sm:text-2xl md:text-3xl font-semibold text-ink">{prefix}{value.toLocaleString()}</p>
     </div>
   );
 }

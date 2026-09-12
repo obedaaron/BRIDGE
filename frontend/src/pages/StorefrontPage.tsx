@@ -89,10 +89,10 @@ export function StorefrontPage() {
 
   if (vendor === undefined) {
     return (
-      <div className="min-h-screen bg-paper flex items-center justify-center">
+      <div className="min-h-screen bg-[#11110f] text-[#f1eee7] flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <Loader2 className="w-6 h-6 text-ink/20 animate-spin" strokeWidth={1.5} />
-          <p className="text-ink/30 text-sm">Loading store...</p>
+          <Loader2 className="w-6 h-6 text-white/30 animate-spin" strokeWidth={1.5} />
+          <p className="text-white/40 text-sm">Loading store...</p>
         </div>
       </div>
     );
@@ -100,7 +100,7 @@ export function StorefrontPage() {
 
   if (!vendor) {
     return (
-      <div className="min-h-screen bg-[#2E8B72] text-paper flex flex-col items-center justify-center gap-4 px-6">
+      <div className="min-h-screen bg-[#11110f] text-[#f1eee7] flex flex-col items-center justify-center gap-4 px-6">
         <div className="w-16 h-16 rounded-lg bg-paper/5 flex items-center justify-center mb-2">
           <Store className="w-7 h-7 text-paper/20" strokeWidth={1.5} />
         </div>
@@ -118,31 +118,31 @@ export function StorefrontPage() {
   const coverUrl = vendor.storefront_cover_url?.replace(/"/g, "%22");
 
   return (
-    <div className="min-h-screen bg-[#f4ede2] text-ink font-body">
-      <nav className="sticky top-0 z-50 bg-paper/95 backdrop-blur-md border-b border-ink/10">
-        <div className="flex items-center justify-between px-5 sm:px-6 md:px-12 py-4 max-w-6xl mx-auto">
-          <Link to="/" className="font-display text-xl font-bold text-ink tracking-tight">BRIDGE</Link>
+    <div className="min-h-screen bg-[#11110f] text-[#f1eee7] font-body">
+      <nav className="sticky top-0 z-50 border-b border-white/15 bg-[#11110f]/95 backdrop-blur-md">
+        <div className="flex items-center justify-between px-5 sm:px-8 lg:px-12 py-4 max-w-[1440px] mx-auto">
+          <Link to="/" className="font-display text-xl font-bold tracking-[-0.06em]">BRIDGE</Link>
           <div className="flex items-center gap-2 sm:gap-3">
             <button
               onClick={handleShare}
-              className="inline-flex items-center gap-1.5 text-sm text-ink/50 hover:text-ink px-3 py-2 transition-colors"
+              className="inline-flex items-center gap-1.5 text-sm text-white/55 hover:text-white px-3 py-2 transition-colors"
             >
               <Share2 className="w-4 h-4" strokeWidth={1.5} />
               <span className="hidden sm:inline">{copied ? "Copied!" : "Share"}</span>
             </button>
-            <Link to="/explore" className="text-sm font-medium bg-[#2E8B72] text-paper px-4 sm:px-5 py-2.5 rounded-lg hover:bg-[#206653] transition-colors">
+            <Link to="/explore" className="text-sm font-semibold bg-[#d6ff57] text-[#11110f] px-4 sm:px-5 py-2.5 rounded-full hover:bg-[#ecffad] transition-colors">
               Explore
             </Link>
-            <Link to="/cart" className="text-sm text-ink/60">Cart ({items.length})</Link>
+            <Link to="/cart" className="text-sm text-white/55 hover:text-white transition-colors">Cart ({items.length})</Link>
           </div>
         </div>
       </nav>
 
-      <header className="relative bg-[#2E8B72] text-paper overflow-hidden" style={coverUrl ? { backgroundImage: `linear-gradient(rgba(20, 20, 20, 0.80), rgba(20, 20, 20, 0.88)), url("${coverUrl}")`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}>
-        <div className="absolute -top-24 -right-24 w-72 h-72 bg-[#dce9df]/20 rounded-lg blur-3xl opacity-40" />
-        <div className="absolute -bottom-16 -left-16 w-64 h-64 bg-gold/15 rounded-lg blur-3xl opacity-30" />
+      <header className="relative bg-[#171714] text-[#f1eee7] overflow-hidden border-b border-white/15" style={coverUrl ? { backgroundImage: `linear-gradient(rgba(17, 17, 15, 0.82), rgba(17, 17, 15, 0.94)), url("${coverUrl}")`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}>
+        <div className="absolute -top-24 -right-24 w-72 h-72 bg-[#d6ff57]/10 rounded-full blur-3xl" />
+        <div className="absolute -bottom-16 -left-16 w-64 h-64 bg-[#ca5b42]/20 rounded-full blur-3xl" />
 
-        <div className={`relative max-w-6xl mx-auto px-5 sm:px-6 md:px-12 ${layout === "minimal" ? "py-9 sm:py-12" : layout === "modern" ? "py-16 sm:py-20 md:py-24" : "py-12 sm:py-16 md:py-20"}`}>
+        <div className={`relative max-w-[1440px] mx-auto px-5 sm:px-8 lg:px-12 ${layout === "minimal" ? "py-9 sm:py-12" : layout === "modern" ? "py-16 sm:py-20 md:py-24" : "py-12 sm:py-16 md:py-20"}`}>
           <div className="flex flex-col sm:flex-row sm:items-start gap-6 sm:gap-8">
             <div className="shrink-0">
               {vendor.logo_url ? (
@@ -162,7 +162,7 @@ export function StorefrontPage() {
 
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-3">
-                <h1 className="font-display text-3xl sm:text-4xl md:text-5xl font-semibold tracking-tight leading-tight">
+                <h1 className="font-display text-4xl sm:text-5xl md:text-6xl font-semibold tracking-[-0.06em] leading-[0.9]">
                   {vendor.business_name}
                 </h1>
                 <SignboardTag color={vendor.verification_status === "unverified" ? "signal" : "gold"}>
@@ -187,7 +187,7 @@ export function StorefrontPage() {
               )}
 
               {vendor.description && (
-                <p className="text-paper/50 text-base sm:text-lg max-w-xl leading-relaxed mb-6">
+                <p className="text-white/65 text-base sm:text-lg max-w-xl leading-relaxed mb-6">
                   {vendor.description}
                 </p>
               )}
@@ -201,7 +201,7 @@ export function StorefrontPage() {
                 <button
                   onClick={handleMessage}
                   disabled={messaging}
-                  className="inline-flex items-center gap-1.5 sm:gap-2 border border-paper/20 text-paper font-medium px-4 sm:px-5 py-2.5 rounded-lg text-sm hover:bg-paper/5 transition-colors disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 sm:gap-2 bg-[#d6ff57] text-[#11110f] font-semibold px-4 sm:px-5 py-2.5 rounded-full text-sm hover:bg-[#ecffad] transition-colors disabled:opacity-50"
                 >
                   {messaging ? (
                     <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" strokeWidth={2} />
@@ -212,7 +212,7 @@ export function StorefrontPage() {
                 </button>
                 <button
                   onClick={handleShare}
-                  className="inline-flex items-center gap-1.5 sm:gap-2 border border-paper/20 text-paper font-medium px-4 sm:px-5 py-2.5 rounded-lg text-sm hover:bg-paper/5 transition-colors"
+                  className="inline-flex items-center gap-1.5 sm:gap-2 border border-white/30 text-white font-semibold px-4 sm:px-5 py-2.5 rounded-full text-sm hover:bg-white hover:text-[#11110f] transition-colors"
                 >
                   <Share2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" strokeWidth={2} />
                   {copied ? "Copied!" : "Share"}
@@ -223,11 +223,11 @@ export function StorefrontPage() {
         </div>
       </header>
 
-      <section className="max-w-6xl mx-auto px-5 sm:px-6 md:px-12 py-10 sm:py-14 md:py-16">
+      <section className="max-w-[1440px] mx-auto px-5 sm:px-8 lg:px-12 py-12 sm:py-16 md:py-20">
         <div className="flex items-end justify-between gap-4 mb-8 sm:mb-10">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] mb-3" style={{ color: accentColor }}>Inventory</p>
-            <h2 className="font-display text-3xl sm:text-4xl font-semibold text-ink tracking-tight">
+            <h2 className="font-display text-4xl sm:text-5xl font-semibold tracking-[-0.06em] leading-[0.9]">
               Products &amp; Services
             </h2>
           </div>
@@ -235,7 +235,7 @@ export function StorefrontPage() {
         </div>
 
         {listings.length === 0 ? (
-          <div className="py-16 sm:py-20 text-center bg-white rounded-2xl border border-ink/5">
+          <div className="py-16 sm:py-20 text-center bg-[#171714] rounded-3xl border border-white/10">
             <div className="w-16 h-16 rounded-lg bg-ink/5 flex items-center justify-center mx-auto mb-4">
               <Package className="w-6 h-6 text-ink/20" strokeWidth={1.5} />
             </div>
@@ -247,7 +247,7 @@ export function StorefrontPage() {
             {listings.map((l, i) => (
               <div
                 key={l.id}
-                className="group bg-white rounded-2xl border border-ink/5 overflow-hidden hover:-translate-y-1 hover:shadow-xl hover:border-ink/10 transition-all duration-300"
+                className="group bg-[#171714] rounded-3xl border border-white/10 overflow-hidden hover:-translate-y-1 hover:border-white/30 transition-all duration-300"
               >
                 <div className={`w-full h-40 sm:h-48 flex items-center justify-center overflow-hidden ${
                   i % 3 === 0 ? "bg-[#dce9df]/5" : i % 3 === 1 ? "bg-gold/5" : "bg-ink/5"
@@ -259,25 +259,25 @@ export function StorefrontPage() {
 
                 <div className="p-5 sm:p-6">
                   <div className="flex items-start justify-between gap-3 mb-2">
-                    <h3 className="font-display text-lg font-bold text-ink leading-tight">{l.title}</h3>
+                    <h3 className="font-display text-xl font-semibold text-[#f1eee7] leading-tight tracking-[-0.03em]">{l.title}</h3>
                     <SignboardTag color={l.type === "service" ? "gold" : "signal"}>{l.type}</SignboardTag>
                   </div>
 
                   {l.description && (
-                    <p className="text-sm text-ink/50 line-clamp-2 leading-relaxed mb-3">
+                    <p className="text-sm text-white/55 line-clamp-2 leading-relaxed mb-3">
                       {l.description}
                     </p>
                   )}
 
                   {l.price ? (
-                    <p className="font-mono text-base font-medium text-ink">
+                    <p className="font-mono text-base font-medium text-[#f1eee7]">
                       {l.currency === "USD" ? "$" : "₦"}{l.price.toLocaleString()}
                     </p>
                   ) : (
                     <p className="text-sm text-ink/30">Price on request</p>
                   )}
                   {l.stock_quantity !== null && <p className="text-xs text-ink/35 mt-2">{l.stock_quantity > 0 ? `${l.stock_quantity} available` : "Out of stock"}</p>}
-                  {l.price !== null && <button onClick={() => add({ listingId: l.id, vendorSlug: slug!, vendorName: vendor.business_name, title: l.title, price: Number(l.price), currency: l.currency, imageUrl: l.image_url })} disabled={l.stock_quantity === 0} className="mt-4 text-xs px-3 py-2 rounded-lg text-ink disabled:opacity-40" style={{ backgroundColor: accentColor }}>{l.stock_quantity === 0 ? "Out of stock" : "Add to cart"}</button>}
+                  {l.price !== null && <button onClick={() => add({ listingId: l.id, vendorSlug: slug!, vendorName: vendor.business_name, title: l.title, price: Number(l.price), currency: l.currency, imageUrl: l.image_url })} disabled={l.stock_quantity === 0} className="mt-4 text-xs px-4 py-2.5 rounded-full text-[#11110f] font-semibold disabled:opacity-40" style={{ backgroundColor: accentColor }}>{l.stock_quantity === 0 ? "Out of stock" : "Add to cart"}</button>}
                 </div>
               </div>
             ))}
@@ -287,7 +287,7 @@ export function StorefrontPage() {
 
       <ReviewsSection slug={slug!} isOwner={user?.id === vendor.user_id} />
 
-      <footer className="border-t border-ink/5 bg-ink/[0.02]">
+      <footer className="border-t border-white/15">
         <div className="max-w-6xl mx-auto px-5 sm:px-6 md:px-12 py-8 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-xs text-ink/30">
             Powered by <span className="font-display font-semibold text-ink/50">BRIDGE</span>
