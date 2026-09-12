@@ -165,13 +165,13 @@ export function StorefrontPage() {
                 <h1 className="font-display text-4xl sm:text-5xl md:text-6xl font-semibold tracking-[-0.06em] leading-[0.9]">
                   {vendor.business_name}
                 </h1>
-                <SignboardTag color={vendor.verification_status === "unverified" ? "signal" : "gold"}>
+                <SignboardTag color={vendor.verification_status === "unverified" ? "signal" : "gold"} tone="dark">
                   {vendor.verification_status.replace("_", " ")}
                 </SignboardTag>
-                {vendor.gold_tick && <SignboardTag color="gold">Gold trusted seller</SignboardTag>}
+                {vendor.gold_tick && <SignboardTag color="gold" tone="dark">Gold trusted seller</SignboardTag>}
                 {vendor.avg_rating !== null && (
                   <div className="flex items-center gap-1.5">
-                    <StarRating value={vendor.avg_rating} size="sm" />
+                    <StarRating value={vendor.avg_rating} size="sm" tone="dark" />
                     <span className="text-paper/50 text-xs font-mono">
                       {vendor.avg_rating} ({vendor.review_count})
                     </span>
@@ -231,16 +231,16 @@ export function StorefrontPage() {
               Products &amp; Services
             </h2>
           </div>
-          <span className="text-sm text-ink/30 font-mono">{listings.length} item{listings.length !== 1 ? "s" : ""}</span>
+          <span className="text-sm text-white/45 font-mono">{listings.length} item{listings.length !== 1 ? "s" : ""}</span>
         </div>
 
         {listings.length === 0 ? (
           <div className="py-16 sm:py-20 text-center bg-[#171714] rounded-3xl border border-white/10">
-            <div className="w-16 h-16 rounded-lg bg-ink/5 flex items-center justify-center mx-auto mb-4">
-              <Package className="w-6 h-6 text-ink/20" strokeWidth={1.5} />
+            <div className="w-16 h-16 rounded-lg bg-white/5 flex items-center justify-center mx-auto mb-4">
+              <Package className="w-6 h-6 text-white/30" strokeWidth={1.5} />
             </div>
-            <p className="text-ink/40 font-medium mb-1">Nothing listed yet</p>
-            <p className="text-ink/30 text-sm">Check back soon for new products and services.</p>
+            <p className="text-white/65 font-medium mb-1">Nothing listed yet</p>
+            <p className="text-white/40 text-sm">Check back soon for new products and services.</p>
           </div>
         ) : (
           <div className={`grid sm:grid-cols-2 ${layout === "modern" ? "lg:grid-cols-2" : "lg:grid-cols-3"} gap-4 sm:gap-6`}>
@@ -274,9 +274,9 @@ export function StorefrontPage() {
                       {l.currency === "USD" ? "$" : "₦"}{l.price.toLocaleString()}
                     </p>
                   ) : (
-                    <p className="text-sm text-ink/30">Price on request</p>
+                    <p className="text-sm text-white/45">Price on request</p>
                   )}
-                  {l.stock_quantity !== null && <p className="text-xs text-ink/35 mt-2">{l.stock_quantity > 0 ? `${l.stock_quantity} available` : "Out of stock"}</p>}
+                  {l.stock_quantity !== null && <p className="text-xs text-white/40 mt-2">{l.stock_quantity > 0 ? `${l.stock_quantity} available` : "Out of stock"}</p>}
                   {l.price !== null && <button onClick={() => add({ listingId: l.id, vendorSlug: slug!, vendorName: vendor.business_name, title: l.title, price: Number(l.price), currency: l.currency, imageUrl: l.image_url })} disabled={l.stock_quantity === 0} className="mt-4 text-xs px-4 py-2.5 rounded-full text-[#11110f] font-semibold disabled:opacity-40" style={{ backgroundColor: accentColor }}>{l.stock_quantity === 0 ? "Out of stock" : "Add to cart"}</button>}
                 </div>
               </div>
@@ -289,10 +289,10 @@ export function StorefrontPage() {
 
       <footer className="border-t border-white/15">
         <div className="max-w-6xl mx-auto px-5 sm:px-6 md:px-12 py-8 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="text-xs text-ink/30">
-            Powered by <span className="font-display font-semibold text-ink/50">BRIDGE</span>
+          <p className="text-xs text-white/35">
+            Powered by <span className="font-display font-semibold text-white/65">BRIDGE</span>
           </p>
-          <Link to="/explore" className="text-xs text-ink/30 hover:text-[#2E8B72] transition-colors inline-flex items-center gap-1">
+          <Link to="/explore" className="text-xs text-white/35 hover:text-[#2E8B72] transition-colors inline-flex items-center gap-1">
             Find more vendors <ArrowUpRight className="w-3 h-3" strokeWidth={2} />
           </Link>
         </div>

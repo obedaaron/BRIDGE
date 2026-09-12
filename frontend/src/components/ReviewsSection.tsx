@@ -59,32 +59,32 @@ export function ReviewsSection({ slug, isOwner }: { slug: string; isOwner: boole
   return (
     <section className="max-w-6xl mx-auto px-5 sm:px-6 md:px-12 py-10 sm:py-14">
       <div className="mb-8">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-signal mb-3">Feedback</p>
-        <h2 className="font-display text-3xl sm:text-4xl font-semibold text-ink tracking-tight">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#d6ff57] mb-3">Feedback</p>
+        <h2 className="font-display text-3xl sm:text-4xl font-semibold text-[#f1eee7] tracking-tight">
           Reviews
         </h2>
       </div>
 
       {user && !isOwner && (
-        <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-ink/5 p-5 sm:p-6 mb-8">
+        <form onSubmit={handleSubmit} className="bg-[#171714] rounded-2xl border border-white/10 p-5 sm:p-6 mb-8 shadow-sm">
           {success ? (
-            <p className="text-sm text-ink/60">Thanks — your review is up.</p>
+            <p className="text-sm text-white/65">Thanks — your review is up.</p>
           ) : (
             <>
-              <p className="text-sm font-medium text-ink mb-3">Leave a review</p>
-              <StarRating value={rating} onChange={setRating} size="lg" />
+              <p className="text-sm font-medium text-[#f1eee7] mb-3">Leave a review</p>
+              <StarRating value={rating} onChange={setRating} size="lg" tone="dark" />
               <textarea
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
                 placeholder="Share how it went (optional)"
                 rows={3}
-                className="w-full mt-4 bg-paper border border-ink/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-ink/30 transition-colors resize-none"
+                className="w-full mt-4 bg-[#11110f] border border-white/15 rounded-xl px-4 py-3 text-sm text-[#f1eee7] placeholder:text-white/35 outline-none focus:border-[#d6ff57]/70 transition-colors resize-none"
               />
               {error && <p className="text-signal text-sm mt-2">{error}</p>}
               <button
                 type="submit"
                 disabled={submitting}
-                className="mt-3 inline-flex items-center gap-2 bg-ink text-paper font-medium px-5 py-2.5 rounded-full text-sm hover:bg-ink/90 transition-colors disabled:opacity-50"
+                className="mt-3 inline-flex items-center gap-2 bg-[#d6ff57] text-[#11110f] font-semibold px-5 py-2.5 rounded-full text-sm hover:bg-[#ecffad] transition-colors disabled:opacity-50"
               >
                 {submitting && <Loader2 className="w-4 h-4 animate-spin" strokeWidth={2} />}
                 Submit review
@@ -96,27 +96,27 @@ export function ReviewsSection({ slug, isOwner }: { slug: string; isOwner: boole
 
       {loading ? (
         <div className="py-10 text-center">
-          <div className="w-6 h-6 border-2 border-ink/10 border-t-signal rounded-full animate-spin mx-auto" />
+          <div className="w-6 h-6 border-2 border-white/15 border-t-[#d6ff57] rounded-full animate-spin mx-auto" />
         </div>
       ) : reviews.length === 0 ? (
-        <div className="py-12 text-center bg-white rounded-2xl border border-ink/5">
-          <div className="w-12 h-12 rounded-full bg-ink/5 flex items-center justify-center mx-auto mb-3">
-            <MessageSquare className="w-5 h-5 text-ink/20" strokeWidth={1.5} />
+        <div className="py-12 text-center bg-[#171714] rounded-2xl border border-white/10">
+          <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-3">
+            <MessageSquare className="w-5 h-5 text-white/35" strokeWidth={1.5} />
           </div>
-          <p className="text-ink/40 text-sm">No reviews yet.</p>
+          <p className="text-white/50 text-sm">No reviews yet.</p>
         </div>
       ) : (
         <div className="grid sm:grid-cols-2 gap-4">
           {reviews.map((r) => (
-            <div key={r.id} className="bg-white rounded-2xl border border-ink/5 p-5">
+            <div key={r.id} className="bg-[#171714] rounded-2xl border border-white/10 p-5 hover:border-white/20 transition-colors">
               <div className="flex items-center justify-between mb-2">
-                <StarRating value={r.rating} size="sm" />
-                <span className="text-xs text-ink/30 font-mono">
+                <StarRating value={r.rating} size="sm" tone="dark" />
+                <span className="text-xs text-white/35 font-mono">
                   {new Date(r.created_at).toLocaleDateString()}
                 </span>
               </div>
-              {r.body && <p className="text-sm text-ink/60 leading-relaxed mb-2">{r.body}</p>}
-              <p className="text-xs text-ink/30">— {r.customer_name || "Anonymous"}</p>
+              {r.body && <p className="text-sm text-white/65 leading-relaxed mb-2">{r.body}</p>}
+              <p className="text-xs text-white/40">— {r.customer_name || "Anonymous"}</p>
             </div>
           ))}
         </div>
