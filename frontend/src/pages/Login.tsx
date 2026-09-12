@@ -35,7 +35,7 @@ export function Login() {
       footer={
         <>
           Don't have an account?{" "}
-          <Link to="/signup" className="font-medium text-[#2E8B72] hover:text-[#206653] transition-colors inline-flex items-center gap-1">
+          <Link to="/signup" className="font-semibold text-[#d6ff57] hover:text-[#ecffad] transition-colors inline-flex items-center gap-1">
             Sign up <ArrowUpRight className="w-3 h-3" strokeWidth={2} />
           </Link>
         </>
@@ -43,15 +43,15 @@ export function Login() {
     >
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
         {error && (
-          <div className="bg-[#f7dfd9] border border-[#C94F36]/25 rounded-xl px-4 py-3">
-            <p className="text-signal text-sm font-medium">{error}</p>
+          <div className="border-l-2 border-[#ca5b42] bg-[#ca5b42]/10 px-4 py-3">
+            <p className="text-[#f1eee7] text-sm font-medium">{error}</p>
           </div>
         )}
 
         <div>
-          <label className="block text-xs uppercase tracking-[0.2em] text-ink/55 mb-2">Email</label>
+          <label className="block text-xs uppercase tracking-[0.2em] text-white/50 mb-2">Email</label>
           <input
-            className="w-full bg-white border border-ink/15 rounded-xl px-5 py-4 text-paper placeholder:text-ink/35 outline-none focus:border-[#2E8B72] focus:bg-white transition-all"
+            className="auth-input"
             placeholder="you@example.com"
             type="email"
             value={email}
@@ -61,15 +61,15 @@ export function Login() {
         </div>
 
         <div>
-          <label className="block text-xs uppercase tracking-[0.2em] text-ink/55 mb-2">Password</label>
+          <label className="block text-xs uppercase tracking-[0.2em] text-white/50 mb-2">Password</label>
           <PasswordInput value={password} onChange={setPassword} />
         </div>
 
         <div className="flex items-center justify-between text-sm">
-          <label className="flex items-center gap-2 text-ink/55 cursor-pointer group">
-            <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${remember ? 'bg-signal border-signal' : 'border-paper/20 group-hover:border-paper/40'}`}>
+          <label className="flex items-center gap-2 text-white/60 cursor-pointer group">
+            <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${remember ? 'bg-[#d6ff57] border-[#d6ff57]' : 'border-white/25 group-hover:border-white/50'}`}>
               {remember && (
-                <svg className="w-3 h-3 text-ink" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                <svg className="w-3 h-3 text-[#11110f]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
               )}
@@ -77,11 +77,11 @@ export function Login() {
             <input type="checkbox" className="hidden" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
             <span>Remember me</span>
           </label>
-          <Link to="/forgot-password" className="text-ink/50 hover:text-signal transition-colors">Forgot password?</Link>
+          <Link to="/forgot-password" className="text-white/55 hover:text-[#d6ff57] transition-colors">Forgot password?</Link>
         </div>
 
         <button
-          className="w-full bg-[#2E8B72] text-paper font-semibold py-4 rounded-xl hover:bg-[#206653] transition-colors flex items-center justify-center gap-2 mt-2"
+          className="w-full bg-[#d6ff57] text-[#11110f] font-semibold py-4 hover:bg-[#ecffad] transition-colors flex items-center justify-center gap-2 mt-2"
           type="submit"
           disabled={loading}
         >

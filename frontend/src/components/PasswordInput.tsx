@@ -6,7 +6,7 @@ export function PasswordInput({ value, onChange, placeholder = "Password" }: { v
   return (
     <div className="relative">
       <input
-        className="input-field pr-11"
+        className="auth-input pr-11"
         type={visible ? "text" : "password"}
         placeholder={placeholder}
         value={value}
@@ -17,7 +17,7 @@ export function PasswordInput({ value, onChange, placeholder = "Password" }: { v
       <button
         type="button"
         onClick={() => setVisible((v) => !v)}
-        className="absolute right-3 top-1/2 -translate-y-1/2 text-charcoal/60 hover:text-charcoal"
+        className="auth-control absolute right-3 top-1/2 -translate-y-1/2 text-white/50 hover:text-[#d6ff57]"
         aria-label={visible ? "Hide password" : "Show password"}
       >
         {visible ? <EyeOff size={18} /> : <Eye size={18} />}

@@ -1,8 +1,11 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import {
   Camera,
   ChevronDown,
+  LayoutDashboard,
+  LogOut,
   Menu,
   Scissors,
   Search as SearchIcon,
@@ -127,6 +130,7 @@ const footerColumns = [
 
 export function Landing() {
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const [query, setQuery] = useState("");
   const [city, setCity] = useState("Lagos");
   const [scrolled, setScrolled] = useState(false);
@@ -224,15 +228,7 @@ export function Landing() {
             </Link>
           </nav>
           <div className="hidden items-center gap-4 text-sm md:flex">
-            <Link to="/login" className="text-white/70 transition-colors hover:text-white">
-              Sign in
-            </Link>
-            <Link
-              to="/signup"
-              className="rounded-full bg-[#d6ff57] px-4 py-2 font-semibold text-[#11110f] transition-colors hover:bg-[#ecffad]"
-            >
-              Create a store
-            </Link>
+            {user ? <><Link to="/dashboard" className="inline-flex items-center gap-2 text-white/70 transition-colors hover:text-white"><LayoutDashboard className="h-4 w-4" />Dashboard</Link><button onClick={logout} className="inline-flex items-center gap-2 text-white/70 transition-colors hover:text-white"><LogOut className="h-4 w-4" />Log out</button></> : <><Link to="/login" className="text-white/70 transition-colors hover:text-white">Sign in</Link><Link to="/signup" className="rounded-full bg-[#d6ff57] px-4 py-2 font-semibold text-[#11110f] transition-colors hover:bg-[#ecffad]">Create a store</Link></>}
           </div>
           <button
             onClick={() => setMobileOpen((open) => !open)}
@@ -256,15 +252,7 @@ export function Landing() {
                 About BRIDGE
               </Link>
               <div className="mt-2 flex items-center gap-4 border-t border-white/10 pt-4">
-                <Link to="/login" className="text-white/70">
-                  Sign in
-                </Link>
-                <Link
-                  to="/signup"
-                  className="rounded-full bg-[#d6ff57] px-4 py-2 font-semibold text-[#11110f]"
-                >
-                  Create a store
-                </Link>
+                {user ? <><Link to="/dashboard" onClick={() => setMobileOpen(false)} className="inline-flex items-center gap-2 text-white/70"><LayoutDashboard className="h-4 w-4" />Dashboard</Link><button onClick={logout} className="inline-flex items-center gap-2 text-white/70"><LogOut className="h-4 w-4" />Log out</button></> : <><Link to="/login" className="text-white/70">Sign in</Link><Link to="/signup" className="rounded-full bg-[#d6ff57] px-4 py-2 font-semibold text-[#11110f]">Create a store</Link></>}
               </div>
             </div>
           </div>

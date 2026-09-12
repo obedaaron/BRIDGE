@@ -1,31 +1,22 @@
 import type { ReactNode } from "react";
-import { Building2, CheckCircle2, MapPin } from "lucide-react";
 import { BrandLink } from "./BrandLink";
 
 export function AuthLayout({ title, subtitle, children, footer }: { title: string; subtitle: string; children: ReactNode; footer: ReactNode }) {
   return (
-    <div className="min-h-screen bg-[#f4ede2] text-ink font-body">
-      <div className="mx-auto grid min-h-screen max-w-7xl md:grid-cols-[0.9fr_1.1fr] md:border-x md:border-ink/10">
-        <section className="flex flex-col px-5 py-5 sm:px-8 md:min-h-screen md:border-r md:border-ink/10 md:px-12 md:py-10">
-          <BrandLink />
-          <div className="my-auto max-w-md py-12 md:py-16">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#2E8B72]">BRIDGE account</p>
-            <h1 className="mt-4 font-display text-4xl font-semibold leading-[0.96] tracking-tight sm:text-5xl">{title}</h1>
-            <p className="mt-5 text-base leading-relaxed text-ink/60">{subtitle}</p>
-            <div className="mt-9 border border-ink/15 bg-paper p-5 sm:p-6">{children}</div>
-            <div className="mt-6 text-sm text-ink/55">{footer}</div>
-          </div>
+    <div className="min-h-screen bg-[#11110f] font-body text-[#f1eee7]">
+      <style>{`
+        .auth-input { width: 100%; border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.055); padding: 1rem 1.1rem; color: #f1eee7; outline: none; transition: border-color .2s ease, background-color .2s ease; }
+        .auth-input::placeholder { color: rgba(255,255,255,.38); }
+        .auth-input:focus { border-color: #d6ff57; background: rgba(255,255,255,.08); }
+        .auth-input:focus-visible, .auth-control:focus-visible { outline: 2px solid #d6ff57; outline-offset: 3px; }
+      `}</style>
+      <div className="mx-auto grid min-h-screen max-w-[1440px] border-x border-white/15 lg:grid-cols-[0.94fr_1.06fr]">
+        <section className="flex min-h-screen flex-col px-5 py-6 sm:px-8 lg:px-12 lg:py-10">
+          <div><BrandLink tone="paper" /></div>
+          <div className="my-auto max-w-md py-12 sm:py-16 lg:py-20"><p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#d6ff57]">BRIDGE account</p><h1 className="mt-5 font-display text-4xl font-semibold leading-[0.9] tracking-[-0.07em] sm:text-6xl">{title}</h1><p className="mt-6 max-w-sm leading-relaxed text-white/60">{subtitle}</p><div className="mt-10 border-t border-white/15 pt-7">{children}</div><div className="mt-7 border-t border-white/10 pt-5 text-sm text-white/55">{footer}</div></div>
+          <p className="text-xs text-white/35">BRIDGE. Built for local business.</p>
         </section>
-        <aside className="hidden bg-[#2E8B72] p-12 text-paper md:flex md:flex-col md:justify-between">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#E5B35C]">Local business, clearly connected</p>
-          <div>
-            <h2 className="max-w-md font-display text-5xl font-semibold leading-[1.02] tracking-tight">A straightforward place to run your business online.</h2>
-            <div className="mt-12 grid gap-px border border-paper/20 bg-paper/20 sm:grid-cols-3">
-              {[{ icon: Building2, label: "Storefront" }, { icon: CheckCircle2, label: "Trust" }, { icon: MapPin, label: "Reach" }].map(({ icon: Icon, label }) => <div key={label} className="bg-[#2E8B72] p-5"><Icon className="h-5 w-5 text-[#E5B35C]" /><p className="mt-8 text-sm font-semibold">{label}</p></div>)}
-            </div>
-          </div>
-          <p className="max-w-sm text-sm leading-relaxed text-paper/60">Create a storefront, keep it up to date, and give customers the information they need to choose you.</p>
-        </aside>
+        <aside className="relative hidden overflow-hidden border-l border-white/15 bg-[#d6ff57] p-12 text-[#11110f] lg:flex lg:flex-col lg:justify-between"><div className="absolute -right-24 -top-20 h-80 w-80 rounded-full border-[32px] border-[#11110f]/10" /><div className="relative"><p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#11110f]/55">A clear front door for your work</p><h2 className="mt-6 max-w-xl font-display text-6xl font-semibold leading-[0.82] tracking-[-0.08em]">Make it easy for the right people to find you.</h2></div><div className="relative grid grid-cols-3 border border-[#11110f]/20"><div className="border-r border-[#11110f]/20 p-5"><span className="text-xs font-semibold uppercase tracking-[0.15em]">01</span><p className="mt-12 font-display text-2xl font-semibold leading-none">Show up</p></div><div className="border-r border-[#11110f]/20 p-5"><span className="text-xs font-semibold uppercase tracking-[0.15em]">02</span><p className="mt-12 font-display text-2xl font-semibold leading-none">Be clear</p></div><div className="p-5"><span className="text-xs font-semibold uppercase tracking-[0.15em]">03</span><p className="mt-12 font-display text-2xl font-semibold leading-none">Get chosen</p></div></div><p className="relative max-w-sm text-sm leading-relaxed text-[#11110f]/65">Set up your storefront once, then keep the work, details, and customer conversations in one place.</p></aside>
       </div>
     </div>
   );
