@@ -5,6 +5,7 @@ import { DashboardLayout } from "../../components/DashboardLayout";
 import { CategorySelect } from "../../components/CategorySelect";
 import { LogoUpload } from "../../components/LogoUpload";
 import { AddressPicker } from "../../components/AddressPicker";
+import { SearchSelect } from "../../components/SearchSelect";
 import { NIGERIAN_STATES } from "../../lib/states";
 import { ArrowUpRight, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 
@@ -22,6 +23,7 @@ export function Settings() {
   const [deliveryFee, setDeliveryFee] = useState("");
   const [storefront, setStorefront] = useState({ coverUrl: "", accentColor: "#e8d44d", layout: "classic" });
   const [savingStorefront, setSavingStorefront] = useState(false);
+  const [galleryUrls, setGalleryUrls] = useState<string[]>([]);
   const [banks, setBanks] = useState<{ name: string; code: string }[]>([]);
   const [payout, setPayout] = useState({ bankCode: "", accountNumber: "" });
   const [bankSearch, setBankSearch] = useState("");
@@ -57,6 +59,7 @@ export function Settings() {
         setStorefront({ coverUrl: data.vendor.storefront_cover_url || "", accentColor: data.vendor.storefront_accent_color || "#e8d44d", layout: data.vendor.storefront_layout || "classic" });
       }
     });
+    apiFetch("/vendors/me/storefront/gallery").then((data) => setGalleryUrls(data.gallery.map((image: { image_url: string }) => image.image_url))).catch(() => undefined);
     apiFetch("/subscriptions/mine").then((data) => setPlanTier(data.tier || "free")).catch(() => undefined);
     apiFetch("/vendors/me/payout-account").then((data) => setSavedPayout(data.account)).catch(() => undefined);
     loadBanks();
@@ -83,7 +86,7 @@ export function Settings() {
     try {
       await Promise.all([
         apiFetch("/vendors/me/delivery", { method: "PATCH", body: JSON.stringify({ outOfCityDeliveryFeeNaira: Number(deliveryFee || 0) }) }),
-        planTier === "free" ? Promise.resolve() : apiFetch("/vendors/me/storefront", { method: "PATCH", body: JSON.stringify(storefront) }),
+        planTier === "free" ? Promise.resolve() : Promise.all([apiFetch("/vendors/me/storefront", { method: "PATCH", body: JSON.stringify(storefront) }), apiFetch("/vendors/me/storefront/gallery", { method: "PUT", body: JSON.stringify({ images: galleryUrls }) })]),
       ]);
       setSaved(true); setTimeout(() => setSaved(false), 3000);
     } catch (err: any) { setError(err.message); } finally { setSavingStorefront(false); }
@@ -187,16 +190,7 @@ export function Settings() {
 
             <div>
               <label className="block text-xs uppercase tracking-[0.2em] text-ink/40 mb-2">State</label>
-              <select
-                className="w-full bg-ink/5 border border-ink/10 rounded-xl px-5 py-4 text-ink outline-none focus:border-[#2E8B72]/50 focus:bg-ink/[0.07] transition-all appearance-none"
-                value={form.state}
-                onChange={(e) => setForm({ ...form, state: e.target.value })}
-              >
-                <option value="">Select state</option>
-                {NIGERIAN_STATES.map((s) => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
-              </select>
+              <SearchSelect value={form.state} onChange={(state) => setForm({ ...form, state })} options={NIGERIAN_STATES.map((state) => ({ value: state, label: state }))} placeholder="Search for a state" />
             </div>
 
             <div className="sm:col-span-2">
@@ -235,7 +229,7 @@ export function Settings() {
           <h2 className="font-display text-2xl font-semibold">Set your delivery rate and look.</h2>
           <form onSubmit={saveStorefront} className="mt-5 grid sm:grid-cols-2 gap-4">
             <div className="sm:col-span-2"><label className="block text-xs uppercase tracking-[0.2em] text-ink/40 mb-2">Out-of-city delivery fee (₦)</label><input type="number" min="0" value={deliveryFee} onChange={(e) => setDeliveryFee(e.target.value)} className="input-field w-full" placeholder="0" /><p className="text-xs text-ink/40 mt-2">BRIDGE automatically charges ₦1,500 for delivery within your city. This fee applies outside it.</p></div>
-            {planTier === "free" ? <p className="sm:col-span-2 text-sm text-ink/50 bg-ink/5 rounded-xl p-4">Your Free plan includes your logo and store details. Upgrade to Standard or Premium to add a cover, colours, and layout.</p> : <><div className="sm:col-span-2"><LogoUpload label="Store cover image" emptyLabel="No cover image" value={storefront.coverUrl} onChange={(coverUrl) => setStorefront({ ...storefront, coverUrl })} /></div><label className="text-sm text-ink/60">Accent colour<input type="color" value={storefront.accentColor} onChange={(e) => setStorefront({ ...storefront, accentColor: e.target.value })} className="block mt-2 h-11 w-full" /></label><label className="text-sm text-ink/60">Storefront layout<select value={storefront.layout} onChange={(e) => setStorefront({ ...storefront, layout: e.target.value })} className="input-field w-full mt-2"><option value="classic">Classic</option><option value="modern">Modern</option><option value="minimal">Minimal</option></select></label></>}
+            {planTier === "free" ? <p className="sm:col-span-2 text-sm text-ink/50 bg-ink/5 rounded-xl p-4">Your Free plan includes your logo and store details. Upgrade to Standard or Premium to add a cover, colours, and layout.</p> : <><div className="sm:col-span-2"><LogoUpload label="Store cover image" emptyLabel="No cover image" value={storefront.coverUrl} onChange={(coverUrl) => setStorefront({ ...storefront, coverUrl })} /></div><label className="text-sm text-ink/60">Accent colour<input type="color" value={storefront.accentColor} onChange={(e) => setStorefront({ ...storefront, accentColor: e.target.value })} className="block mt-2 h-11 w-full" /></label><label className="text-sm text-ink/60">Storefront layout<select value={storefront.layout} onChange={(e) => setStorefront({ ...storefront, layout: e.target.value })} className="input-field w-full mt-2"><option value="classic">Classic</option><option value="modern">Modern</option><option value="minimal">Minimal</option></select></label><div className="sm:col-span-2"><p className="text-sm text-ink/60 mb-2">Gallery image links (up to 8)</p>{galleryUrls.map((url, index) => <div key={index} className="mb-2 flex gap-2"><input value={url} onChange={(e) => setGalleryUrls(galleryUrls.map((item, i) => i === index ? e.target.value : item))} className="input-field min-w-0 flex-1" placeholder="https://…" /><button type="button" onClick={() => setGalleryUrls(galleryUrls.filter((_, i) => i !== index))} className="px-3 text-sm text-[#C94F36]">Remove</button></div>)}{galleryUrls.length < 8 && <button type="button" onClick={() => setGalleryUrls([...galleryUrls, ""])} className="text-sm font-semibold text-[#2E8B72]">+ Add gallery image</button>}</div></>}
             <button disabled={savingStorefront} className="sm:col-span-2 w-full sm:w-auto justify-self-start bg-[#2E8B72] text-paper px-5 py-3 rounded-xl text-sm disabled:opacity-50">{savingStorefront ? "Saving…" : "Save delivery & storefront"}</button>
           </form>
         </section>

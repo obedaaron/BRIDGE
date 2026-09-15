@@ -18,6 +18,18 @@ router.get("/:slug", async (req, res) => {
     [vendor.id]
   );
 
+  const galleryResult = await pool.query(
+    "select id, image_url, position from vendor_storefront_gallery_images where vendor_id = $1 order by position asc",
+    [vendor.id]
+  );
+  // Store views are aggregated by day; no visitor identity is stored in this metric.
+  await pool.query(
+    `insert into vendor_storefront_daily_metrics (vendor_id, metric_date, store_views)
+     values ($1, current_date, 1)
+     on conflict (vendor_id, metric_date) do update set store_views = vendor_storefront_daily_metrics.store_views + 1`,
+    [vendor.id]
+  );
+
   const reviewsResult = await pool.query(
     `select r.id, r.rating, r.body, r.created_at, u.full_name as customer_name
      from reviews r
@@ -61,6 +73,7 @@ router.get("/:slug", async (req, res) => {
       gold_tick: goldTick,
     },
     listings: listingsResult.rows,
+    gallery: galleryResult.rows,
     reviews: reviewsResult.rows,
   });
 });

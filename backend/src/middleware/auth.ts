@@ -22,3 +22,10 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
     return res.status(401).json({ error: "Invalid or expired session" });
   }
 }
+export function optionalAuth(req: Request, _res: Response, next: NextFunction) {
+  const authHeader = req.headers.authorization;
+  if (authHeader?.startsWith("Bearer ")) {
+    try { req.user = verifyToken(authHeader.split(" ")[1]); } catch { /* anonymous browsing remains available */ }
+  }
+  next();
+}

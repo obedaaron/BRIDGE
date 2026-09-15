@@ -19,9 +19,9 @@ export function AdminLayout({ children }: { children: ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[#f4ede2] text-ink font-body">
+    <div className="admin-theme min-h-screen bg-[#11110f] text-[#f1eee7] font-body">
       {/* Mobile header */}
-      <div className="lg:hidden flex items-center justify-between px-5 py-4 border-b border-ink/10 bg-paper/95 backdrop-blur sticky top-0 z-40">
+      <div className="lg:hidden flex items-center justify-between px-5 py-4 border-b border-ink/10 bg-[#171714]/95 backdrop-blur sticky top-0 z-40">
         <BrandLink />
         <button onClick={() => setMobileOpen(!mobileOpen)} className="p-2 text-ink/60">
           {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -30,7 +30,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
 
       {/* Mobile nav overlay */}
       {mobileOpen && (
-        <div className="lg:hidden fixed inset-0 z-30 bg-[#2E8B72] text-paper pt-20 px-5 pb-8">
+        <div className="lg:hidden fixed inset-0 z-30 bg-[#171714] text-[#f1eee7] pt-20 px-5 pb-8">
           <nav className="flex flex-col gap-1">
             {navItems.map((item) => (
               <Link
@@ -38,7 +38,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
                 to={item.path}
                 onClick={() => setMobileOpen(false)}
                 className={`px-4 py-3 rounded-xl text-base font-medium transition ${
-                  location.pathname === item.path ? "bg-[#E5B35C] text-ink font-semibold" : "text-paper/60 hover:text-paper hover:bg-white/10"
+                  location.pathname === item.path ? "bg-[#d6ff57] text-[#11110f] font-semibold" : "text-white/60 hover:text-white hover:bg-white/10"
                 }`}
               >
                 {item.label}
@@ -54,9 +54,9 @@ export function AdminLayout({ children }: { children: ReactNode }) {
         </div>
       )}
 
-      <div className="hidden lg:flex min-h-screen">
+      <style>{`.admin-theme .bg-paper,.admin-theme .bg-white{background:#171714}.admin-theme .text-ink{color:#f1eee7}.admin-theme [class*="text-ink/"]{color:rgba(241,238,231,.6)}.admin-theme [class*="border-ink/"]{border-color:rgba(255,255,255,.15)}.admin-theme .input-field{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.16);color:#f1eee7}`}</style><div className="hidden lg:flex min-h-screen">
         {/* Sidebar */}
-        <aside className="w-64 bg-[#2E8B72] text-paper flex flex-col px-6 py-8 sticky top-0 h-screen">
+        <aside className="w-72 bg-[#171714] text-[#f1eee7] border-r border-white/15 flex flex-col px-6 py-8 sticky top-0 h-screen">
           <style>{`
             .sidebar-grain {
               background: transparent url('data:image/svg+xml,<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23n)" opacity="0.03"/></svg>');
@@ -77,8 +77,8 @@ export function AdminLayout({ children }: { children: ReactNode }) {
                     to={item.path}
                     className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
                       isActive
-                        ? "bg-[#E5B35C] text-ink font-semibold"
-                        : "text-paper/75 hover:text-paper hover:bg-white/10"
+                        ? "bg-[#d6ff57] text-[#11110f] font-semibold"
+                        : "text-white/65 hover:text-white hover:bg-white/10"
                     }`}
                   >
                     {item.label}
@@ -88,7 +88,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
             </nav>
 
             <div className="mt-auto pt-6 border-t border-white/10">
-              <button onClick={logout} className="inline-flex items-center gap-2 text-sm text-paper/55 hover:text-paper transition-colors">
+              <button onClick={logout} className="inline-flex items-center gap-2 text-sm text-white/55 hover:text-white transition-colors">
                 <LogOut className="w-4 h-4" strokeWidth={1.5} />
                 Log out
               </button>

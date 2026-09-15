@@ -7,6 +7,7 @@ import { SignboardTag } from "../components/SignboardTag";
 import { CategorySelect } from "../components/CategorySelect";
 import { LogoUpload } from "../components/LogoUpload";
 import { AddressPicker } from "../components/AddressPicker";
+import { SearchSelect } from "../components/SearchSelect";
 import { NIGERIAN_STATES } from "../lib/states";
 import {
   ArrowUpRight, Copy, Eye, Globe, Power, Loader2, Link2, AlertCircle
@@ -179,16 +180,7 @@ export function VendorDashboard() {
 
               <div>
                 <label className="block text-xs uppercase tracking-[0.2em] text-ink/40 mb-2">State</label>
-                <select
-                  className="w-full bg-ink/5 border border-ink/10 rounded-xl px-5 py-4 text-ink outline-none focus:border-signal/50 focus:bg-ink/[0.07] transition-all appearance-none"
-                  value={form.state}
-                  onChange={(e) => setForm({ ...form, state: e.target.value })}
-                >
-                  <option value="">Select state</option>
-                  {NIGERIAN_STATES.map((s) => (
-                    <option key={s} value={s}>{s}</option>
-                  ))}
-                </select>
+                <SearchSelect value={form.state} onChange={(state) => setForm({ ...form, state })} options={NIGERIAN_STATES.map((state) => ({ value: state, label: state }))} placeholder="Search for a state" />
               </div>
 
               <div className="sm:col-span-2">

@@ -30,6 +30,8 @@ import { Promotions } from "./pages/dashboard/Promotions";
 import { CompanyPage, ContactPage } from "./pages/Company";
 import { NotFound } from "./pages/NotFound";
 import { ResetPassword } from "./pages/ResetPassword";
+import { BridgeAssistant } from "./components/BridgeAssistant";
+import { Analytics } from "./pages/dashboard/Analytics";
 
 export default function App() {
   return (
@@ -73,6 +75,7 @@ export default function App() {
           <Route path="/dashboard/plans" element={<ProtectedRoute><Plans /></ProtectedRoute>} />
           <Route path="/dashboard/wallet" element={<ProtectedRoute><Wallet /></ProtectedRoute>} />
           <Route path="/dashboard/promotions" element={<ProtectedRoute><Promotions /></ProtectedRoute>} />
+          <Route path="/dashboard/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
 
           {/* Admin */}
           <Route path="/admin" element={<AdminRoute><AdminOverview /></AdminRoute>} />
@@ -83,6 +86,7 @@ export default function App() {
           <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
+        <BridgeAssistant />
       </CartProvider>
       </AuthProvider>
     </BrowserRouter>

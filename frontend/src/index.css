@@ -81,3 +81,8 @@ button, input, select, textarea {
 @media (max-width: 640px) {
   h1 { letter-spacing: -0.035em; }
 }
+@media (prefers-reduced-motion: no-preference) {
+  button, a[role="button"], .btn-primary, .btn-secondary, .btn-dark { transition: transform .16s ease, box-shadow .16s ease, background-color .2s ease, border-color .2s ease; }
+  button:active, a[role="button"]:active, .btn-primary:active, .btn-secondary:active, .btn-dark:active { transform: scale(.97); }
+  button:not(:disabled):hover, .btn-primary:hover, .btn-secondary:hover, .btn-dark:hover { transform: translateY(-1px); }
+}

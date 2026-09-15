@@ -18,6 +18,8 @@ import subscriptionRoutes from "./routes/subscriptions";
 import uploadRoutes from "./routes/uploads";
 import walletRoutes from "./routes/wallet";
 import promotionRoutes from "./routes/promotions";
+import analyticsRoutes from "./routes/analytics";
+import recommendationRoutes from "./routes/recommendations";
 
 const app = express();
 app.use(cors());
@@ -44,6 +46,8 @@ app.use("/subscriptions", subscriptionRoutes);
 app.use("/uploads", uploadRoutes);
 app.use("/wallet", walletRoutes);
 app.use("/promotions", promotionRoutes);
+app.use("/analytics", analyticsRoutes);
+app.use("/recommendations", recommendationRoutes);
 
 app.use((_req, res) => res.status(404).json({ error: "API route not found" }));
 

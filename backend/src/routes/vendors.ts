@@ -171,4 +171,30 @@ router.patch("/me/storefront", requireAuth, async (req, res) => {
   const result = await pool.query("update vendors set storefront_cover_url = $1, storefront_accent_color = $2, storefront_layout = $3 where id = $4 returning storefront_cover_url, storefront_accent_color, storefront_layout", [coverUrl || null, accentColor, layout, vendor.id]);
   res.json({ storefront: result.rows[0] });
 });
+
+router.get("/me/storefront/gallery", requireAuth, async (req, res) => {
+  const result = await pool.query("select id, image_url, position from vendor_storefront_gallery_images where vendor_id = (select id from vendors where user_id = $1) order by position", [req.user!.userId]);
+  res.json({ gallery: result.rows });
+});
+router.put("/me/storefront/gallery", requireAuth, async (req, res) => {
+  const vendorResult = await pool.query("select id from vendors where user_id = $1", [req.user!.userId]);
+  const vendor = vendorResult.rows[0];
+  if (!vendor) return res.status(404).json({ error: "No store found" });
+  const plan = await getVendorPlan(vendor.id);
+  if (plan.tier === "free") return res.status(403).json({ error: "Storefront galleries are available on Standard and Premium." });
+  const urls = Array.isArray(req.body.images) ? req.body.images : [];
+  if (urls.length > 8) return res.status(400).json({ error: "You can add up to 8 gallery images." });
+  const images: string[] = urls.filter((url: unknown): url is string => typeof url === "string" && url.trim().length > 0).map((url: string) => url.trim());
+  const client = await pool.connect();
+  try {
+    await client.query("begin");
+    await client.query("delete from vendor_storefront_gallery_images where vendor_id = $1", [vendor.id]);
+    for (const [position, imageUrl] of images.entries()) await client.query("insert into vendor_storefront_gallery_images (vendor_id, image_url, position) values ($1, $2, $3)", [vendor.id, imageUrl, position]);
+    await client.query("commit");
+    res.json({ gallery: images.map((image_url: string, position: number) => ({ image_url, position })) });
+  } catch (err) {
+    await client.query("rollback"); console.error(err);
+    res.status(500).json({ error: "Failed to save storefront gallery" });
+  } finally { client.release(); }
+});
 export default router;

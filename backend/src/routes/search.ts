@@ -1,16 +1,19 @@
 import { Router } from "express";
 import { pool } from "../db";
 import { expireUnverifiedPublishedStores } from "../services/publishGrace";
+import { optionalAuth } from "../middleware/auth";
 
 const router = Router();
 
-router.get("/", async (req, res) => {
+router.get("/", optionalAuth, async (req, res) => {
   await expireUnverifiedPublishedStores();
   const { category, city, q } = req.query;
   const lat = Number(req.query.lat);
   const lng = Number(req.query.lng);
   const hasLocation = Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
 
+  const interest = typeof q === "string" ? q.trim().toLowerCase().slice(0, 120) : "";
+  if (req.user && interest.length >= 2) await pool.query("insert into user_marketplace_interests (user_id, interest_key, weight, last_seen_at) values ($1, $2, 1, now()) on conflict (user_id, interest_key) do update set weight = least(user_marketplace_interests.weight + 1, 20), last_seen_at = now()", [req.user.userId, interest]);
   const result = await pool.query(
     `select distinct v.id, v.business_name, v.slug, v.description, v.city, v.state,
             v.verification_status, v.logo_url, v.created_at,
