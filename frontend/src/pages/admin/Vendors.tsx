@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import { apiFetch } from "../../lib/api";
 import { AdminLayout } from "../../components/AdminLayout";
 import { SignboardTag } from "../../components/SignboardTag";
-import { Eye, Power, Store, MapPin, Loader2 } from "lucide-react";
+import { BridgeLoader } from "../../components/BridgeLoader";
+import { Eye, Power, Store, MapPin } from "lucide-react";
 
 interface Vendor {
   id: string;
@@ -56,10 +57,7 @@ export function AdminVendors() {
 
         {/* List */}
         {loading ? (
-          <div className="py-20 text-center">
-            <Loader2 className="w-6 h-6 text-ink/20 animate-spin mx-auto mb-3" strokeWidth={1.5} />
-            <p className="text-ink/30 text-sm">Loading vendors...</p>
-          </div>
+          <BridgeLoader label="Loading vendors" />
         ) : vendors.length === 0 ? (
           <div className="py-20 text-center bg-paper border border-ink/15 rounded-none border border-ink/5">
             <div className="w-16 h-16 rounded-full bg-ink/5 flex items-center justify-center mx-auto mb-4">

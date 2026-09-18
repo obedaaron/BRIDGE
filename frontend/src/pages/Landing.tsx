@@ -326,7 +326,7 @@ export function Landing() {
 
           <div className="relative z-10">
             <p className="mb-6 text-xs font-semibold uppercase tracking-[0.2em] text-[#d6ff57]">
-              Built for local business
+              Built for local businessess
             </p>
             <h1 className="max-w-6xl font-display text-[clamp(3.2rem,8.5vw,8.5rem)] font-semibold leading-[0.85] tracking-[-0.07em]">
               Find the people who know the work.

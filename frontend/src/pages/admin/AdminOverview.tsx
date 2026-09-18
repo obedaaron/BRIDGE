@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { AdminLayout } from "../../components/AdminLayout";
 import { apiFetch } from "../../lib/api";
+import { BridgeLoader } from "../../components/BridgeLoader";
 import {
   Store, Users, TrendingUp, Eye, Clock,
   ArrowUpRight, CheckCircle2, AlertCircle
@@ -48,10 +49,7 @@ export function AdminOverview() {
     return (
       <AdminLayout>
         <div className="min-h-[60vh] flex items-center justify-center">
-          <div className="flex flex-col items-center gap-3">
-            <div className="w-6 h-6 border-2 border-ink/10 border-t-signal rounded-full animate-spin" />
-            <p className="text-ink/30 text-sm">Loading dashboard...</p>
-          </div>
+          <BridgeLoader label="Loading admin dashboard" />
         </div>
       </AdminLayout>
     );

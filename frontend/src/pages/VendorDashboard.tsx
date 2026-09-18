@@ -8,6 +8,7 @@ import { CategorySelect } from "../components/CategorySelect";
 import { LogoUpload } from "../components/LogoUpload";
 import { AddressPicker } from "../components/AddressPicker";
 import { SearchSelect } from "../components/SearchSelect";
+import { BridgeLoader } from "../components/BridgeLoader";
 import { NIGERIAN_STATES } from "../lib/states";
 import {
   ArrowUpRight, Copy, Eye, Globe, Power, Loader2, Link2, AlertCircle
@@ -96,10 +97,7 @@ export function VendorDashboard() {
     return (
       <DashboardLayout>
         <div className="min-h-[60vh] flex items-center justify-center">
-          <div className="flex flex-col items-center gap-3">
-            <Loader2 className="w-6 h-6 text-ink/20 animate-spin" strokeWidth={1.5} />
-            <p className="text-ink/30 text-sm">Loading your store...</p>
-          </div>
+          <BridgeLoader label="Loading your store" />
         </div>
       </DashboardLayout>
     );

@@ -86,3 +86,18 @@ button, input, select, textarea {
   button:active, a[role="button"]:active, .btn-primary:active, .btn-secondary:active, .btn-dark:active { transform: scale(.97); }
   button:not(:disabled):hover, .btn-primary:hover, .btn-secondary:hover, .btn-dark:hover { transform: translateY(-1px); }
 }
+@keyframes bridge-loader-orbit {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes bridge-loader-pulse {
+  0%, 100% { transform: scale(.9); opacity: .72; }
+  50% { transform: scale(1); opacity: 1; }
+}
+
+.bridge-loader-orbit { animation: bridge-loader-orbit 1.05s linear infinite; }
+.bridge-loader-mark { animation: bridge-loader-pulse 1.45s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .bridge-loader-orbit, .bridge-loader-mark { animation: none; }
+}
