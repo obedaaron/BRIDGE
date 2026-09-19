@@ -6,8 +6,9 @@ import { useAuth } from "../context/AuthContext";
 import { ArrowLeft, Check, ClipboardCheck, LayoutDashboard, Moon, Send, ShieldCheck, Sun, X } from "lucide-react";
 import { useBridgeTheme } from "../lib/theme";
 
-interface Message { id: string; sender_id: string; body: string; }
+interface Message { id: string; sender_id: string; body: string; created_at: string; }
 interface Order { id: string; title: string; description: string | null; amount_kobo: number; buyer_total_kobo?: number; platform_fee_kobo?: number; processing_fee_kobo?: number; currency: string; delivery_terms: string | null; status: string; }
+const messageTime = (value: string) => new Date(value).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 const statusStyle: Record<string, string> = { proposed: "bg-gold/15 text-[var(--message-text)]", accepted: "bg-[#dce9df]/15 text-[var(--message-text)]", payment_pending: "bg-gold/15 text-[var(--message-text)]", paid: "bg-[#dce9df]/15 text-[var(--message-text)]", in_progress: "bg-ink/10 text-[var(--message-text)]", delivered: "bg-[#dce9df]/15 text-[var(--message-text)]", completed: "bg-[#dce9df]/20 text-[var(--message-text)]", rejected: "bg-[var(--message-soft)] text-[var(--message-muted)]", cancelled: "bg-[var(--message-soft)] text-[var(--message-muted)]", refunded: "bg-[var(--message-soft)] text-[var(--message-muted)]", disputed: "bg-[#dce9df]/20 text-[var(--message-text)]" };
 
 export function Conversation() {
@@ -107,7 +108,7 @@ export function Conversation() {
       </div>)}
     </div>
 
-    <div className="flex-1 max-w-2xl w-full mx-auto px-6 py-8 overflow-y-auto flex flex-col gap-3">{messages.map((m) => <div key={m.id} className={`max-w-[75%] px-4 py-2.5 rounded-2xl text-sm ${m.sender_id === user?.id ? "self-end bg-[#2E8B72] text-paper" : "self-start bg-[var(--message-soft)] text-[var(--message-text)]"}`}>{m.body}</div>)}<div ref={bottomRef} /></div>
+    <div className="flex-1 max-w-2xl w-full mx-auto px-6 py-8 overflow-y-auto flex flex-col gap-3">{messages.map((m) => <div key={m.id} className={`max-w-[75%] px-4 py-2.5 rounded-2xl text-sm ${m.sender_id === user?.id ? "self-end bg-[#2E8B72] text-paper" : "self-start bg-[var(--message-soft)] text-[var(--message-text)]"}`}><p>{m.body}</p><time className={`mt-1 block text-[10px] ${m.sender_id === user?.id ? "text-paper/65" : "text-[var(--message-muted)]"}`}>{messageTime(m.created_at)}</time></div>)}<div ref={bottomRef} /></div>
     <form onSubmit={handleSend} className="border-t border-[var(--message-line)] px-6 md:px-12 py-4 flex gap-3 max-w-2xl w-full mx-auto"><input className="flex-1 rounded-xl border border-[var(--message-line)] bg-[var(--message-soft)] px-4 py-3 text-sm text-[var(--message-text)] outline-none" placeholder="Type a message..." value={body} onChange={(e) => setBody(e.target.value)} /><button className="btn-primary px-4" type="submit" disabled={sending}><Send className="w-4 h-4" /></button></form>
   </div>;
 }
