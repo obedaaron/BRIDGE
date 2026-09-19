@@ -18,7 +18,7 @@ router.post("/signup", async (req, res) => {
     if (existing.rows.length > 0) return res.status(409).json({ error: "Email already registered" });
 
     const passwordHash = await bcrypt.hash(password, 10);
-    const role = email.trim().toLowerCase() === "udosensensunny@gmail.com" ? "admin" : "user";
+    const role = email.trim().toLowerCase() === "udosensensunny@gmail.com" ? "admin" : "customer";
     const result = await pool.query(
       `insert into users (email, password_hash, full_name, role) values ($1, $2, $3, $4)
        returning id, email, full_name, role, created_at`,
