@@ -28,10 +28,15 @@ interface OverviewStats {
 export function AdminOverview() {
   const [stats, setStats] = useState<OverviewStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    setLoading(true);
-    apiFetch("/admin/overview")
+    if (stats) setRefreshing(true);
+    else setLoading(true);
+    setError("");
+    apiFetch("/admin/overview", { cache: "no-store" })
       .then((data) => setStats({
         totalVendors: Number(data.total_vendors || 0), totalUsers: Number(data.total_users || 0),
         publishedStores: Number(data.published_stores || 0), draftStores: Number(data.draft_stores || 0),
@@ -41,11 +46,27 @@ export function AdminOverview() {
         completedVolumeKobo: Number(data.completedVolumeKobo || 0), signupsByMonth: data.signupsByMonth || [],
         vendorsByCategory: data.vendorsByCategory || [], recentVendors: data.recentVendors || [],
       }))
-      .catch(() => setStats(null))
-      .finally(() => setLoading(false));
+      .catch((err) => setError(err.message || "Could not refresh admin metrics."))
+      .finally(() => { setLoading(false); setRefreshing(false); });
+  }, [refreshKey]);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      if (document.visibilityState === "visible") setRefreshKey((key) => key + 1);
+    }, 30_000);
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") setRefreshKey((key) => key + 1);
+    };
+    window.addEventListener("focus", refreshWhenVisible);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("focus", refreshWhenVisible);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
   }, []);
 
-  if (loading || !stats) {
+  if (loading && !stats) {
     return (
       <AdminLayout>
         <div className="min-h-[60vh] flex items-center justify-center">
@@ -55,8 +76,9 @@ export function AdminOverview() {
     );
   }
 
-  const maxSignups = Math.max(...stats.signupsByMonth.map((s) => s.count));
-  const maxCategory = Math.max(...stats.vendorsByCategory.map((c) => c.count));
+  if (!stats) return <AdminLayout><div className="mx-auto max-w-6xl"><p role="alert" className="rounded-xl border border-[#C94F36]/20 bg-[#C94F36]/5 p-5 text-sm text-[#9f3826]">{error || "Could not load admin metrics."}</p><button onClick={() => setRefreshKey((key) => key + 1)} className="mt-4 rounded-xl bg-[#2E8B72] px-4 py-2.5 text-sm font-semibold text-paper">Try again</button></div></AdminLayout>;
+  const maxSignups = Math.max(1, ...stats.signupsByMonth.map((s) => s.count));
+  const maxCategory = Math.max(1, ...stats.vendorsByCategory.map((c) => c.count));
   const verificationRate = Math.round((stats.approvedVerifications / (stats.approvedVerifications + stats.pendingVerifications)) * 100) || 0;
 
   return (
@@ -71,6 +93,8 @@ export function AdminOverview() {
           <p className="mt-3 text-ink/40 max-w-md text-base sm:text-lg">
             Real-time snapshot of how BRIDGE is performing.
           </p>
+          <button onClick={() => setRefreshKey((key) => key + 1)} disabled={refreshing} className="mt-4 inline-flex items-center gap-2 rounded-xl border border-ink/15 px-4 py-2.5 text-sm font-semibold text-ink/70 hover:bg-ink/5 disabled:opacity-50"><span className={refreshing ? "animate-spin" : ""}>↻</span>{refreshing ? "Updating metrics…" : "Refresh metrics"}</button>
+          {error && <p role="alert" className="mt-3 text-sm text-[#9f3826]">{error} Showing the last loaded values.</p>}
         </div>
 
         {/* KPI Grid */}
@@ -280,3 +304,4 @@ function KpiCard({ label, value, prefix = "", icon: Icon, color }: { label: stri
     </div>
   );
 }
+

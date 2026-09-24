@@ -5,6 +5,7 @@ import { useBridgeTheme } from "../lib/theme";
 import { SearchSelect } from "../components/SearchSelect";
 import { NIGERIAN_STATES } from "../lib/states";
 import {
+  ArrowUpRight,
   Camera,
   ChevronDown,
   LayoutDashboard,
@@ -364,6 +365,12 @@ export function Landing() {
                 Search
               </button>
             </form>
+            <div className="mt-5 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-4">
+              <Link to="/signup" className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full border border-[#d6ff57]/70 px-6 py-3 text-sm font-semibold text-[#d6ff57] transition-all hover:bg-[#d6ff57] hover:text-[#11110f] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#d6ff57] sm:w-auto">
+                Create your store <ArrowUpRight className="h-4 w-4" />
+              </Link>
+              <span className="text-sm text-white/55">For business owners ready to be discovered.</span>
+            </div>
           </div>
         </section>
 
@@ -622,6 +629,7 @@ export function Landing() {
     </div>
   );
 }
+
 
 
 
