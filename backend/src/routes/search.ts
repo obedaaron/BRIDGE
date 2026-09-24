@@ -30,9 +30,9 @@ left join (
 ) r on r.vendor_id = v.id
 left join lateral (select true as is_promoted from vendor_promotions p where p.vendor_id = v.id and p.status = 'active' and p.ends_at > now() limit 1) promoted on true
 where v.is_published = true
-  and ($1::text is null or c.slug = $1)
+  and ($1::text is null or c.slug = $1 or ($1 = 'fashion' and c.slug = 'fashion-accessories') or ($1 in ('food', 'catering') and c.slug = 'food-beverages') or ($1 = 'tailoring' and c.slug = 'tailoring-alterations') or ($1 = 'mechanics' and c.slug in ('repairs-maintenance', 'auto-mobility')) or ($1 = 'electrical' and c.slug in ('electronics', 'repairs-maintenance')) or ($1 = 'photography' and c.slug = 'events-media'))
   and ($2::text is null or v.city ilike '%' || $2 || '%')
-  and ($3::text is null or v.business_name ilike '%' || $3 || '%' or v.description ilike '%' || $3 || '%')
+  and ($3::text is null or v.business_name ilike '%' || $3 || '%' or v.description ilike '%' || $3 || '%' or c.name ilike '%' || $3 || '%' or c.slug ilike '%' || $3 || '%' or (c.slug = 'food-beverages' and lower($3) ~ '(cater|restaurant|bakery|drink|beverage|snack)') or exists (select 1 from regexp_split_to_table(lower($3), '\s+') as term where length(term) >= 3 and (lower(c.name) like '%' || term || '%' or lower(c.slug) like '%' || term || '%')))
 order by
   distance_km asc nulls last,
   coalesce(promoted.is_promoted, false) desc, v.created_at desc`,
@@ -50,3 +50,7 @@ order by
 });
 
 export default router;
+
+
+
+

@@ -6,22 +6,30 @@ import { SearchSelect } from "../components/SearchSelect";
 import { NIGERIAN_STATES } from "../lib/states";
 import {
   ArrowUpRight,
+  BookOpen,
+  BriefcaseBusiness,
   Camera,
+  Car,
   ChevronDown,
+  HeartPulse,
+  House,
+  Laptop,
   LayoutDashboard,
   LogOut,
   Menu,
+  PartyPopper,
   Scissors,
   Search as SearchIcon,
   Shirt,
+  Sparkles,
   Sun,
   Moon,
+  Truck,
   UtensilsCrossed,
   Wrench,
   X,
   Zap,
 } from "lucide-react";
-
 const cities = ["Lagos", "Abuja", "Port Harcourt", "Ibadan", "Kano", "Benin City", "Enugu", "Aba", "Jos", "Ilorin", "Maiduguri", "Zaria", "Sokoto", "Onitsha", "Warri", "Uyo", "Calabar", "Abeokuta", "Akure", "Owerri", "Minna", "Ado-Ekiti", "Bauchi", "Makurdi", "Yola", "Damaturu", "Gombe", "Birnin Kebbi", "Lokoja", "Jalingo", "Dutse", "Katsina", "Lafia", "Osogbo", "Yenagoa", "Abakaliki", "Awka"];
 
 const heroIcons = [
@@ -34,54 +42,21 @@ const heroIcons = [
 ];
 
 const categories = [
-  {
-    name: "Tailoring",
-    slug: "tailoring",
-    icon: Scissors,
-    description: "Custom fits, alterations, and made-to-measure pieces from tailors near you.",
-    image:
-      "https://images.unsplash.com/photo-1752946253686-a15088ab0b8f?auto=format&fit=crop&w=1600&q=70",
-  },
-  {
-    name: "Electrical",
-    slug: "electrical",
-    icon: Zap,
-    description: "Wiring, installations, and repairs from electricians who show up on time.",
-    image:
-      "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=1600&q=70",
-  },
-  {
-    name: "Photography",
-    slug: "photography",
-    icon: Camera,
-    description: "Portraits, events, and product shoots from photographers who know the city.",
-    image:
-      "https://images.unsplash.com/photo-1577369867409-5cdd9d24a03a?auto=format&fit=crop&w=1600&q=70",
-  },
-  {
-    name: "Fashion",
-    slug: "fashion",
-    icon: Shirt,
-    description: "Designers and boutiques making original pieces for every size and style.",
-    image:
-      "https://images.unsplash.com/photo-1761090617068-f1b3257d27ad?auto=format&fit=crop&w=1600&q=70",
-  },
-  {
-    name: "Catering",
-    slug: "catering",
-    icon: UtensilsCrossed,
-    description: "Home cooks and catering teams for parties, offices, and everyday meals.",
-    image:
-      "https://images.unsplash.com/photo-1742436448781-fe5eb077abd4?auto=format&fit=crop&w=1600&q=70",
-  },
-  {
-    name: "Mechanics",
-    slug: "mechanics",
-    icon: Wrench,
-    description: "Diagnostics, repairs, and maintenance from mechanics who know your make.",
-    image:
-      "https://images.unsplash.com/photo-1487754180451-c456f719a1fc?auto=format&fit=crop&w=1600&q=70",
-  },
+  { name: "Fashion & Accessories", slug: "fashion-accessories", icon: Shirt, description: "Clothing, shoes, bags, and accessories from local designers and boutiques.", image: "https://images.unsplash.com/photo-1761090617068-f1b3257d27ad?auto=format&fit=crop&w=1600&q=70" },
+  { name: "Electronics", slug: "electronics", icon: Laptop, description: "Phones, computers, home electronics, gadgets, and accessories.", image: "https://images.unsplash.com/photo-1498049794561-7780e7231661?auto=format&fit=crop&w=1600&q=70" },
+  { name: "Food & Beverages", slug: "food-beverages", icon: UtensilsCrossed, description: "Restaurants, caterers, home cooks, bakeries, snacks, and drinks.", image: "https://images.unsplash.com/photo-1742436448781-fe5eb077abd4?auto=format&fit=crop&w=1600&q=70" },
+  { name: "Beauty & Personal Care", slug: "beauty-personal-care", icon: Sparkles, description: "Skincare, cosmetics, fragrance, and everyday personal care.", image: "https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=1600&q=70" },
+  { name: "Home & Living", slug: "home-living", icon: House, description: "Furniture, décor, cleaning, and services that make a house feel like home.", image: "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=1600&q=70" },
+  { name: "Repairs & Maintenance", slug: "repairs-maintenance", icon: Wrench, description: "Reliable repairs for appliances, electronics, plumbing, and everyday essentials.", image: "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=1600&q=70" },
+  { name: "Hair & Beauty", slug: "hair-beauty", icon: Scissors, description: "Barbers, salons, braiders, nail artists, makeup, and spa professionals.", image: "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=1600&q=70" },
+  { name: "Tailoring & Alterations", slug: "tailoring-alterations", icon: Shirt, description: "Custom fits, alterations, and made-to-measure pieces from local tailors.", image: "https://images.unsplash.com/photo-1752946253686-a15088ab0b8f?auto=format&fit=crop&w=1600&q=70" },
+  { name: "Logistics & Delivery", slug: "logistics-delivery", icon: Truck, description: "Dispatch riders, moving services, couriers, and delivery partners.", image: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=1600&q=70" },
+  { name: "Digital Services", slug: "digital-services", icon: Laptop, description: "Web, software, design, marketing, and other digital expertise.", image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1600&q=70" },
+  { name: "Health & Wellness", slug: "health-wellness", icon: HeartPulse, description: "Fitness, wellbeing, and trusted health support in your community.", image: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&w=1600&q=70" },
+  { name: "Education & Training", slug: "education-training", icon: BookOpen, description: "Tutors, lessons, skills training, and professional learning.", image: "https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=1600&q=70" },
+  { name: "Events & Media", slug: "events-media", icon: PartyPopper, description: "Photography, videography, event planning, and entertainment.", image: "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=1600&q=70" },
+  { name: "Auto & Mobility", slug: "auto-mobility", icon: Car, description: "Vehicle sales, servicing, parts, and mobility support.", image: "https://images.unsplash.com/photo-1487754180451-c456f719a1fc?auto=format&fit=crop&w=1600&q=70" },
+  { name: "Other Services", slug: "other-services", icon: BriefcaseBusiness, description: "Find other skilled local professionals and independent businesses.", image: "https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=1600&q=70" },
 ];
 
 const steps = [
@@ -261,7 +236,7 @@ export function Landing() {
       </header>
 
       <main className="pt-32">
-        <section className="relative mx-auto max-w-[1440px] overflow-hidden border-x border-white/15 px-5 pb-16 sm:px-8 lg:px-12">
+        <section className="relative mx-auto max-w-[1440px] overflow-x-clip border-x border-white/15 px-5 pb-16 sm:px-8 lg:px-12">
           {/*
             Decorative background layer: drifting category icons + a
             self-drawing grid. aria-hidden + pointer-events-none so it
@@ -339,7 +314,7 @@ export function Landing() {
 
             <form
               onSubmit={explore}
-              className="mt-10 grid max-w-3xl overflow-hidden rounded-2xl border border-white/20 bg-[#1b1b18] sm:grid-cols-[1.4fr_0.8fr_auto]"
+              className="mt-10 grid max-w-3xl overflow-visible rounded-2xl border border-white/20 bg-[#1b1b18] sm:grid-cols-[1.4fr_0.8fr_auto]"
             >
               <label className="border-b border-white/15 px-5 py-4 sm:border-b-0 sm:border-r">
                 <span className="block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">
@@ -629,6 +604,9 @@ export function Landing() {
     </div>
   );
 }
+
+
+
 
 
 
