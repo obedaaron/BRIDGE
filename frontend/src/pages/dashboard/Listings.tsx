@@ -23,6 +23,7 @@ export function Listings() {
   const [form, setForm] = useState({ title: "", description: "", type: "product", price: "", imageUrl: "", stockQuantity: "" });
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   function loadListings() {
     apiFetch("/listings/mine").then((data) => setListings(data.listings)).catch(() => setListings([]));
@@ -53,8 +54,16 @@ export function Listings() {
 
   async function handleDelete(id: string) {
     if (!confirm("Delete this listing?")) return;
-    await apiFetch(`/listings/${id}`, { method: "DELETE" });
-    loadListings();
+    setError("");
+    setDeleting(id);
+    try {
+      await apiFetch(`/listings/${id}`, { method: "DELETE" });
+      setListings((current) => current.filter((listing) => listing.id !== id));
+    } catch (err: any) {
+      setError(err.message || "Could not delete this listing. Please try again.");
+    } finally {
+      setDeleting(null);
+    }
   }
 
   return (
@@ -176,6 +185,8 @@ export function Listings() {
           </form>
         )}
 
+        {error && !showForm && <p role="alert" className="mb-5 rounded-xl border border-[#2E8B72]/20 bg-[#dce9df]/10 px-4 py-3 text-sm font-medium text-[#2E8B72]">{error}</p>}
+
         {/* Listings grid */}
         {listings.length === 0 ? (
           <div className="py-20 text-center">
@@ -207,10 +218,11 @@ export function Listings() {
 
                 <button
                   onClick={() => handleDelete(l.id)}
+                  disabled={deleting === l.id}
                   className="inline-flex items-center gap-1.5 text-xs text-ink/30 hover:text-[#2E8B72] transition-colors"
                 >
                   <Trash2 className="w-3.5 h-3.5" strokeWidth={2} />
-                  Delete
+                  {deleting === l.id ? "Deleting…" : "Delete"}
                 </button>
               </div>
             ))}
@@ -220,3 +232,7 @@ export function Listings() {
     </DashboardLayout>
   );
 }
+
+
+
+

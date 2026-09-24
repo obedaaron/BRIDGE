@@ -2,6 +2,8 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useBridgeTheme } from "../lib/theme";
+import { SearchSelect } from "../components/SearchSelect";
+import { NIGERIAN_STATES } from "../lib/states";
 import {
   Camera,
   ChevronDown,
@@ -11,16 +13,16 @@ import {
   Scissors,
   Search as SearchIcon,
   Shirt,
+  Sun,
+  Moon,
   UtensilsCrossed,
   Wrench,
   X,
   Zap,
 } from "lucide-react";
 
-const cities = ["Lagos", "Abuja", "Port Harcourt", "Ibadan", "Kano"];
+const cities = ["Lagos", "Abuja", "Port Harcourt", "Ibadan", "Kano", "Benin City", "Enugu", "Aba", "Jos", "Ilorin", "Maiduguri", "Zaria", "Sokoto", "Onitsha", "Warri", "Uyo", "Calabar", "Abeokuta", "Akure", "Owerri", "Minna", "Ado-Ekiti", "Bauchi", "Makurdi", "Yola", "Damaturu", "Gombe", "Birnin Kebbi", "Lokoja", "Jalingo", "Dutse", "Katsina", "Lafia", "Osogbo", "Yenagoa", "Abakaliki", "Awka"];
 
-// Background icon layer for the hero — faint, drifting versions of the
-// category icons, purely decorative (aria-hidden, pointer-events-none).
 const heroIcons = [
   { icon: Scissors, top: "14%", left: "7%", size: 30, duration: "19s", delay: "0s" },
   { icon: Zap, top: "68%", left: "90%", size: 24, duration: "23s", delay: "2s" },
@@ -143,11 +145,6 @@ export function Landing() {
   const [rotationPaused, setRotationPaused] = useState(false);
   const rotationTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // FIX: auto-rotation now pauses while the user is interacting with the
-  // category showcase (hover, keyboard focus, or touch on mobile), so it
-  // no longer yanks away content someone is actively reading. This also
-  // addresses the WCAG 2.2.2 (Pause, Stop, Hide) concern with
-  // auto-updating content.
   useEffect(() => {
     if (rotationPaused) return;
 
@@ -355,22 +352,10 @@ export function Landing() {
                   aria-label="Business or service"
                 />
               </label>
-              <label className="border-b border-white/15 px-5 py-4 sm:border-b-0 sm:border-r">
-                <span className="block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">
-                  In
-                </span>
-                <select
-                  value={city}
-                  onChange={(event) => setCity(event.target.value)}
-                  className="mt-1 w-full appearance-none bg-transparent text-base text-white outline-none"
-                >
-                  {cities.map((name) => (
-                    <option key={name} className="bg-[#1b1b18]" value={name}>
-                      {name}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <div className="border-b border-white/15 px-5 py-4 sm:border-b-0 sm:border-r">
+                <span className="block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">In</span>
+                <SearchSelect value={city} onChange={setCity} options={[...new Set([...NIGERIAN_STATES, ...cities])].map((name) => ({ value: name, label: name }))} placeholder="Select location" className="mt-1" />
+              </div>
               <button
                 type="submit"
                 className="flex items-center justify-center gap-2 bg-[#d6ff57] px-7 py-5 text-sm font-semibold text-[#11110f] transition-colors hover:bg-[#ecffad]"
@@ -619,7 +604,7 @@ export function Landing() {
           </div>
 
           <div className="mt-14 flex flex-col gap-4 border-t border-white/10 pt-6 text-xs text-white/40 sm:flex-row sm:items-center sm:justify-between">
-            <span>BRIDGE. Built for local business.</span>
+            <span>BRIDGE. Built for local businesses.</span>
             <div className="flex gap-5">
               <Link to="/terms" className="transition-colors hover:text-white">
                 Terms
@@ -637,3 +622,6 @@ export function Landing() {
     </div>
   );
 }
+
+
+
