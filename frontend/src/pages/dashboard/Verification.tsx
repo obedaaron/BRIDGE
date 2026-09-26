@@ -25,6 +25,7 @@ export function Verification() {
   const [consent, setConsent] = useState(false);
   const [submitting, setSubmitting] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [contactNotice, setContactNotice] = useState("");
   const [contact, setContact] = useState({ email: false, phone: false, phoneNumber: "", emailAddress: "" });
   const [codes, setCodes] = useState({ email: "", phone: "" });
   const [sendingContact, setSendingContact] = useState<string | null>(null);
@@ -35,8 +36,8 @@ export function Verification() {
 
   useEffect(() => { load(); apiFetch("/auth/me").then((data) => setContact({ email: Boolean(data.user.email_verified_at), phone: Boolean(data.user.phone_verified_at), phoneNumber: data.user.phone || "", emailAddress: data.user.email || "" })); }, []);
 
-  async function sendContact(type: "email" | "phone") { setError(""); setSendingContact(`${type}-send`); try { await apiFetch("/auth/contact-verification/send", { method: "POST", body: JSON.stringify({ type, phone: contact.phoneNumber }) }); } catch (err: any) { setError(err.message); } finally { setSendingContact(null); } }
-  async function confirmContact(type: "email" | "phone") { setError(""); setSendingContact(`${type}-confirm`); try { await apiFetch("/auth/contact-verification/confirm", { method: "POST", body: JSON.stringify({ type, code: codes[type] }) }); setContact({ ...contact, [type]: true }); } catch (err: any) { setError(err.message); } finally { setSendingContact(null); } }
+  async function sendContact(type: "email" | "phone") { setError(""); setContactNotice(""); setSendingContact(`${type}-send`); try { await apiFetch("/auth/contact-verification/send", { method: "POST", body: JSON.stringify({ type, phone: contact.phoneNumber }) }); setContactNotice(`A verification code was sent to your ${type === "email" ? "email" : "phone"}. It is valid for 10 minutes.`); } catch (err: any) { setError(err.message); } finally { setSendingContact(null); } }
+  async function confirmContact(type: "email" | "phone") { setError(""); setContactNotice(""); setSendingContact(`${type}-confirm`); try { await apiFetch("/auth/contact-verification/confirm", { method: "POST", body: JSON.stringify({ type, code: codes[type] }) }); setContact({ ...contact, [type]: true }); setContactNotice(`${type === "email" ? "Email" : "Phone"} verified successfully.`); } catch (err: any) { setError(err.message); } finally { setSendingContact(null); } }
 
   function statusFor(type: string) {
     const match = verifications.find((v) => v.type === type);
@@ -86,15 +87,15 @@ export function Verification() {
         </div>
 
         {error && (
-          <div className="bg-[#dce9df]/10 border border-[#2E8B72]/20 rounded-xl px-4 py-3 mb-6 flex items-center gap-3">
-            <AlertCircle className="w-4 h-4 text-[#2E8B72] shrink-0" strokeWidth={2} />
-            <p className="text-[#2E8B72] text-sm font-medium">{error}</p>
+          <div className="bg-[#ca5b42]/10 border border-[#ca5b42]/25 rounded-xl px-4 py-3 mb-6 flex items-center gap-3">
+            <AlertCircle className="w-4 h-4 text-[#ca5b42] shrink-0" strokeWidth={2} />
+            <p className="text-[#9f3826] text-sm font-medium">{error}</p>
           </div>
         )}
 
         <section className="mb-8 bg-paper border border-ink/15 rounded-none border border-ink/5 p-5 sm:p-6">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#2E8B72] mb-2">Account security</p><h2 className="font-display text-2xl font-semibold">Verify your contact details.</h2><p className="text-sm text-ink/45 mt-2 mb-5">Both checks are required before a vendor can become fully trusted.</p>
-          <div className="grid sm:grid-cols-2 gap-5">{(["email", "phone"] as const).map((type) => <div key={type} className="rounded-xl bg-ink/[0.03] p-4"><div className="flex items-center justify-between"><p className="font-medium capitalize">{type}</p><SignboardTag color={contact[type] ? "gold" : "signal"}>{contact[type] ? "Verified" : "Required"}</SignboardTag></div>{type === "email" ? <p className="text-xs text-ink/40 mt-2 truncate">{contact.emailAddress}</p> : <input className="input-field mt-3" inputMode="tel" placeholder="08012345678" value={contact.phoneNumber} onChange={(e) => setContact({ ...contact, phoneNumber: e.target.value })} />}{!contact[type] && <><button onClick={() => sendContact(type)} disabled={sendingContact !== null || (type === "phone" && !contact.phoneNumber)} className="mt-3 text-xs px-3 py-2 bg-[#2E8B72] text-paper rounded-lg disabled:opacity-50">{sendingContact === `${type}-send` ? "Sending…" : "Send 6-digit code"}</button><div className="flex gap-2 mt-3"><input className="input-field text-sm" inputMode="numeric" maxLength={6} placeholder="Code" value={codes[type]} onChange={(e) => setCodes({ ...codes, [type]: e.target.value.replace(/\D/g, "") })} /><button onClick={() => confirmContact(type)} disabled={sendingContact !== null || codes[type].length !== 6} className="text-xs px-3 py-2 border border-ink/15 rounded-lg disabled:opacity-50">Verify</button></div></>}</div>)}</div>
+          {contactNotice && <p role="status" className="mb-4 rounded-lg border border-[#2E8B72]/20 bg-[#2E8B72]/5 px-3 py-2 text-sm text-[#206653]">{contactNotice}</p>}<div className="grid sm:grid-cols-2 gap-5">{(["email", "phone"] as const).map((type) => <div key={type} className="rounded-xl bg-ink/[0.03] p-4"><div className="flex items-center justify-between"><p className="font-medium capitalize">{type}</p><SignboardTag color={contact[type] ? "gold" : "signal"}>{contact[type] ? "Verified" : "Required"}</SignboardTag></div>{type === "email" ? <p className="text-xs text-ink/40 mt-2 truncate">{contact.emailAddress}</p> : <input className="input-field mt-3" inputMode="tel" placeholder="08012345678" value={contact.phoneNumber} onChange={(e) => setContact({ ...contact, phoneNumber: e.target.value })} />}{!contact[type] && <><button onClick={() => sendContact(type)} disabled={sendingContact !== null || (type === "phone" && !contact.phoneNumber)} className="mt-3 text-xs px-3 py-2 bg-[#2E8B72] text-paper rounded-lg disabled:opacity-50">{sendingContact === `${type}-send` ? "Sending…" : "Send 6-digit code"}</button><div className="flex gap-2 mt-3"><input className="input-field text-sm" inputMode="numeric" maxLength={6} placeholder="Code" value={codes[type]} onChange={(e) => setCodes({ ...codes, [type]: e.target.value.replace(/\D/g, "") })} /><button onClick={() => confirmContact(type)} disabled={sendingContact !== null || codes[type].length !== 6} className="text-xs px-3 py-2 border border-ink/15 rounded-lg disabled:opacity-50">Verify</button></div></>}</div>)}</div>
         </section>
 
         <div className="grid sm:grid-cols-2 gap-4">

@@ -135,21 +135,55 @@ function normaliseNigerianPhone(value: string) {
 router.post("/contact-verification/send", requireAuth, async (req, res) => {
   const type = req.body.type === "phone" ? "phone" : req.body.type === "email" ? "email" : null;
   if (!type) return res.status(400).json({ error: "Choose email or phone verification" });
-  const userResult = await pool.query("select email, phone from users where id = $1", [req.user!.userId]);
-  const user = userResult.rows[0];
-  const destination = type === "email" ? user.email : normaliseNigerianPhone(typeof req.body.phone === "string" ? req.body.phone : user.phone || "");
-  if (!destination) return res.status(400).json({ error: "Enter a valid Nigerian phone number" });
-  const recent = await pool.query("select id from contact_verification_challenges where user_id = $1 and type = $2 and created_at > now() - interval '60 seconds' order by created_at desc limit 1", [req.user!.userId, type]);
-  if (recent.rows[0]) return res.status(429).json({ error: "Wait one minute before requesting another code" });
-  const code = crypto.randomInt(100000, 1000000).toString();
+
+  const userId = req.user!.userId;
   try {
-    const providerReference = type === "phone"
-      ? await sendVerificationSms({ destination, code })
-      : await sendVerificationEmail({ destination, code });
-    await pool.query("insert into contact_verification_challenges (user_id, type, destination, code_hash, provider_reference, expires_at) values ($1, $2, $3, $4, $5, now() + interval '10 minutes')", [req.user!.userId, type, destination, crypto.createHash("sha256").update(code).digest("hex"), providerReference]);
-    if (type === "phone") await pool.query("update users set phone = $1 where id = $2", [destination, req.user!.userId]);
-    res.json({ message: "Verification code sent" });
-  } catch (err) { res.status(err instanceof ContactDeliveryNotConfiguredError ? 503 : 502).json({ error: err instanceof Error ? err.message : "Could not send verification code" }); }
+    const userResult = await pool.query("select email, phone from users where id = $1", [userId]);
+    const user = userResult.rows[0];
+    if (!user) return res.status(404).json({ error: "Your account could not be found. Please sign in again." });
+    const destination = type === "email" ? user.email : normaliseNigerianPhone(typeof req.body.phone === "string" ? req.body.phone : user.phone || "");
+    if (!destination) return res.status(400).json({ error: "Enter a valid Nigerian phone number" });
+
+    const code = crypto.randomInt(100000, 1000000).toString();
+    const client = await pool.connect();
+    let challengeId: string;
+    try {
+      await client.query("begin");
+      await client.query("select id from users where id = $1 for update", [userId]);
+      const recent = await client.query("select id from contact_verification_challenges where user_id = $1 and type = $2 and created_at > now() - interval '60 seconds' order by created_at desc limit 1", [userId, type]);
+      if (recent.rows[0]) {
+        await client.query("rollback");
+        return res.status(429).json({ error: "Wait one minute before requesting another code" });
+      }
+      const challenge = await client.query(
+        "insert into contact_verification_challenges (user_id, type, destination, code_hash, expires_at) values ($1, $2, $3, $4, now() + interval '10 minutes') returning id",
+        [userId, type, destination, crypto.createHash("sha256").update(code).digest("hex")]
+      );
+      challengeId = challenge.rows[0].id;
+      await client.query("commit");
+    } catch (error) {
+      await client.query("rollback");
+      throw error;
+    } finally {
+      client.release();
+    }
+
+    try {
+      const providerReference = type === "phone"
+        ? await sendVerificationSms({ destination, code })
+        : await sendVerificationEmail({ destination, code });
+      await pool.query("update contact_verification_challenges set provider_reference = $1 where id = $2", [providerReference, challengeId]).catch((error) => console.error("Could not save verification provider reference", error));
+      res.json({ message: "Verification code sent" });
+    } catch (error) {
+      await pool.query("delete from contact_verification_challenges where id = $1", [challengeId]).catch((cleanupError) => console.error("Could not remove an unsent verification challenge", cleanupError));
+      if (error instanceof ContactDeliveryNotConfiguredError) return res.status(503).json({ error: error.message });
+      console.error(`${type} verification delivery failed`, error);
+      return res.status(502).json({ error: `We couldn't send your ${type === "email" ? "email" : "text message"} just now. Please wait a moment and try again.` });
+    }
+  } catch (error) {
+    console.error("Verification request failed", error);
+    res.status(503).json({ error: "Verification is temporarily unavailable. Please try again in a moment." });
+  }
 });
 
 router.post("/contact-verification/confirm", requireAuth, async (req, res) => {
@@ -162,7 +196,7 @@ router.post("/contact-verification/confirm", requireAuth, async (req, res) => {
   if (challenge.attempts >= 5) return res.status(429).json({ error: "Too many attempts. Request a new code." });
   if (crypto.createHash("sha256").update(code).digest("hex") !== challenge.code_hash) { await pool.query("update contact_verification_challenges set attempts = attempts + 1 where id = $1", [challenge.id]); return res.status(400).json({ error: "That code is incorrect" }); }
   const client = await pool.connect();
-  try { await client.query("begin"); await client.query("update contact_verification_challenges set verified_at = now() where id = $1", [challenge.id]); await client.query(`update users set ${type}_verified_at = now() where id = $1`, [req.user!.userId]); await client.query("commit"); res.json({ message: `${type === "phone" ? "Phone" : "Email"} verified` }); }
+  try { await client.query("begin"); await client.query("update contact_verification_challenges set verified_at = now() where id = $1", [challenge.id]); if (type === "phone") await client.query("update users set phone = $1, phone_verified_at = now() where id = $2", [challenge.destination, req.user!.userId]); else await client.query("update users set email_verified_at = now() where id = $1", [req.user!.userId]); await client.query("commit"); res.json({ message: `${type === "phone" ? "Phone" : "Email"} verified` }); }
   catch (err) { await client.query("rollback"); throw err; }
   finally { client.release(); }
 });
