@@ -3,7 +3,7 @@ import type { FormEvent } from "react";
 import { Link, useParams } from "react-router-dom";
 import { apiFetch } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
-import { ArrowLeft, Check, ClipboardCheck, LayoutDashboard, Moon, Send, ShieldCheck, Sun, X } from "lucide-react";
+import { ArrowLeft, Check, ClipboardCheck, Moon, Send, ShieldCheck, Sun, X } from "lucide-react";
 import { useBridgeTheme } from "../lib/theme";
 
 interface Message { id: string; sender_id: string; body: string; created_at: string; }
@@ -83,15 +83,17 @@ export function Conversation() {
     finally { setUpdatingOrderId(null); }
   }
 
-  return <div style={themeStyle} className="min-h-screen bg-[var(--message-page)] text-[var(--message-text)] font-body flex flex-col">
-    <nav className="flex items-center justify-between gap-4 px-6 md:px-12 py-4 border-b border-[var(--message-line)]">
-      <div className="flex items-center gap-4"><Link to="/messages" className="text-[var(--message-muted)] hover:text-[var(--message-text)]"><ArrowLeft className="w-5 h-5" /></Link><p className="font-display font-semibold text-[var(--message-text)]">{vendorName || "Conversation"}</p></div>
-      <button onClick={toggleTheme} className="grid h-9 w-9 place-items-center rounded-full border border-[var(--message-line)] text-[#d6ff57]" aria-label="Toggle theme">{dark ? <Sun className="h-4 w-4"/> : <Moon className="h-4 w-4"/>}</button><Link to="/dashboard" className="hidden sm:inline-flex items-center gap-1.5 text-xs text-[var(--message-muted)] hover:text-[var(--message-text)]"><LayoutDashboard className="w-3.5 h-3.5" />Dashboard</Link>
-      {isVendor && <button onClick={() => setShowProposal((open) => !open)} className="text-xs font-medium bg-[#2E8B72] text-paper px-3 py-2 rounded-lg hover:bg-[#206653] transition-colors inline-flex items-center gap-1.5"><ClipboardCheck className="w-3.5 h-3.5" />Create deal</button>}
-    </nav>
-
-    <div className="max-w-2xl w-full mx-auto px-6 pt-4">
-      <div className="rounded-2xl border border-[#2E8B72]/20 bg-[#dce9df]/5 px-4 py-3 flex gap-3 text-xs text-[var(--message-muted)] leading-relaxed"><ShieldCheck className="w-4 h-4 text-[#2E8B72] shrink-0 mt-0.5" /><p>Keep your agreement on BRIDGE. BRIDGE Everything is not responsible or liable for damages, injuries, or losses from negotiations or transactions completed outside the platform.</p></div>
+  return <div style={themeStyle} className="min-h-[100dvh] bg-[var(--message-page)] text-[var(--message-text)] font-body flex flex-col">
+    <header className="sticky top-0 z-30 border-b border-[var(--message-line)] bg-[var(--message-page)]/95 backdrop-blur-xl">
+      <nav aria-label="Conversation navigation" className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3 sm:px-6 lg:px-8">
+        <Link to="/messages" aria-label="Back to messages" className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-[var(--message-line)] text-[var(--message-muted)] hover:bg-[var(--message-soft)]"><ArrowLeft className="h-4 w-4" /></Link>
+        <div className="min-w-0 flex-1"><p className="truncate font-display font-semibold text-[var(--message-text)]">{vendorName || "Conversation"}</p><p className="text-xs text-[var(--message-muted)]">{isVendor ? "Customer conversation" : "Store conversation"} · Protected on BRIDGE</p></div>
+        <div className="hidden items-center gap-1 sm:flex"><Link to="/explore" className="rounded-full px-3 py-2 text-sm text-[var(--message-muted)] hover:bg-[var(--message-soft)] hover:text-[var(--message-text)]">Explore</Link><Link to="/orders" className="rounded-full px-3 py-2 text-sm text-[var(--message-muted)] hover:bg-[var(--message-soft)] hover:text-[var(--message-text)]">Orders</Link><Link to="/messages" aria-current="page" className="rounded-full bg-[#d6ff57] px-3 py-2 text-sm font-semibold text-[#11110f]">Messages</Link></div>
+        <button onClick={toggleTheme} className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-[var(--message-line)] text-[#2e8b72]" aria-label="Toggle theme">{dark ? <Sun className="h-4 w-4"/> : <Moon className="h-4 w-4"/>}</button>
+        {isVendor && <button onClick={() => setShowProposal((open) => !open)} className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[#2e8b72] px-3 py-2.5 text-xs font-semibold text-white hover:bg-[#206653]"><ClipboardCheck className="h-3.5 w-3.5" /><span className="hidden sm:inline">Create deal</span></button>}
+      </nav>
+    </header>    <div className="mx-auto w-full max-w-4xl px-4 pt-4 sm:px-6">
+      <div className="rounded-2xl border border-[#2E8B72]/20 bg-[#dce9df]/5 px-4 py-3 flex gap-3 text-xs text-[var(--message-muted)] leading-relaxed"><ShieldCheck className="w-4 h-4 text-[#2E8B72] shrink-0 mt-0.5" /><p>Keep your agreement and payments on BRIDGE. This helps protect both sides and keeps your order details in one place.</p></div>
       {error && <p className="text-xs text-[#2E8B72] mt-3">{error}</p>}
 
       {isVendor && showProposal && <form onSubmit={handleCreateProposal} className="mt-4 bg-[var(--message-panel)] rounded-2xl border border-[var(--message-line)] p-5 space-y-3">
@@ -108,7 +110,7 @@ export function Conversation() {
       </div>)}
     </div>
 
-    <div className="flex-1 max-w-2xl w-full mx-auto px-6 py-8 overflow-y-auto flex flex-col gap-3">{messages.map((m) => <div key={m.id} className={`max-w-[75%] px-4 py-2.5 rounded-2xl text-sm ${m.sender_id === user?.id ? "self-end bg-[#2E8B72] text-paper" : "self-start bg-[var(--message-soft)] text-[var(--message-text)]"}`}><p>{m.body}</p><time className={`mt-1 block text-[10px] ${m.sender_id === user?.id ? "text-paper/65" : "text-[var(--message-muted)]"}`}>{messageTime(m.created_at)}</time></div>)}<div ref={bottomRef} /></div>
-    <form onSubmit={handleSend} className="border-t border-[var(--message-line)] px-6 md:px-12 py-4 flex gap-3 max-w-2xl w-full mx-auto"><input className="flex-1 rounded-xl border border-[var(--message-line)] bg-[var(--message-soft)] px-4 py-3 text-sm text-[var(--message-text)] outline-none" placeholder="Type a message..." value={body} onChange={(e) => setBody(e.target.value)} /><button className="btn-primary px-4" type="submit" disabled={sending}><Send className="w-4 h-4" /></button></form>
+    <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-3 overflow-y-auto px-4 py-6 sm:px-6">{messages.map((m) => <div key={m.id} className={`max-w-[75%] px-4 py-2.5 rounded-2xl text-sm ${m.sender_id === user?.id ? "self-end bg-[#2E8B72] text-white" : "self-start border border-[var(--message-line)] bg-[var(--message-panel)] text-[var(--message-text)] shadow-sm"}`}><p>{m.body}</p><time className={`mt-1 block text-[10px] ${m.sender_id === user?.id ? "text-white/75" : "text-[var(--message-muted)]"}`}>{messageTime(m.created_at)}</time></div>)}<div ref={bottomRef} /></div>
+    <form onSubmit={handleSend} className="sticky bottom-0 mx-auto flex w-full max-w-4xl gap-2 border-t border-[var(--message-line)] bg-[var(--message-page)]/95 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-xl sm:gap-3 sm:px-6"><input className="min-w-0 flex-1 rounded-xl border border-[var(--message-line)] bg-[var(--message-panel)] px-4 py-3 text-sm text-[var(--message-text)] outline-none placeholder:text-[var(--message-muted)] focus:border-[#2e8b72] focus:ring-2 focus:ring-[#2e8b72]/20" placeholder="Type a message..." value={body} onChange={(e) => setBody(e.target.value)} /><button className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-[#d6ff57] px-4 text-[#11110f] hover:brightness-95 disabled:opacity-50" type="submit" disabled={sending}><Send className="w-4 h-4" /></button></form>
   </div>;
 }
