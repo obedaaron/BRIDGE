@@ -5,6 +5,26 @@ import { optionalAuth } from "../middleware/auth";
 
 const router = Router();
 
+router.get("/suggestions", async (req, res) => {
+  const query = typeof req.query.q === "string" ? req.query.q.trim().slice(0, 100) : "";
+  const city = typeof req.query.city === "string" ? req.query.city.trim().slice(0, 80) : "";
+  if (query.length < 2) return res.json({ vendors: [] });
+
+  const result = await pool.query(
+    `select v.id, v.business_name, v.slug, v.city, v.state, v.logo_url
+       from vendors v
+      where v.is_published = true
+        and v.business_name ilike '%' || $1 || '%'
+
+      order by case when lower(v.business_name) = lower($1) then 0
+                    when lower(v.business_name) like lower($1) || '%' then 1 else 2 end,
+               case when $2::text <> '' and (v.city ilike '%' || $2 || '%' or v.state ilike '%' || $2 || '%') then 0 else 1 end,
+               v.created_at desc
+      limit 6`,
+    [query, city]
+  );
+  res.json({ vendors: result.rows });
+});
 router.get("/", optionalAuth, async (req, res) => {
   await expireUnverifiedPublishedStores();
   const { category, city, q } = req.query;

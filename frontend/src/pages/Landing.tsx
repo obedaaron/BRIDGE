@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { useBridgeTheme } from "../lib/theme";
 import { SearchSelect } from "../components/SearchSelect";
 import { NIGERIAN_STATES } from "../lib/states";
+import { apiFetch } from "../lib/api";
 import {
   ArrowUpRight,
   BookOpen,
@@ -113,6 +114,8 @@ export function Landing() {
   const { theme, toggleTheme } = useBridgeTheme();
   const dark = theme === "dark";
   const [query, setQuery] = useState("");
+  const [suggestions, setSuggestions] = useState<Array<{ id: string; business_name: string; slug: string; city: string | null; state: string | null; logo_url: string | null }>>([]);
+  const [suggestionsOpen, setSuggestionsOpen] = useState(false);
   const [city, setCity] = useState("Lagos");
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -121,6 +124,20 @@ export function Landing() {
   const [rotationPaused, setRotationPaused] = useState(false);
   const rotationTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  useEffect(() => {
+    const trimmedQuery = query.trim();
+    if (trimmedQuery.length < 2) {
+      setSuggestions([]);
+      return;
+    }
+    let active = true;
+    const params = new URLSearchParams({ q: trimmedQuery });
+    if (city.trim()) params.set("city", city.trim());
+    apiFetch(`/search/suggestions?${params.toString()}`)
+      .then((data) => { if (active) setSuggestions(data.vendors); })
+      .catch(() => { if (active) setSuggestions([]); });
+    return () => { active = false; };
+  }, [query, city]);
   useEffect(() => {
     if (rotationPaused) return;
 
@@ -316,18 +333,48 @@ export function Landing() {
               onSubmit={explore}
               className="mt-10 grid max-w-3xl overflow-visible rounded-2xl border border-white/20 bg-[#1b1b18] sm:grid-cols-[1.4fr_0.8fr_auto]"
             >
-              <label className="border-b border-white/15 px-5 py-4 sm:border-b-0 sm:border-r">
-                <span className="block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">
-                  I need a
-                </span>
-                <input
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  className="mt-1 w-full bg-transparent text-base text-white outline-none placeholder:text-white/55"
-                  placeholder="Tailor, caterer, electrician"
-                  aria-label="Business or service"
-                />
-              </label>
+              <div className="relative border-b border-white/15 px-5 py-4 sm:border-b-0 sm:border-r">
+                <label className="block">
+                  <span className="block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">
+                    I need a
+                  </span>
+                  <input
+                    value={query}
+                    onChange={(event) => { setQuery(event.target.value); setSuggestionsOpen(true); }}
+                    onFocus={() => setSuggestionsOpen(true)}
+                    onBlur={() => window.setTimeout(() => setSuggestionsOpen(false), 120)}
+                    onKeyDown={(event) => { if (event.key === "Escape") setSuggestionsOpen(false); }}
+                    aria-autocomplete="list"
+                    aria-expanded={suggestionsOpen && suggestions.length > 0}
+                    className="mt-1 w-full bg-transparent text-base text-white outline-none placeholder:text-white/55"
+                    placeholder="Tailor, caterer, electrician"
+                    aria-label="Business or service"
+                  />
+                </label>
+                {suggestionsOpen && query.trim().length >= 2 && suggestions.length > 0 && (
+                  <div role="listbox" className="absolute left-0 right-0 top-full z-40 mt-2 overflow-hidden rounded-xl border border-white/15 bg-[#1b1b18] p-1.5 shadow-2xl">
+                    {suggestions.map((vendor) => (
+                      <button
+                        key={vendor.id}
+                        type="button"
+                        role="option"
+                        aria-selected="false"
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={() => {
+                          setQuery(vendor.business_name);
+                          if (vendor.city) setCity(vendor.city);
+                          setSuggestionsOpen(false);
+                        }}
+                        className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left hover:bg-white/10"
+                      >
+                        {vendor.logo_url ? <img src={vendor.logo_url} alt="" className="h-10 w-10 shrink-0 rounded-lg object-cover" /> : <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-[#d6ff57]/15 text-sm font-semibold text-[#d6ff57]">{vendor.business_name.charAt(0)}</span>}
+                        <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold text-white">{vendor.business_name}</span><span className="mt-0.5 block truncate text-xs text-white/50">{[vendor.city, vendor.state].filter(Boolean).join(", ") || "Location not listed"}</span></span>
+                        <ArrowUpRight className="h-4 w-4 shrink-0 text-white/40" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
               <div className="border-b border-white/15 px-5 py-4 sm:border-b-0 sm:border-r">
                 <span className="block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">In</span>
                 <SearchSelect value={city} onChange={setCity} options={[...new Set([...NIGERIAN_STATES, ...cities])].map((name) => ({ value: name, label: name }))} placeholder="Select location" className="mt-1" />
