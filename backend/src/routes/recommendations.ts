@@ -3,7 +3,7 @@ import { pool } from "../db";
 import { requireAuth } from "../middleware/auth";
 const router = Router();
 router.get("/", requireAuth, async (req, res) => {
-  const result = await pool.query(`select distinct v.id, v.business_name, v.slug, v.description, v.city, v.state, v.verification_status, v.logo_url, v.cover_image_url, coalesce(v.storefront_cover_url, v.cover_image_url, store_image.image_url) as storefront_cover_url,
+  const result = await pool.query(`select distinct v.id, v.business_name, v.slug, v.description, v.city, v.state, v.verification_status, v.logo_url, v.cover_image_url, coalesce(v.storefront_cover_url, v.cover_image_url, store_image.image_url) as storefront_cover_url, store_image.image_url as image_url,
     coalesce(i.score, 0) as interest_score, coalesce(r.avg_rating, 0) as avg_rating, coalesce(r.review_count, 0)::int as review_count
     from vendors v left join categories c on c.id = v.category_id
     left join lateral (

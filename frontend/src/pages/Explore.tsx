@@ -10,7 +10,7 @@ import { BridgeLoader } from "../components/BridgeLoader";
 
 interface Vendor {
   id: string; business_name: string; slug: string; description: string | null; city: string | null; state: string | null;
-  verification_status: string; logo_url: string | null; cover_image_url?: string | null; storefront_cover_url?: string | null;
+  verification_status: string; logo_url: string | null; cover_image_url?: string | null; storefront_cover_url?: string | null; image_url?: string | null;
   category_name?: string | null; avg_rating: number | null; review_count: number; is_promoted?: boolean; distance_km?: number | null;
 }
 interface Category { id: string; name: string; slug: string; }
@@ -31,7 +31,7 @@ interface ExploreNavigationProps {
 type BrowseFilter = "all" | "featured" | "rated";
 
 const cardTones = ["bg-[#d6ff57]", "bg-[#ca5b42]", "bg-[#e9e4da]", "bg-[#6d7160]"];
-const coverFor = (vendor: Vendor) => vendor.storefront_cover_url || vendor.cover_image_url || null;
+const coverFor = (vendor: Vendor) => vendor.storefront_cover_url || vendor.cover_image_url || vendor.image_url || null;
 function CategoryIcon({ category }: { category: Category }) {
   const label = (category.name + " " + category.slug).toLowerCase();
   const className = "mr-1 inline h-3.5 w-3.5 shrink-0";
@@ -73,10 +73,12 @@ function ExploreNavigation({ theme, onThemeChange, query, onQueryChange, city, o
 }
 
 function StoreCard({ vendor, featured = false }: { vendor: Vendor; featured?: boolean }) {
-  const cover = coverFor(vendor);
+  const imageCandidates = [vendor.storefront_cover_url, vendor.cover_image_url, vendor.image_url].filter((url, index, all): url is string => Boolean(url) && all.indexOf(url) === index);
+  const [imageIndex, setImageIndex] = useState(0);
+  const cover = imageCandidates[imageIndex] || null;
   return <Link to={"/store/" + vendor.slug} className="group block min-w-0 overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--panel)] transition-colors hover:border-[#9abf31]/60">
     <div className={"relative h-36 overflow-hidden " + (cover ? "bg-black/10" : cardTones[vendor.business_name.length % cardTones.length])}>
-      {cover ? <img src={cover} alt="" loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]" /> : vendor.logo_url ? <div className="grid h-full place-items-center bg-[var(--soft)]"><img src={vendor.logo_url} alt="" loading="lazy" className="h-20 w-20 rounded-2xl object-cover shadow-sm" /></div> : <div className="grid h-full place-items-center font-display text-6xl font-semibold text-black/20">{vendor.business_name.charAt(0)}</div>}
+      {cover ? <img src={cover} alt={vendor.business_name + " storefront"} loading="lazy" onError={() => setImageIndex((index) => Math.min(index + 1, imageCandidates.length))} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]" /> : vendor.logo_url ? <div className="grid h-full place-items-center bg-[var(--soft)]"><img src={vendor.logo_url} alt={vendor.business_name + " logo"} loading="lazy" onError={(event) => { event.currentTarget.style.visibility = "hidden"; }} className="h-20 w-20 rounded-2xl object-cover shadow-sm" /></div> : <div className="grid h-full place-items-center font-display text-6xl font-semibold text-black/20">{vendor.business_name.charAt(0)}</div>}
       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
       {featured && <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-[#d6ff57] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#11110f]"><Sparkles className="h-3 w-3" />Featured</span>}
       {cover && vendor.logo_url && <img src={vendor.logo_url} alt="" loading="lazy" className="absolute bottom-3 left-3 h-11 w-11 rounded-xl border-2 border-white object-cover shadow-lg" />}
@@ -88,7 +90,6 @@ function StoreCard({ vendor, featured = false }: { vendor: Vendor; featured?: bo
     </div>
   </Link>;
 }
-
 export function Explore() {
   const [searchParams] = useSearchParams();
   const { theme, toggleTheme } = useBridgeTheme();

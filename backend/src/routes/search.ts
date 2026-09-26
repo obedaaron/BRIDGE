@@ -46,7 +46,7 @@ router.get("/", optionalAuth, async (req, res) => {
   if (req.user && interest.length >= 2) await pool.query("insert into user_marketplace_interests (user_id, interest_key, weight, last_seen_at) values ($1, $2, 1, now()) on conflict (user_id, interest_key) do update set weight = least(user_marketplace_interests.weight + 1, 20), last_seen_at = now()", [req.user.userId, interest]);
   const result = await pool.query(
     `select distinct v.id, v.business_name, v.slug, v.description, v.city, v.state,
-            v.verification_status, v.logo_url, v.cover_image_url, coalesce(v.storefront_cover_url, v.cover_image_url, store_image.image_url) as storefront_cover_url, c.name as category_name, v.created_at,
+            v.verification_status, v.logo_url, v.cover_image_url, coalesce(v.storefront_cover_url, v.cover_image_url, store_image.image_url) as storefront_cover_url, store_image.image_url as image_url, c.name as category_name, v.created_at,
             r.avg_rating, r.review_count, coalesce(promoted.is_promoted, false) as is_promoted,
             case when $4::float8 is not null and $5::float8 is not null and v.location is not null
               then round((ST_Distance(v.location, ST_SetSRID(ST_MakePoint($5, $4), 4326)::geography) / 1000)::numeric, 1)
@@ -86,7 +86,3 @@ order by
 });
 
 export default router;
-
-
-
-
