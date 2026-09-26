@@ -46,13 +46,19 @@ router.get("/", optionalAuth, async (req, res) => {
   if (req.user && interest.length >= 2) await pool.query("insert into user_marketplace_interests (user_id, interest_key, weight, last_seen_at) values ($1, $2, 1, now()) on conflict (user_id, interest_key) do update set weight = least(user_marketplace_interests.weight + 1, 20), last_seen_at = now()", [req.user.userId, interest]);
   const result = await pool.query(
     `select distinct v.id, v.business_name, v.slug, v.description, v.city, v.state,
-            v.verification_status, v.logo_url, v.created_at,
+            v.verification_status, v.logo_url, v.cover_image_url, coalesce(v.storefront_cover_url, v.cover_image_url, store_image.image_url) as storefront_cover_url, c.name as category_name, v.created_at,
             r.avg_rating, r.review_count, coalesce(promoted.is_promoted, false) as is_promoted,
             case when $4::float8 is not null and $5::float8 is not null and v.location is not null
               then round((ST_Distance(v.location, ST_SetSRID(ST_MakePoint($5, $4), 4326)::geography) / 1000)::numeric, 1)
               else null end as distance_km
 from vendors v
 left join categories c on c.id = v.category_id
+left join lateral (
+  select coalesce(
+    (select image_url from vendor_storefront_gallery_images where vendor_id = v.id order by position asc limit 1),
+    (select image_url from listings where vendor_id = v.id and is_active = true and image_url is not null order by created_at desc limit 1)
+  ) as image_url
+) store_image on true
 left join (
   select vendor_id, round(avg(rating)::numeric, 1) as avg_rating, count(*) as review_count
   from reviews
