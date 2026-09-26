@@ -126,7 +126,7 @@ export function Landing() {
 
   useEffect(() => {
     const trimmedQuery = query.trim();
-    if (trimmedQuery.length < 2) {
+    if (trimmedQuery.length < 1) {
       setSuggestions([]);
       return;
     }
@@ -351,8 +351,8 @@ export function Landing() {
                     aria-label="Business or service"
                   />
                 </label>
-                {suggestionsOpen && query.trim().length >= 2 && suggestions.length > 0 && (
-                  <div role="listbox" className="absolute left-0 right-0 top-full z-40 mt-2 overflow-hidden rounded-xl border border-white/15 bg-[#1b1b18] p-1.5 shadow-2xl">
+                {suggestionsOpen && query.trim().length >= 1 && suggestions.length > 0 && (
+                  <div role="listbox" className="absolute left-0 right-0 top-full z-40 mt-2 max-h-80 overflow-y-auto scrollbar-hide rounded-xl border border-white/15 bg-[#1b1b18] p-1.5 shadow-2xl">
                     {suggestions.map((vendor) => (
                       <button
                         key={vendor.id}
