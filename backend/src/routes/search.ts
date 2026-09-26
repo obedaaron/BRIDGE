@@ -11,13 +11,19 @@ router.get("/suggestions", async (req, res) => {
   if (query.length < 2) return res.json({ vendors: [] });
 
   const result = await pool.query(
-    `select v.id, v.business_name, v.slug, v.city, v.state, v.logo_url
+    `select v.id, v.business_name, v.slug, v.city, v.state, v.logo_url, c.name as category_name
        from vendors v
+       left join categories c on c.id = v.category_id
       where v.is_published = true
-        and v.business_name ilike '%' || $1 || '%'
-
+        and (v.business_name ilike '%' || $1 || '%'
+          or c.name ilike '%' || $1 || '%'
+          or c.slug ilike '%' || $1 || '%'
+          or exists (select 1 from regexp_split_to_table(lower($1), '\s+') as term
+                     where length(term) >= 3 and (lower(c.name) like '%' || term || '%' or lower(c.slug) like '%' || term || '%')))
       order by case when lower(v.business_name) = lower($1) then 0
-                    when lower(v.business_name) like lower($1) || '%' then 1 else 2 end,
+                    when lower(v.business_name) like lower($1) || '%' then 1
+                    when lower(c.name) = lower($1) or lower(c.slug) = lower($1) then 2
+                    else 3 end,
                case when $2::text <> '' and (v.city ilike '%' || $2 || '%' or v.state ilike '%' || $2 || '%') then 0 else 1 end,
                v.created_at desc
       limit 6`,

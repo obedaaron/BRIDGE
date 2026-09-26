@@ -114,7 +114,7 @@ export function Landing() {
   const { theme, toggleTheme } = useBridgeTheme();
   const dark = theme === "dark";
   const [query, setQuery] = useState("");
-  const [suggestions, setSuggestions] = useState<Array<{ id: string; business_name: string; slug: string; city: string | null; state: string | null; logo_url: string | null }>>([]);
+  const [suggestions, setSuggestions] = useState<Array<{ id: string; business_name: string; slug: string; city: string | null; state: string | null; logo_url: string | null; category_name: string | null }>>([]);
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
   const [city, setCity] = useState("Lagos");
   const [scrolled, setScrolled] = useState(false);
@@ -368,7 +368,7 @@ export function Landing() {
                         className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left hover:bg-white/10"
                       >
                         {vendor.logo_url ? <img src={vendor.logo_url} alt="" className="h-10 w-10 shrink-0 rounded-lg object-cover" /> : <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-[#d6ff57]/15 text-sm font-semibold text-[#d6ff57]">{vendor.business_name.charAt(0)}</span>}
-                        <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold text-white">{vendor.business_name}</span><span className="mt-0.5 block truncate text-xs text-white/50">{[vendor.city, vendor.state].filter(Boolean).join(", ") || "Location not listed"}</span></span>
+                        <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold text-white">{vendor.business_name}</span><span className="mt-0.5 block truncate text-xs text-white/50">{[[vendor.city, vendor.state].filter(Boolean).join(", "), vendor.category_name].filter(Boolean).join(" · ") || "Location not listed"}</span></span>
                         <ArrowUpRight className="h-4 w-4 shrink-0 text-white/40" />
                       </button>
                     ))}
