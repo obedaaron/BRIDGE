@@ -1,20 +1,17 @@
-import { useEffect, useState } from "react";
-import type { FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
+import { Link } from "react-router-dom";
 import { apiFetch } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
+import { useBridgeTheme } from "../lib/theme";
 import { StarRating } from "./StarRating";
-import { Loader2, MessageSquare } from "lucide-react";
+import { Loader2, MessageSquare, Star } from "lucide-react";
 
-interface Review {
-  id: string;
-  rating: number;
-  body: string | null;
-  created_at: string;
-  customer_name: string | null;
-}
+interface Review { id: string; rating: number; body: string | null; created_at: string; customer_name: string | null; }
 
 export function ReviewsSection({ slug, isOwner }: { slug: string; isOwner: boolean }) {
   const { user } = useAuth();
+  const { theme } = useBridgeTheme();
+  const dark = theme === "dark";
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [rating, setRating] = useState(0);
@@ -23,104 +20,47 @@ export function ReviewsSection({ slug, isOwner }: { slug: string; isOwner: boole
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
-  function load() {
+  async function load() {
     setLoading(true);
-    apiFetch(`/reviews/${slug}`)
-      .then((data) => setReviews(data.reviews))
-      .finally(() => setLoading(false));
-  }
-
-  useEffect(load, [slug]);
-
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    if (rating === 0) {
-      setError("Pick a star rating first.");
-      return;
-    }
-    setError("");
-    setSubmitting(true);
     try {
-      await apiFetch(`/reviews/${slug}`, {
-        method: "POST",
-        body: JSON.stringify({ rating, body: body.trim() || null }),
-      });
-      setSuccess(true);
-      setBody("");
-      load();
-    } catch (err: any) {
-      // Backend returns this exact message when the message-first gate blocks the review
-      setError(err.message);
-    } finally {
-      setSubmitting(false);
-    }
+      const data = await apiFetch("/reviews/" + slug);
+      setReviews(data.reviews);
+      setError("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not load reviews.");
+    } finally { setLoading(false); }
   }
 
-  return (
-    <section className="max-w-6xl mx-auto px-5 sm:px-6 md:px-12 py-10 sm:py-14">
-      <div className="mb-8">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#d6ff57] mb-3">Feedback</p>
-        <h2 className="font-display text-3xl sm:text-4xl font-semibold text-[#f1eee7] tracking-tight">
-          Reviews
-        </h2>
-      </div>
+  useEffect(() => { void load(); }, [slug]);
 
-      {user && !isOwner && (
-        <form onSubmit={handleSubmit} className="bg-[#171714] rounded-2xl border border-white/10 p-5 sm:p-6 mb-8 shadow-sm">
-          {success ? (
-            <p className="text-sm text-white/65">Thanks — your review is up.</p>
-          ) : (
-            <>
-              <p className="text-sm font-medium text-[#f1eee7] mb-3">Leave a review</p>
-              <StarRating value={rating} onChange={setRating} size="lg" tone="dark" />
-              <textarea
-                value={body}
-                onChange={(e) => setBody(e.target.value)}
-                placeholder="Share how it went (optional)"
-                rows={3}
-                className="w-full mt-4 bg-[#11110f] border border-white/15 rounded-xl px-4 py-3 text-sm text-[#f1eee7] placeholder:text-white/35 outline-none focus:border-[#d6ff57]/70 transition-colors resize-none"
-              />
-              {error && <p className="text-signal text-sm mt-2">{error}</p>}
-              <button
-                type="submit"
-                disabled={submitting}
-                className="mt-3 inline-flex items-center gap-2 bg-[#d6ff57] text-[#11110f] font-semibold px-5 py-2.5 rounded-full text-sm hover:bg-[#ecffad] transition-colors disabled:opacity-50"
-              >
-                {submitting && <Loader2 className="w-4 h-4 animate-spin" strokeWidth={2} />}
-                Submit review
-              </button>
-            </>
-          )}
-        </form>
-      )}
+  async function handleSubmit(event: FormEvent) {
+    event.preventDefault();
+    if (!rating) { setError("Choose a star rating before submitting."); return; }
+    setError(""); setSuccess(false); setSubmitting(true);
+    try {
+      await apiFetch("/reviews/" + slug, { method: "POST", body: JSON.stringify({ rating, body: body.trim() || null }) });
+      setSuccess(true); setBody(""); setRating(0);
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not submit your review.");
+    } finally { setSubmitting(false); }
+  }
 
-      {loading ? (
-        <div className="py-10 text-center">
-          <div className="w-6 h-6 border-2 border-white/15 border-t-[#d6ff57] rounded-full animate-spin mx-auto" />
-        </div>
-      ) : reviews.length === 0 ? (
-        <div className="py-12 text-center bg-[#171714] rounded-2xl border border-white/10">
-          <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-3">
-            <MessageSquare className="w-5 h-5 text-white/35" strokeWidth={1.5} />
-          </div>
-          <p className="text-white/50 text-sm">No reviews yet.</p>
-        </div>
-      ) : (
-        <div className="grid sm:grid-cols-2 gap-4">
-          {reviews.map((r) => (
-            <div key={r.id} className="bg-[#171714] rounded-2xl border border-white/10 p-5 hover:border-white/20 transition-colors">
-              <div className="flex items-center justify-between mb-2">
-                <StarRating value={r.rating} size="sm" tone="dark" />
-                <span className="text-xs text-white/35 font-mono">
-                  {new Date(r.created_at).toLocaleDateString()}
-                </span>
-              </div>
-              {r.body && <p className="text-sm text-white/65 leading-relaxed mb-2">{r.body}</p>}
-              <p className="text-xs text-white/40">— {r.customer_name || "Anonymous"}</p>
-            </div>
-          ))}
-        </div>
-      )}
-    </section>
-  );
+  return <section id="reviews" className="border-t border-[var(--store-line)] bg-[var(--store-page)] px-4 py-10 sm:px-8 sm:py-14">
+    <div className="mx-auto max-w-[1440px]">
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-[.2em] text-[var(--store-accent-ink)]">Customer feedback</p><h2 className="mt-2 font-display text-3xl font-semibold tracking-[-.04em]">Reviews</h2></div><span className="rounded-full border border-[var(--store-line)] px-3 py-1.5 text-sm text-[var(--store-muted)]">{reviews.length} review{reviews.length === 1 ? "" : "s"}</span></div>
+
+      {user && !isOwner && <form onSubmit={handleSubmit} className="mb-7 rounded-2xl border border-[var(--store-line)] bg-[var(--store-panel)] p-5 sm:p-6">
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center"><div><h3 className="font-display text-xl font-semibold">Share your experience</h3><p className="mt-1 text-sm text-[var(--store-muted)]">Reviews are available to customers with a completed BRIDGE order.</p></div><StarRating value={rating} onChange={setRating} size="lg" tone={dark ? "dark" : "light"} /></div>
+        <label className="mt-4 block"><span className="sr-only">Your review</span><textarea value={body} onChange={(event) => setBody(event.target.value)} placeholder="What should other customers know? (optional)" rows={3} maxLength={1500} className="w-full resize-y rounded-xl border border-[var(--store-line)] bg-[var(--store-soft)] px-4 py-3 text-sm leading-relaxed text-[var(--store-text)] placeholder:text-[var(--store-muted)] outline-none transition focus:border-[var(--store-accent-ink)] focus:ring-2 focus:ring-[var(--store-accent-ink)]/20" /></label>
+        {error && <p role="alert" className="mt-3 text-sm font-medium text-[var(--store-danger)]">{error}</p>}
+        {success && <p role="status" className="mt-3 text-sm font-medium text-emerald-700">Thanks — your review has been posted.</p>}
+        <button type="submit" disabled={submitting} className="mt-4 inline-flex items-center gap-2 rounded-full bg-[#d6ff57] px-5 py-2.5 text-sm font-bold text-[#11110f] transition-colors hover:bg-[#eaff9e] disabled:cursor-not-allowed disabled:opacity-60">{submitting && <Loader2 className="h-4 w-4 animate-spin" />}{submitting ? "Submitting…" : "Submit review"}</button>
+      </form>}
+      {!user && <div className="mb-7 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--store-line)] bg-[var(--store-panel)] p-5"><p className="text-sm text-[var(--store-muted)]">Bought from this store? Sign in to leave a review after your order is complete.</p><Link to="/login" className="rounded-full border border-[var(--store-line)] px-4 py-2 text-sm font-semibold hover:bg-[var(--store-soft)]">Sign in to review</Link></div>}
+      {isOwner && <p className="mb-7 rounded-2xl border border-[var(--store-line)] bg-[var(--store-panel)] p-5 text-sm text-[var(--store-muted)]">Store owners can’t review their own storefront.</p>}
+
+      {loading ? <div className="flex items-center justify-center gap-2 py-12 text-sm text-[var(--store-muted)]"><Loader2 className="h-4 w-4 animate-spin" />Loading reviews</div> : error && reviews.length === 0 ? <div role="alert" className="rounded-2xl border border-[var(--store-line)] px-5 py-10 text-center text-sm text-[var(--store-muted)]">{error}</div> : reviews.length === 0 ? <div className="rounded-2xl border border-[var(--store-line)] bg-[var(--store-panel)] px-5 py-10 text-center"><MessageSquare className="mx-auto h-6 w-6 text-[var(--store-muted)]" /><p className="mt-3 font-semibold">No reviews yet</p><p className="mt-1 text-sm text-[var(--store-muted)]">Be the first customer to share feedback.</p></div> : <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{reviews.map((review) => <article key={review.id} className="rounded-2xl border border-[var(--store-line)] bg-[var(--store-panel)] p-5"><div className="flex flex-wrap items-center justify-between gap-2"><div className="flex items-center gap-2"><Star className="h-4 w-4 fill-amber-400 text-amber-500" /><strong className="text-sm">{review.rating}.0</strong><StarRating value={review.rating} size="sm" tone={dark ? "dark" : "light"} /></div><time className="text-xs text-[var(--store-muted)]">{new Date(review.created_at).toLocaleDateString()}</time></div>{review.body && <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-relaxed text-[var(--store-text)]">{review.body}</p>}<p className="mt-4 border-t border-[var(--store-line)] pt-3 text-xs text-[var(--store-muted)]">{review.customer_name || "BRIDGE customer"}</p></article>)}</div>}
+    </div>
+  </section>;
 }
