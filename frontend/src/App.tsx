@@ -1,45 +1,49 @@
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
-import { ProtectedRoute } from "./components/ProtectedRoute";
 import { Landing } from "./pages/Landing";
-import { Login } from "./pages/Login";
-import { Signup } from "./pages/Signup";
-import { VendorDashboard } from "./pages/VendorDashboard";
-import { ForgotPassword } from "./pages/ForgotPassword";
-import { Listings } from "./pages/dashboard/Listings";
-import { Verification } from "./pages/dashboard/Verification";
-import { Settings } from "./pages/dashboard/Settings";
-import { StorefrontPage } from "./pages/StorefrontPage";
-import { Explore } from "./pages/Explore";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AdminRoute } from "./components/AdminRoute";
-import { AdminOverview } from "./pages/admin/AdminOverview";
-import { AdminVerifications } from "./pages/admin/Verifications";
-import { AdminVendors } from "./pages/admin/Vendors";
-import { FraudAlerts } from "./pages/admin/FraudAlerts";
-import { AdminSettings } from "./pages/admin/Settings";
-import { Messages } from "./pages/Messages";
-import { Conversation } from "./pages/Conversation";
-import { Orders as VendorOrders } from "./pages/dashboard/Orders";
-import { Orders } from "./pages/Orders";
-import { Cart } from "./pages/Cart";
 import { CartProvider } from "./context/CartContext";
-import { Plans } from "./pages/dashboard/Plans";
-import { Wallet } from "./pages/dashboard/Wallet";
-import { Legal } from "./pages/Legal";
-import { Promotions } from "./pages/dashboard/Promotions";
-import { CompanyPage, ContactPage } from "./pages/Company";
-import { NotFound } from "./pages/NotFound";
-import { ResetPassword } from "./pages/ResetPassword";
 import { BridgeAssistant } from "./components/BridgeAssistant";
-import { Analytics } from "./pages/dashboard/Analytics";
+import { CookieConsent } from "./components/CookieConsent";
+
+const Login = lazy(() => import("./pages/Login").then((module) => ({ default: module.Login })));
+const Signup = lazy(() => import("./pages/Signup").then((module) => ({ default: module.Signup })));
+const VendorDashboard = lazy(() => import("./pages/VendorDashboard").then((module) => ({ default: module.VendorDashboard })));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword").then((module) => ({ default: module.ForgotPassword })));
+const Listings = lazy(() => import("./pages/dashboard/Listings").then((module) => ({ default: module.Listings })));
+const Verification = lazy(() => import("./pages/dashboard/Verification").then((module) => ({ default: module.Verification })));
+const Settings = lazy(() => import("./pages/dashboard/Settings").then((module) => ({ default: module.Settings })));
+const StorefrontPage = lazy(() => import("./pages/StorefrontPage").then((module) => ({ default: module.StorefrontPage })));
+const Explore = lazy(() => import("./pages/Explore").then((module) => ({ default: module.Explore })));
+const AdminOverview = lazy(() => import("./pages/admin/AdminOverview").then((module) => ({ default: module.AdminOverview })));
+const AdminVerifications = lazy(() => import("./pages/admin/Verifications").then((module) => ({ default: module.AdminVerifications })));
+const AdminVendors = lazy(() => import("./pages/admin/Vendors").then((module) => ({ default: module.AdminVendors })));
+const FraudAlerts = lazy(() => import("./pages/admin/FraudAlerts").then((module) => ({ default: module.FraudAlerts })));
+const AdminSettings = lazy(() => import("./pages/admin/Settings").then((module) => ({ default: module.AdminSettings })));
+const Messages = lazy(() => import("./pages/Messages").then((module) => ({ default: module.Messages })));
+const Conversation = lazy(() => import("./pages/Conversation").then((module) => ({ default: module.Conversation })));
+const VendorOrders = lazy(() => import("./pages/dashboard/Orders").then((module) => ({ default: module.Orders })));
+const Orders = lazy(() => import("./pages/Orders").then((module) => ({ default: module.Orders })));
+const Cart = lazy(() => import("./pages/Cart").then((module) => ({ default: module.Cart })));
+const Plans = lazy(() => import("./pages/dashboard/Plans").then((module) => ({ default: module.Plans })));
+const Wallet = lazy(() => import("./pages/dashboard/Wallet").then((module) => ({ default: module.Wallet })));
+const Legal = lazy(() => import("./pages/Legal").then((module) => ({ default: module.Legal })));
+const Promotions = lazy(() => import("./pages/dashboard/Promotions").then((module) => ({ default: module.Promotions })));
+const CompanyPage = lazy(() => import("./pages/Company").then((module) => ({ default: module.CompanyPage })));
+const ContactPage = lazy(() => import("./pages/Company").then((module) => ({ default: module.ContactPage })));
+const NotFound = lazy(() => import("./pages/NotFound").then((module) => ({ default: module.NotFound })));
+const ResetPassword = lazy(() => import("./pages/ResetPassword").then((module) => ({ default: module.ResetPassword })));
+const Analytics = lazy(() => import("./pages/dashboard/Analytics").then((module) => ({ default: module.Analytics })));
 
 export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
       <CartProvider>
+        <Suspense fallback={<div className="grid min-h-screen place-items-center bg-[#11110f] font-body text-[#f1eee7]"><span className="inline-flex items-center gap-3"><span className="h-2 w-2 animate-pulse rounded-full bg-[#d6ff57]" />Loading BRIDGE…</span></div>}>
         <Routes>
-          {/* Public */}
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
@@ -55,15 +59,7 @@ export default function App() {
           <Route path="/careers" element={<CompanyPage />} />
           <Route path="/contact" element={<ContactPage />} />
 
-          {/* Vendor Dashboard */}
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <VendorDashboard />
-              </ProtectedRoute>
-            }
-          />
+          <Route path="/dashboard" element={<ProtectedRoute><VendorDashboard /></ProtectedRoute>} />
           <Route path="/dashboard/listings" element={<ProtectedRoute><Listings /></ProtectedRoute>} />
           <Route path="/dashboard/verification" element={<ProtectedRoute><Verification /></ProtectedRoute>} />
           <Route path="/dashboard/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
@@ -77,7 +73,6 @@ export default function App() {
           <Route path="/dashboard/promotions" element={<ProtectedRoute><Promotions /></ProtectedRoute>} />
           <Route path="/dashboard/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
 
-          {/* Admin */}
           <Route path="/admin" element={<AdminRoute><AdminOverview /></AdminRoute>} />
           <Route path="/admin/overview" element={<AdminRoute><AdminOverview /></AdminRoute>} />
           <Route path="/admin/verifications" element={<AdminRoute><AdminVerifications /></AdminRoute>} />
@@ -86,7 +81,9 @@ export default function App() {
           <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
+        </Suspense>
         <BridgeAssistant />
+        <CookieConsent />
       </CartProvider>
       </AuthProvider>
     </BrowserRouter>

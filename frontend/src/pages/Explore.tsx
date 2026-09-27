@@ -93,6 +93,7 @@ function StoreCard({ vendor, featured = false }: { vendor: Vendor; featured?: bo
 export function Explore() {
   const [searchParams] = useSearchParams();
   const { theme, toggleTheme } = useBridgeTheme();
+  const { user, loading: authLoading } = useAuth();
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [recommendations, setRecommendations] = useState<Vendor[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -110,7 +111,8 @@ export function Explore() {
     ? { "--page": "#11110f", "--panel": "#171714", "--text": "#f1eee7", "--muted": "rgba(255,255,255,.68)", "--placeholder": "rgba(255,255,255,.64)", "--accent-ink": "#bce55c", "--line": "rgba(255,255,255,.18)", "--soft": "#262720", "--softText": "#f1eee7" }
     : { "--page": "#ffffff", "--panel": "#ffffff", "--text": "#11110f", "--muted": "#545a56", "--placeholder": "#707771", "--accent-ink": "#526b0c", "--line": "#d5dad6", "--soft": "#f2f5f3", "--softText": "#11110f" }) as CSSProperties;
 
-  useEffect(() => { apiFetch("/categories").then((data) => setCategories(data.categories)); apiFetch("/recommendations").then((data) => setRecommendations(data.vendors)).catch(() => undefined); }, []);
+  useEffect(() => { apiFetch("/categories").then((data) => setCategories(data.categories)); }, []);
+  useEffect(() => { if (authLoading) return; if (!user) { setRecommendations([]); return; } let active = true; apiFetch("/recommendations").then((data) => { if (active) setRecommendations(data.vendors); }).catch(() => undefined); return () => { active = false; }; }, [authLoading, user]);
   useEffect(() => {
     const trimmedQuery = q.trim();
     if (trimmedQuery.length < 1) { setSuggestions([]); return; }
@@ -153,7 +155,7 @@ export function Explore() {
       <section className="relative overflow-hidden rounded-t-[2rem] rounded-b-none border border-b-0 border-[var(--line)] bg-[var(--panel)] px-5 pb-5 pt-7 sm:px-8 sm:pb-6 sm:pt-9 lg:px-12 lg:pb-7 lg:pt-12">
         <div aria-hidden="true" className="pointer-events-none absolute -right-24 -top-36 h-[28rem] w-[28rem] rounded-full bg-[#d6ff57]/[0.08] blur-3xl" />
         <div className="relative flex flex-col justify-end gap-5 sm:flex-row sm:items-end sm:justify-between">
-          <div><p className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[.22em] text-[var(--accent-ink)]"><span className="h-1.5 w-1.5 rounded-full bg-[#d6ff57]" />A better way to find local</p><h1 className="mt-4 max-w-2xl font-display text-[clamp(2.8rem,6vw,5.8rem)] font-semibold leading-[.88] tracking-[-.075em]">Good finds<br className="hidden sm:block" /> start nearby.</h1><p className="mt-5 max-w-md text-sm leading-relaxed text-[var(--muted)] sm:text-base">Find trusted storefronts, compare useful details, and connect directly with local businesses.</p></div>
+          <div><p className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[.22em] text-[var(--accent-ink)]"><span className="h-1.5 w-1.5 rounded-full bg-[#d6ff57]" />A better way to find local Businesses</p><h1 className="mt-4 max-w-2xl font-display text-[clamp(2.8rem,6vw,5.8rem)] font-semibold leading-[.88] tracking-[-.075em]">Good finds<br className="hidden sm:block" /> start nearby.</h1><p className="mt-5 max-w-md text-sm leading-relaxed text-[var(--muted)] sm:text-base">Find trusted storefronts, compare useful details, and connect directly with local businesses.</p></div>
           <p className="mb-1 flex items-center gap-2 text-xs font-semibold text-[var(--muted)]"><Crosshair className="h-4 w-4 text-[var(--accent-ink)]" />Search stores, services and categories</p>
         </div>
         {locationMessage && <p className="relative mt-5 inline-flex border-l-2 border-[#9abf31] pl-3 text-sm text-[var(--muted)]">{locationMessage}</p>}

@@ -419,7 +419,7 @@ export function Landing() {
                 mid-item — same layout, just a smoother touch-scroll feel.
                 No visual/design change.
               */}
-              <div className="flex gap-2 overflow-x-auto pb-2 snap-x snap-mandatory scroll-px-1 lg:flex-col lg:overflow-visible lg:pb-0 lg:snap-none">
+              <div className="flex gap-2 overflow-x-auto pb-2 snap-x snap-mandatory scroll-px-1 scrollbar-hide lg:h-[30rem] lg:max-h-[calc(100vh-10rem)] lg:self-start lg:flex-col lg:overflow-y-auto lg:overscroll-contain lg:pr-2 lg:pb-0 lg:snap-none">
                 {categories.map((category) => {
                   const Icon = category.icon;
                   const active = selectedCategory === category.name;
@@ -651,10 +651,4 @@ export function Landing() {
     </div>
   );
 }
-
-
-
-
-
-
 
