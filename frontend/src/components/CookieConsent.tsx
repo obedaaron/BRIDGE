@@ -34,7 +34,7 @@ export function CookieConsent() {
   const muted = dark ? "text-white/65" : "text-[#171714]/65";
   const subtle = dark ? "border-white/15 bg-white/[.04]" : "border-[#171714]/15 bg-[#f6f2ea]";
 
-  if (consent && !settingsOpen) return <button onClick={() => { setAnalytics(consent.analytics); setSettingsOpen(true); }} aria-label="Cookie settings" className="fixed bottom-3 left-3 z-[65] inline-flex items-center gap-2 rounded-full border border-white/15 bg-[#171714] px-3 py-2 text-xs text-[#f1eee7] opacity-75 shadow-lg transition hover:opacity-100"><Cookie className="h-3.5 w-3.5" />Cookie settings</button>;
+  if (consent && !settingsOpen) return <button onClick={() => { setAnalytics(consent.analytics); setSettingsOpen(true); }} type="button" aria-label="Cookie settings" title="Cookie settings" className="fixed bottom-3 left-3 z-[65] grid h-10 w-10 place-items-center rounded-full border border-white/15 bg-[#171714] text-[#f1eee7] opacity-75 shadow-lg transition hover:opacity-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d6ff57]"><Cookie className="h-4 w-4" aria-hidden="true" /></button>;
 
   return <section role="dialog" aria-labelledby="cookie-title" aria-describedby="cookie-description" className={`fixed bottom-40 left-3 right-3 z-[80] mx-auto max-w-xl rounded-2xl border p-4 shadow-2xl sm:bottom-5 sm:left-5 sm:right-auto sm:p-5 ${shell}`}>
     <div className="flex items-start gap-3">
@@ -53,6 +53,3 @@ export function CookieConsent() {
     </div>
   </section>;
 }
-
-
-
