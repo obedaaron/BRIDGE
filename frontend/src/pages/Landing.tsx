@@ -93,7 +93,6 @@ const footerColumns = [
     links: [
       { label: "Create a storefront", to: "/signup" },
       { label: "Get verified", to: "/how-it-works" },
-      { label: "Pricing", to: "/pricing" },
       { label: "Sign in", to: "/login" },
     ],
   },
@@ -651,4 +650,3 @@ export function Landing() {
     </div>
   );
 }
-
