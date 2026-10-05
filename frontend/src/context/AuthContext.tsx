@@ -15,6 +15,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<User>;
   signup: (email: string, password: string, fullName: string, acceptedTerms: boolean) => Promise<void>;
   logout: () => void;
+  updateUser: (updates: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -61,13 +62,17 @@ async function login(email: string, password: string) {
     setUser(data.user);
   }
 
+  function updateUser(updates: Partial<User>) {
+    setUser((current) => current ? { ...current, ...updates } : current);
+  }
+
   function logout() {
     localStorage.removeItem("token");
     setUser(null);
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, signup, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, signup, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

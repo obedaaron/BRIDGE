@@ -57,10 +57,33 @@ router.post("/login", async (req, res) => {
 
 router.get("/me", requireAuth, async (req, res) => {
   const result = await pool.query(
-    "select id, email, full_name, role, phone, email_verified_at, phone_verified_at, created_at from users where id = $1",
+    "select id, email, full_name, username, personalized_ads_enabled, role, phone, email_verified_at, phone_verified_at, created_at from users where id = $1",
     [req.user!.userId]
   );
   res.json({ user: result.rows[0] });
+});
+
+router.patch("/me", requireAuth, async (req, res) => {
+  const fullName = typeof req.body.fullName === "string" ? req.body.fullName.trim() : "";
+  const username = typeof req.body.username === "string" ? req.body.username.trim().toLowerCase() : "";
+  const personalizedAdsEnabled = req.body.personalizedAdsEnabled;
+  if (!fullName || fullName.length > 100) return res.status(400).json({ error: "Enter a name up to 100 characters long" });
+  if (username && !/^[a-z0-9_]{3,24}$/.test(username)) return res.status(400).json({ error: "Username must be 3–24 characters using letters, numbers or underscores" });
+  if (typeof personalizedAdsEnabled !== "boolean") return res.status(400).json({ error: "Choose whether to allow personalized recommendations" });
+  try {
+    const result = await pool.query(
+      `update users set full_name = $1, username = $2, personalized_ads_enabled = $3
+       where id = $4
+       returning id, email, full_name, username, personalized_ads_enabled, role, phone, email_verified_at, phone_verified_at, created_at`,
+      [fullName, username || null, personalizedAdsEnabled, req.user!.userId]
+    );
+    if (!result.rows[0]) return res.status(404).json({ error: "Your account could not be found. Please sign in again." });
+    res.json({ user: result.rows[0], message: "Account details saved" });
+  } catch (err) {
+    if ((err as { code?: string }).code === "23505") return res.status(409).json({ error: "That username is already taken" });
+    console.error("Account update failed", err);
+    res.status(500).json({ error: "Could not save your account details. Please try again." });
+  }
 });
 
 router.patch("/me/password", requireAuth, async (req, res) => {

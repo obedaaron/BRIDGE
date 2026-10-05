@@ -1,10 +1,10 @@
-import { useEffect, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { apiFetch } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 import { ReviewsSection } from "../components/ReviewsSection";
-import { ArrowLeft, ArrowRight, Check, ChevronRight, Headphones, Home, MapPin, MessageCircle, Moon, Package, ShieldCheck, ShoppingCart, Star, Sun } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, ChevronRight, Headphones, Home, MapPin, MessageCircle, Minus, Moon, Package, Plus, Search, ShieldCheck, ShoppingCart, Star, Sun, X } from "lucide-react";
 import { useBridgeTheme } from "../lib/theme";
 import { BridgeLoader } from "../components/BridgeLoader";
 
@@ -18,9 +18,30 @@ type Vendor = {
   category_name: string | null; category_slug: string | null;
 };
 type Toast = { id: string; key: string; title: string; imageUrl: string | null };
+/* What the person added during this visit. Drives the order panel; the real cart still lives in CartContext. */
+type VisitLine = { listingId: string; title: string; price: number; currency: string; imageUrl: string | null; qty: number };
+
 const money = (amount: number | null, currency: string) => amount === null
   ? "Contact for price"
   : new Intl.NumberFormat("en-NG", { style: "currency", currency, maximumFractionDigits: 0 }).format(amount);
+
+const typeLabel = (type: string) => type ? type.charAt(0).toUpperCase() + type.slice(1) : "Other";
+
+/* Cleans up messy city/state input: splits on , or /, trims, dedupes, drops "state". */
+function formatPlace(city?: string | null, state?: string | null) {
+  const seen = new Set<string>();
+  const parts = [city, state]
+    .filter(Boolean)
+    .flatMap((value) => (value as string).split(/[,/]/))
+    .map((part) => part.trim().replace(/\s+state$/i, ""))
+    .filter((part) => {
+      const key = part.toLowerCase();
+      if (!part || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  return parts.slice(0, 2).join(", ") || "Location not listed";
+}
 
 function AddToCartToast({ title, imageUrl, onDone }: { title: string; imageUrl: string | null; onDone: () => void }) {
   const [show, setShow] = useState(false);
@@ -34,6 +55,71 @@ function AddToCartToast({ title, imageUrl, onDone }: { title: string; imageUrl: 
     <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#d6ff57] text-[#11110f]"><Check className="h-5 w-5" /></div>
     {imageUrl && <img src={imageUrl} className="h-10 w-10 shrink-0 rounded-lg object-cover" alt="" />}
     <div className="min-w-0"><p className="text-sm font-semibold">Added to cart</p><p className="truncate text-xs text-[var(--store-muted)]">{title}</p></div>
+  </div>;
+}
+
+/* Product details popup: bottom sheet on phones, centered dialog on larger screens. */
+function ProductModal({ item, vendorName, location, inCartQty, onClose, onAdd, onMessage }: {
+  item: Item; vendorName: string; location: string; inCartQty: number;
+  onClose: () => void; onAdd: (item: Item, qty: number) => void; onMessage: () => void;
+}) {
+  const [qty, setQty] = useState(1);
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const max = item.stock_quantity > 0 ? item.stock_quantity : 99;
+  const priced = item.price !== null;
+
+  useEffect(() => {
+    const previousFocus = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    closeRef.current?.focus();
+    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = previousOverflow;
+      previousFocus?.focus?.();
+    };
+  }, [onClose]);
+
+  return <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-[2px] sm:items-center sm:p-6" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+    <div role="dialog" aria-modal="true" aria-labelledby="product-modal-title" className="relative grid max-h-[94vh] w-full max-w-3xl grid-rows-[auto_minmax(0,1fr)] overflow-hidden rounded-t-3xl border border-[var(--store-line)] bg-[var(--store-panel)] text-[var(--store-text)] shadow-2xl sm:max-h-[640px] sm:grid-cols-2 sm:grid-rows-1 sm:rounded-3xl">
+      <button ref={closeRef} type="button" onClick={onClose} aria-label="Close product details" className="absolute right-3 top-3 z-10 grid h-10 w-10 place-items-center rounded-full bg-[var(--store-panel)] text-[var(--store-text)] shadow-lg transition-transform hover:scale-105"><X className="h-5 w-5" /></button>
+
+      <div className="relative h-56 bg-[var(--store-soft)] sm:h-full">
+        {item.image_url
+          ? <img src={item.image_url} alt={item.title} className="absolute inset-0 h-full w-full object-cover" />
+          : <div className="grid h-full place-items-center"><Package className="h-12 w-12 text-[var(--store-muted)]" /></div>}
+        <span className="absolute left-3 top-3 rounded-full bg-black/65 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-white backdrop-blur-sm">{item.type}</span>
+      </div>
+
+      <div className="flex min-h-0 flex-col">
+        <div className="min-h-0 flex-1 overflow-y-auto p-5 sm:p-7">
+          <p className="text-[10px] font-bold uppercase tracking-[.2em] text-[var(--store-accent-ink)]">{vendorName}</p>
+          <h2 id="product-modal-title" className="mt-2 break-words font-display text-2xl font-semibold tracking-[-.04em] sm:text-3xl">{item.title}</h2>
+          <p className="mt-3 font-display text-2xl font-semibold">{money(item.price, item.currency)}</p>
+          <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold">
+            {item.stock_quantity > 0 && <span className="rounded-full bg-[var(--store-soft)] px-3 py-1.5">{item.stock_quantity} available</span>}
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--store-soft)] px-3 py-1.5"><MapPin className="h-3.5 w-3.5 text-[var(--store-accent-ink)]" />{location}</span>
+            {inCartQty > 0 && <span className="rounded-full bg-[#d6ff57] px-3 py-1.5 text-[#11110f]">{inCartQty} already added</span>}
+          </div>
+          <h3 className="mt-6 text-[10px] font-bold uppercase tracking-[.2em] text-[var(--store-muted)]">About this item</h3>
+          <p className="mt-2 whitespace-pre-line break-words text-sm leading-relaxed text-[var(--store-muted)]">{item.description || "The store hasn’t added a description yet. Message them if you want more detail."}</p>
+          <p className="mt-5 flex items-start gap-3 rounded-2xl bg-[var(--store-soft)] p-3.5 text-sm"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[var(--store-accent-ink)]" /><span><strong className="block">Secure payment on BRIDGE</strong><span className="text-[var(--store-muted)]">You pay through BRIDGE, not directly to the seller.</span></span></p>
+        </div>
+
+        <div className="flex items-center gap-3 border-t border-[var(--store-line)] bg-[var(--store-panel)] p-4 sm:px-7">
+          {priced ? <>
+            <div className="inline-flex h-12 shrink-0 items-center rounded-full border border-[var(--store-line)]">
+              <button type="button" onClick={() => setQty((value) => Math.max(1, value - 1))} disabled={qty <= 1} aria-label="Decrease quantity" className="grid h-full w-11 place-items-center rounded-full transition-colors hover:bg-[var(--store-soft)] disabled:opacity-40"><Minus className="h-4 w-4" /></button>
+              <span aria-live="polite" className="min-w-[1.75rem] text-center font-semibold tabular-nums">{qty}</span>
+              <button type="button" onClick={() => setQty((value) => Math.min(max, value + 1))} disabled={qty >= max} aria-label="Increase quantity" className="grid h-full w-11 place-items-center rounded-full transition-colors hover:bg-[var(--store-soft)] disabled:opacity-40"><Plus className="h-4 w-4" /></button>
+            </div>
+            <button type="button" onClick={() => onAdd(item, qty)} className="flex h-12 min-w-0 flex-1 items-center justify-between gap-3 rounded-full bg-[#d6ff57] px-5 text-sm font-bold text-[#11110f] transition-colors hover:bg-[#e9ff9c]"><span className="flex items-center gap-2"><ShoppingCart className="h-4 w-4" />Add to cart</span><span className="tabular-nums">{money((item.price as number) * qty, item.currency)}</span></button>
+          </> : <button type="button" onClick={onMessage} className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-full bg-[#d6ff57] px-5 text-sm font-bold text-[#11110f] transition-colors hover:bg-[#e9ff9c]"><MessageCircle className="h-4 w-4" />Message store for a price</button>}
+        </div>
+      </div>
+    </div>
   </div>;
 }
 
@@ -54,20 +140,49 @@ export function StorefrontPage() {
   const [addedId, setAddedId] = useState<string | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [showFullDescription, setShowFullDescription] = useState(false);
+  const [query, setQuery] = useState("");
+  const [tab, setTab] = useState("all");
+  const [active, setActive] = useState<Item | null>(null);
+  const [visit, setVisit] = useState<VisitLine[]>([]);
+  /* If the banner image fails to load we fall back to the store mark. */
+  const [heroFailed, setHeroFailed] = useState(false);
 
   useEffect(() => {
-    let active = true;
+    let current = true;
     setVendor(undefined);
+    setHeroFailed(false);
+    setVisit([]);
+    setTab("all");
+    setQuery("");
+    setActive(null);
     apiFetch("/store/" + slug)
       .then((data) => {
-        if (!active) return;
+        if (!current) return;
         setVendor(data.vendor);
         setItems(data.listings);
         setGallery(data.gallery || []);
       })
-      .catch(() => { if (active) setVendor(null); });
-    return () => { active = false; };
+      .catch(() => { if (current) setVendor(null); });
+    return () => { current = false; };
   }, [slug]);
+
+  const closeModal = useCallback(() => setActive(null), []);
+
+  const tabs = useMemo(() => {
+    const counts = new Map<string, number>();
+    items.forEach((item) => counts.set(item.type, (counts.get(item.type) || 0) + 1));
+    return [{ key: "all", label: "All", count: items.length }, ...Array.from(counts, ([key, count]) => ({ key, label: typeLabel(key), count }))];
+  }, [items]);
+
+  const visible = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    return items.filter((item) => (tab === "all" || item.type === tab) && (!needle || (item.title + " " + (item.description || "")).toLowerCase().includes(needle)));
+  }, [items, tab, query]);
+
+  const visitQty = (id: string) => visit.find((line) => line.listingId === id)?.qty || 0;
+  const visitCount = visit.reduce((sum, line) => sum + line.qty, 0);
+  const visitTotal = visit.reduce((sum, line) => sum + line.price * line.qty, 0);
+  const visitCurrency = visit[0]?.currency || "NGN";
 
   async function message() {
     if (!user) { navigate("/login"); return; }
@@ -82,23 +197,31 @@ export function StorefrontPage() {
     } finally { setMessaging(false); }
   }
 
-  function addToCart(item: Item) {
+  /* Quantity is applied by calling add() once per unit, so it works with the existing CartContext. */
+  function addToCart(item: Item, qty = 1) {
     if (!vendor) return;
-    add({ listingId: item.id, title: item.title, price: item.price ?? 0, currency: item.currency, imageUrl: item.image_url, vendorSlug: vendor.slug, vendorName: vendor.business_name });
+    for (let i = 0; i < qty; i += 1) {
+      add({ listingId: item.id, title: item.title, price: item.price ?? 0, currency: item.currency, imageUrl: item.image_url, vendorSlug: vendor.slug, vendorName: vendor.business_name });
+    }
+    setVisit((lines) => lines.some((line) => line.listingId === item.id)
+      ? lines.map((line) => line.listingId === item.id ? { ...line, qty: line.qty + qty } : line)
+      : [...lines, { listingId: item.id, title: item.title, price: item.price ?? 0, currency: item.currency, imageUrl: item.image_url, qty }]);
     setAddedId(item.id);
-    setTimeout(() => setAddedId((id) => id === item.id ? null : id), 400);
-    setToasts((current) => [...current, { id: item.id, key: item.id + "-" + Date.now(), title: item.title, imageUrl: item.image_url }]);
+    setTimeout(() => setAddedId((id) => id === item.id ? null : id), 600);
+    setToasts((current) => [...current, { id: item.id, key: item.id + "-" + Date.now(), title: qty > 1 ? qty + " × " + item.title : item.title, imageUrl: item.image_url }]);
   }
 
   if (vendor === undefined) return <div style={themeStyle} className="min-h-screen bg-[var(--store-page)] text-[var(--store-text)]"><BridgeLoader label="Loading this storefront" className="min-h-screen" /></div>;
   if (!vendor) return <div style={themeStyle} className="grid min-h-screen place-items-center bg-[var(--store-page)] p-6 text-center text-[var(--store-text)]"><div><p className="font-display text-3xl font-semibold">Store not found.</p><Link className="mt-4 inline-flex items-center gap-2 text-[var(--store-muted)] underline underline-offset-4" to="/explore"><ArrowLeft className="h-4 w-4" />Back to Explore</Link></div></div>;
 
   const heroImage = vendor.storefront_cover_url || vendor.cover_image_url || gallery[0]?.image_url || items.find((item) => item.image_url)?.image_url || null;
+  const showHero = Boolean(heroImage) && !heroFailed;
   const breadcrumbCategory = vendor.category_name || "All businesses";
   const categoryHref = vendor.category_slug ? "/explore?category=" + encodeURIComponent(vendor.category_slug) : "/explore";
   const isOwner = user?.id === vendor.user_id;
   const description = vendor.description || "Discover products and services from this BRIDGE store.";
-  const location = [vendor.city, vendor.state].filter(Boolean).join(", ") || "Location not listed";
+  const location = formatPlace(vendor.city, vendor.state);
+  const verified = vendor.verification_status !== "unverified";
 
   return <div style={themeStyle} className="min-h-screen overflow-x-hidden bg-[var(--store-page)] font-body text-[var(--store-text)]">
     <header className="sticky top-0 z-40 border-b border-[var(--store-line)] bg-[var(--store-panel)]/95 backdrop-blur-md">
@@ -113,8 +236,8 @@ export function StorefrontPage() {
       </div>
     </header>
 
-    <main className="mx-auto max-w-[1440px] px-4 pb-14 sm:px-8">
-      <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-2 py-5 text-xs font-semibold sm:py-7 sm:text-sm">
+    <main className="mx-auto max-w-[1440px] px-4 pb-24 sm:px-8 xl:pb-14">
+      <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-2 py-5 text-xs font-semibold sm:py-6 sm:text-sm">
         <Link to="/" className="inline-flex items-center gap-1.5 text-[var(--store-muted)] transition-colors hover:text-[var(--store-text)]"><Home className="h-3.5 w-3.5" />Home</Link>
         <ChevronRight className="h-3.5 w-3.5 text-[var(--store-muted)]" />
         <Link to={categoryHref} className="text-[var(--store-muted)] transition-colors hover:text-[var(--store-text)]">{breadcrumbCategory}</Link>
@@ -122,60 +245,94 @@ export function StorefrontPage() {
         <span aria-current="page" className="max-w-[55vw] truncate text-[var(--store-text)]">{vendor.business_name}</span>
       </nav>
 
-      <div className="mb-4">
-        <Link to="/explore" className="inline-flex items-center gap-2 rounded-full border border-[var(--store-line)] px-3.5 py-2 text-xs font-semibold text-[var(--store-muted)] transition-colors hover:border-[#8ba526] hover:text-[var(--store-text)]"><ArrowLeft className="h-3.5 w-3.5" />Back to businesses</Link>
-      </div>
-
-      <section className="overflow-hidden rounded-3xl border border-[var(--store-line)] bg-[var(--store-panel)]">
-        <div className="relative aspect-[16/8] min-h-48 max-h-[440px] overflow-hidden bg-[var(--store-soft)] sm:aspect-[16/6]">
-          {heroImage ? <img src={heroImage} alt={vendor.business_name + " storefront"} className="h-full w-full object-cover" /> : <div className="grid h-full place-items-center bg-gradient-to-br from-[var(--store-soft)] to-[var(--store-panel)]"><StoreMark name={vendor.business_name} /></div>}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent" />
-          <div className="absolute inset-x-0 bottom-0 flex flex-wrap items-end justify-between gap-4 p-4 sm:p-7">
-            <div className="flex min-w-0 items-end gap-3 sm:gap-4">
-              {vendor.logo_url ? <img src={vendor.logo_url} alt={vendor.business_name + " logo"} className="h-14 w-14 shrink-0 rounded-2xl border-2 border-white bg-white object-cover shadow-lg sm:h-20 sm:w-20" /> : <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-[#d6ff57] text-xl font-bold text-[#11110f] sm:h-20 sm:w-20">{vendor.business_name.charAt(0)}</div>}
-              <div className="min-w-0 pb-0.5"><span className="mb-1 inline-flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-white backdrop-blur-sm">{breadcrumbCategory}</span><h1 className="truncate font-display text-2xl font-semibold tracking-[-.045em] text-white drop-shadow sm:text-4xl">{vendor.business_name}</h1></div>
-            </div>
-            <div className="flex shrink-0 items-center gap-2 rounded-full bg-white/95 px-3.5 py-2 text-xs font-bold text-[#11110f] shadow-lg sm:px-4 sm:py-2.5 sm:text-sm"><MapPin className="h-4 w-4 text-[#526b0c]" /><span className="max-w-[34vw] truncate sm:max-w-none">{location}</span></div>
-          </div>
-        </div>
-
-        <div className="grid gap-6 p-5 sm:p-7 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:px-9 lg:py-7">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-              <h2 className="font-display text-2xl font-semibold tracking-[-.04em] sm:text-3xl">{vendor.business_name}</h2>
-              <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--store-accent-ink)]"><ShieldCheck className="h-4 w-4" />{vendor.verification_status === "unverified" ? "New storefront" : "Verified"}</span>
-            </div>
-            <p className={"mt-3 max-w-3xl text-sm leading-relaxed text-[var(--store-muted)] sm:text-base " + (showFullDescription ? "" : "line-clamp-2")}>{description}</p>
-            {description.length > 140 && <button type="button" onClick={() => setShowFullDescription((value) => !value)} className="mt-1 text-sm font-semibold text-[#5a7411] underline underline-offset-4 dark:text-[#d6ff57]">{showFullDescription ? "Show less" : "More info"}</button>}
-            <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
-              <a href="#reviews" className="inline-flex items-center gap-2 rounded-full border border-[var(--store-line)] px-3 py-1.5 transition-colors hover:bg-[var(--store-soft)]"><Star className="h-4 w-4 fill-amber-400 text-amber-500" /><strong>{vendor.avg_rating?.toFixed(1) || "New"}</strong><span className="text-[var(--store-muted)]">({vendor.review_count} reviews)</span></a>
-              <span className="inline-flex items-center gap-1.5 text-[var(--store-muted)]"><Check className="h-4 w-4 text-emerald-600 dark:text-emerald-300" />{vendor.completed_transactions} completed orders</span>
-              {vendor.reliability_score > 0 && <span className="text-xs text-[var(--store-muted)]">Reliability {vendor.reliability_score}%</span>}
+      <div className="grid gap-6 lg:grid-cols-[300px_minmax(0,1fr)] lg:gap-8 xl:grid-cols-[300px_minmax(0,1fr)_340px]">
+        {/* ── Left: store identity ── */}
+        <aside className="min-w-0 lg:sticky lg:top-24 lg:self-start">
+          <div className="relative isolate aspect-[16/10] overflow-hidden rounded-3xl bg-[var(--store-soft)] lg:aspect-[4/3]">
+            {showHero
+              ? <img
+                  src={heroImage!}
+                  alt={vendor.business_name + " storefront"}
+                  onError={() => setHeroFailed(true)}
+                  className="absolute inset-0 h-full w-full object-cover object-center"
+                />
+              : <div className="grid h-full place-items-center bg-gradient-to-br from-[var(--store-soft)] to-[var(--store-panel)]"><StoreMark name={vendor.business_name} /></div>}
+            <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-transparent" />
+            <div className="absolute bottom-3 left-3 flex items-center gap-2 rounded-full bg-[var(--store-panel)] py-1.5 pl-1.5 pr-3.5 text-xs font-bold shadow-lg">
+              {vendor.logo_url ? <img src={vendor.logo_url} alt={vendor.business_name + " logo"} className="h-7 w-7 rounded-full object-cover" /> : <span className="grid h-7 w-7 place-items-center rounded-full bg-[#d6ff57] text-[#11110f]">{vendor.business_name.charAt(0)}</span>}
+              <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5 text-[var(--store-accent-ink)]" /><span className="max-w-[160px] truncate">{location}</span></span>
             </div>
           </div>
-          <div className="flex flex-wrap gap-2 lg:justify-end">
-            <a href="#shop" className="inline-flex items-center justify-center gap-2 rounded-full bg-[#d6ff57] px-5 py-3 text-sm font-bold text-[#11110f] transition-colors hover:bg-[#e9ff9c]">Shop this store <ArrowRight className="h-4 w-4" /></a>
-            <button onClick={message} disabled={messaging} className="inline-flex items-center justify-center gap-2 rounded-full border border-[var(--store-line)] px-5 py-3 text-sm font-semibold transition-colors hover:bg-[var(--store-soft)] disabled:opacity-60"><MessageCircle className="h-4 w-4" />{messaging ? "Opening…" : "Message store"}</button>
+
+          <h1 className="mt-5 break-words font-display text-3xl font-semibold leading-[1.05] tracking-[-.045em]">{vendor.business_name}</h1>
+          <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-[#d6ff57]/25 px-3 py-1 text-sm font-semibold text-[var(--store-accent-ink)]"><ShieldCheck className="h-4 w-4" />{verified ? "Verified" : "New storefront"}</span>
+          <p className={"mt-3 text-sm leading-relaxed text-[var(--store-muted)] " + (showFullDescription ? "" : "line-clamp-3")}>{description}</p>
+          {description.length > 140 && <button type="button" onClick={() => setShowFullDescription((value) => !value)} className="mt-1 text-sm font-semibold underline underline-offset-4">{showFullDescription ? "Show less" : "More info"}</button>}
+
+          <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
+            <a href="#reviews" className="inline-flex items-center gap-1.5 rounded-full border border-[var(--store-line)] px-3 py-1.5 transition-colors hover:bg-[var(--store-soft)]"><Star className="h-4 w-4 fill-amber-400 text-amber-500" /><strong>{vendor.avg_rating?.toFixed(1) || "New"}</strong><span className="text-[var(--store-muted)]">({vendor.review_count})</span></a>
+            <span className="inline-flex items-center gap-1.5 text-[var(--store-muted)]"><Check className="h-4 w-4 text-emerald-600 dark:text-emerald-300" />{vendor.completed_transactions} orders</span>
           </div>
-        </div>
-      </section>
+          {vendor.reliability_score > 0 && <div className="mt-4"><div className="flex justify-between text-xs text-[var(--store-muted)]"><span>Reliability</span><span className="font-semibold text-[var(--store-text)]">{vendor.reliability_score}%</span></div><div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[var(--store-soft)]"><div className="h-full rounded-full bg-[#d6ff57]" style={{ width: Math.min(100, vendor.reliability_score) + "%" }} /></div></div>}
 
-      <div className="mt-8 grid gap-8 xl:grid-cols-[minmax(0,1fr)_300px]">
-        <div className="min-w-0">
-          {gallery.length > 0 && <section aria-label="Store gallery" className="mb-9"><div className="mb-3 flex items-end justify-between"><div><p className="text-[10px] font-bold uppercase tracking-[.2em] text-[var(--store-accent-ink)]">A closer look</p><h2 className="mt-1 font-display text-xl font-semibold">From the storefront</h2></div><span className="text-xs text-[var(--store-muted)]">{gallery.length} photos</span></div><div className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2">{gallery.map((image) => <img key={image.id} src={image.image_url} alt={vendor.business_name + " gallery"} loading="lazy" className="h-28 w-40 shrink-0 snap-start rounded-xl border border-[var(--store-line)] object-cover sm:h-36 sm:w-52" />)}</div></section>}
+          <button onClick={message} disabled={messaging} className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full border border-[var(--store-line)] px-5 py-3 text-sm font-semibold transition-colors hover:bg-[var(--store-soft)] disabled:opacity-60"><MessageCircle className="h-4 w-4" />{messaging ? "Opening…" : "Message store"}</button>
+        </aside>
 
-          <section id="shop" className="scroll-mt-24">
-            <div className="flex flex-wrap items-end justify-between gap-3 border-b border-[var(--store-line)] pb-4"><div><p className="text-[10px] font-bold uppercase tracking-[.2em] text-[var(--store-accent-ink)]">Browse the collection</p><h2 className="mt-1 font-display text-2xl font-semibold sm:text-3xl">From this store</h2></div><span className="text-sm text-[var(--store-muted)]">{items.length} item{items.length === 1 ? "" : "s"}</span></div>
-            {items.length === 0 ? <div className="mt-5 rounded-2xl border border-[var(--store-line)] bg-[var(--store-panel)] px-5 py-12 text-center"><Package className="mx-auto h-7 w-7 text-[var(--store-muted)]" /><p className="mt-3 font-semibold">This store hasn’t added listings yet.</p><p className="mt-1 text-sm text-[var(--store-muted)]">Check back soon or message the store directly.</p></div> : <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">{items.map((item) => <article id={"product-" + item.id} key={item.id} className="scroll-mt-24 min-w-0 overflow-hidden rounded-2xl border border-[var(--store-line)] bg-[var(--store-panel)] transition-shadow hover:shadow-lg hover:shadow-black/5">
-              <div className="relative aspect-[4/3] bg-[var(--store-soft)]">{item.image_url ? <img src={item.image_url} className="h-full w-full object-cover" alt={item.title} loading="lazy" /> : <div className="grid h-full place-items-center"><Package className="h-8 w-8 text-[var(--store-muted)]" /></div>}<span className="absolute left-3 top-3 rounded-full bg-black/65 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-white backdrop-blur-sm">{item.type}</span></div>
-              <div className="min-w-0 p-4"><h3 className="break-words font-display text-lg font-semibold">{item.title}</h3>{item.description && <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-[var(--store-muted)]">{item.description}</p>}<div className="mt-4 flex items-center justify-between gap-3 border-t border-[var(--store-line)] pt-3"><div><strong className="text-base">{money(item.price, item.currency)}</strong>{item.stock_quantity > 0 && <p className="mt-0.5 text-xs text-[var(--store-muted)]">{item.stock_quantity} available</p>}</div><button onClick={() => addToCart(item)} aria-label={"Add " + item.title + " to cart"} className={"grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#d6ff57] text-[#11110f] transition-transform " + (addedId === item.id ? "scale-90" : "hover:scale-105 active:scale-95")}><ShoppingCart className="h-4 w-4" /></button></div></div>
-            </article>)}</div>}
+        {/* ── Centre: menu ── */}
+        <section id="shop" className="min-w-0 scroll-mt-24">
+          <label className="flex h-13 items-center gap-3 rounded-2xl border border-[var(--store-line)] bg-[var(--store-soft)] px-4 py-3.5 focus-within:border-[#8ba526]">
+            <Search className="h-5 w-5 shrink-0 text-[var(--store-accent-ink)]" />
+            <span className="sr-only">Search this store</span>
+            <input value={query} onChange={(event) => setQuery(event.target.value)} type="search" placeholder={"Search " + vendor.business_name} className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-[var(--store-muted)]" />
+            {query && <button type="button" onClick={() => setQuery("")} aria-label="Clear search" className="text-[var(--store-muted)] hover:text-[var(--store-text)]"><X className="h-4 w-4" /></button>}
+          </label>
+
+          {tabs.length > 2 && <div role="tablist" aria-label="Item types" className="sticky top-[61px] z-30 -mx-4 mt-3 flex gap-1 overflow-x-auto border-b border-[var(--store-line)] bg-[var(--store-page)] px-4 sm:-mx-0 sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {tabs.map((entry) => <button key={entry.key} role="tab" aria-selected={tab === entry.key} type="button" onClick={() => setTab(entry.key)} className={"relative shrink-0 px-4 py-3.5 text-sm font-semibold transition-colors " + (tab === entry.key ? "text-[var(--store-text)] after:absolute after:inset-x-4 after:-bottom-px after:h-[3px] after:rounded-t-full after:bg-[#d6ff57]" : "text-[var(--store-muted)] hover:text-[var(--store-text)]")}>{entry.label}<span className="ml-1.5 text-xs font-normal text-[var(--store-muted)]">{entry.count}</span></button>)}
+          </div>}
+
+          <div className="mb-4 mt-6 flex items-end justify-between gap-3"><h2 className="font-display text-2xl font-semibold tracking-[-.03em]">{tab === "all" ? "Everything in store" : typeLabel(tab)}</h2><span className="text-sm text-[var(--store-muted)]">{visible.length} item{visible.length === 1 ? "" : "s"}</span></div>
+
+          {items.length === 0 ? <div className="rounded-2xl border border-[var(--store-line)] bg-[var(--store-panel)] px-5 py-12 text-center"><Package className="mx-auto h-7 w-7 text-[var(--store-muted)]" /><p className="mt-3 font-semibold">This store hasn’t added listings yet.</p><p className="mt-1 text-sm text-[var(--store-muted)]">Check back soon or message the store directly.</p></div>
+          : visible.length === 0 ? <div className="rounded-2xl border border-[var(--store-line)] px-5 py-12 text-center"><p className="font-semibold">Nothing matches “{query}”.</p><button type="button" onClick={() => { setQuery(""); setTab("all"); }} className="mt-2 text-sm font-semibold underline underline-offset-4">Clear filters</button></div>
+          : <div className="grid gap-3 sm:grid-cols-2">{visible.map((item) => {
+            const inCart = visitQty(item.id);
+            return <article id={"product-" + item.id} key={item.id} className="group relative grid min-h-[148px] min-w-0 scroll-mt-40 grid-cols-[minmax(0,1fr)_132px] overflow-hidden rounded-2xl border border-[var(--store-line)] bg-[var(--store-panel)] transition-all hover:-translate-y-0.5 hover:border-[#8ba526] hover:shadow-lg hover:shadow-black/5 sm:grid-cols-[minmax(0,1fr)_120px] 2xl:grid-cols-[minmax(0,1fr)_132px]">
+              <div className="flex min-w-0 flex-col p-4 pr-3">
+                <h3 className="break-words font-display text-base font-semibold leading-snug"><button type="button" onClick={() => setActive(item)} className="text-left after:absolute after:inset-0 after:content-[''] focus-visible:outline-none focus-visible:after:rounded-2xl focus-visible:after:ring-2 focus-visible:after:ring-[#8ba526]">{item.title}</button></h3>
+                {item.description && <p className="mt-1 line-clamp-2 text-[13px] leading-snug text-[var(--store-muted)]">{item.description}</p>}
+                <div className="mt-auto flex items-center gap-2 pt-3"><strong className="text-[15px] tabular-nums">{money(item.price, item.currency)}</strong><span className="rounded-full bg-[var(--store-soft)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--store-muted)]">{item.type}</span></div>
+              </div>
+              <div className="relative bg-[var(--store-soft)]">
+                {item.image_url ? <img src={item.image_url} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" /> : <div className="grid h-full place-items-center"><Package className="h-7 w-7 text-[var(--store-muted)]" /></div>}
+                {inCart > 0 && <span className="absolute left-2 top-2 rounded-full bg-[#d6ff57] px-2 py-0.5 text-[11px] font-bold text-[#11110f]">{inCart} added</span>}
+                {item.price !== null && <button type="button" onClick={() => addToCart(item)} aria-label={"Add " + item.title + " to cart"} className={"absolute bottom-2 right-2 z-10 inline-flex h-9 items-center gap-1 rounded-full bg-[var(--store-panel)] px-3 text-sm font-bold text-[var(--store-text)] shadow-lg transition-all hover:bg-[#d6ff57] hover:text-[#11110f] " + (addedId === item.id ? "scale-90 !bg-[#d6ff57] !text-[#11110f]" : "active:scale-95")}>{addedId === item.id ? <Check className="h-4 w-4" /> : <>Add<Plus className="h-4 w-4" /></>}</button>}
+              </div>
+            </article>;
+          })}</div>}
+
+          {gallery.length > 0 && <section aria-label="Store gallery" className="mt-12"><div className="mb-3 flex items-end justify-between"><div><p className="text-[10px] font-bold uppercase tracking-[.2em] text-[var(--store-accent-ink)]">A closer look</p><h2 className="mt-1 font-display text-xl font-semibold">From the storefront</h2></div><span className="text-xs text-[var(--store-muted)]">{gallery.length} photos</span></div><div className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2">{gallery.map((image) => <img key={image.id} src={image.image_url} alt={vendor.business_name + " gallery"} loading="lazy" className="h-28 w-40 shrink-0 snap-start rounded-xl border border-[var(--store-line)] object-cover sm:h-36 sm:w-52" />)}</div></section>}
+        </section>
+
+        {/* ── Right: live order panel (xl and up) ── */}
+        <aside aria-label="Your order" className="hidden min-w-0 xl:sticky xl:top-24 xl:block xl:self-start">
+          <section className="overflow-hidden rounded-3xl border border-[var(--store-line)] bg-[var(--store-panel)]">
+            <div className="flex items-center justify-between px-5 pb-3 pt-5"><h2 className="font-display text-2xl font-semibold tracking-[-.03em]">Your order</h2>{visitCount > 0 && <span className="rounded-full bg-[#d6ff57] px-2.5 py-1 text-xs font-bold text-[#11110f]">{visitCount}</span>}</div>
+            <div className="max-h-[46vh] overflow-y-auto border-t border-[var(--store-line)] px-5">
+              {visit.length === 0 ? <div className="py-10 text-center"><ShoppingCart className="mx-auto h-7 w-7 text-[var(--store-muted)]" /><p className="mt-3 font-semibold">Nothing added yet</p><p className="mt-1 text-sm text-[var(--store-muted)]">Tap Add on any item, or open it to see the details first.</p></div>
+              : <ul className="divide-y divide-[var(--store-line)]">{visit.map((line) => <li key={line.listingId} className="flex items-center gap-3 py-3.5">
+                {line.imageUrl ? <img src={line.imageUrl} alt="" className="h-12 w-12 shrink-0 rounded-xl object-cover" /> : <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-[var(--store-soft)]"><Package className="h-5 w-5 text-[var(--store-muted)]" /></div>}
+                <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{line.title}</p><p className="text-xs text-[var(--store-muted)] tabular-nums">{line.qty} × {money(line.price, line.currency)}</p></div>
+                <strong className="text-sm tabular-nums">{money(line.price * line.qty, line.currency)}</strong>
+              </li>)}</ul>}
+            </div>
+            <div className="border-t border-[var(--store-line)] p-5">
+              <div className="flex items-center justify-between text-sm"><span className="text-[var(--store-muted)]">Added this visit</span><strong className="text-lg tabular-nums">{money(visitTotal, visitCurrency)}</strong></div>
+              <Link to="/cart" className="mt-4 flex h-12 items-center justify-center gap-2 rounded-full bg-[#d6ff57] text-sm font-bold text-[#11110f] transition-colors hover:bg-[#e9ff9c]">Review cart &amp; checkout <ArrowRight className="h-4 w-4" /></Link>
+              <p className="mt-3 flex items-center justify-center gap-1.5 text-xs text-[var(--store-muted)]"><ShieldCheck className="h-3.5 w-3.5" />Secure payments on BRIDGE</p>
+            </div>
           </section>
-        </div>
-
-        <aside className="space-y-4 xl:sticky xl:top-24 xl:self-start">
-          <section className="rounded-2xl border border-[var(--store-line)] bg-[var(--store-panel)] p-5 sm:p-6"><p className="text-[10px] font-bold uppercase tracking-[.2em] text-[var(--store-accent-ink)]">Shop with confidence</p><h2 className="mt-2 font-display text-2xl font-semibold">Support local.<br />Shop smart.</h2><p className="mt-2 text-sm leading-relaxed text-[var(--store-muted)]">Find trusted products and services from businesses in your community.</p><div className="mt-5 space-y-4 border-t border-[var(--store-line)] pt-4 text-sm"><p className="flex items-start gap-3"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[var(--store-accent-ink)]" /><span><strong className="block">Store verification</strong><span className="text-[var(--store-muted)]">{vendor.verification_status === "unverified" ? "New storefront" : "Verified on BRIDGE"}</span></span></p><p className="flex items-start gap-3"><Star className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" /><span><strong className="block">Customer feedback</strong><span className="text-[var(--store-muted)]">{vendor.avg_rating?.toFixed(1) || "No rating yet"} · {vendor.review_count} reviews</span></span></p><p className="flex items-start gap-3"><MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[var(--store-accent-ink)]" /><span><strong className="block">Store location</strong><span className="text-[var(--store-muted)]">{location}</span></span></p></div><button onClick={message} className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full border border-[var(--store-line)] px-4 py-3 text-sm font-semibold transition-colors hover:bg-[var(--store-soft)]"><Headphones className="h-4 w-4" />Contact this store</button></section>
-          <section className="rounded-2xl bg-[var(--store-soft)] p-5 sm:p-6"><p className="text-xs font-bold uppercase tracking-[.18em] text-[var(--store-accent-ink)]">Discover more</p><h2 className="mt-3 font-display text-2xl font-semibold">More local finds await.</h2><Link to="/explore" className="mt-5 inline-flex items-center gap-2 rounded-full bg-[var(--store-panel)] px-4 py-2.5 text-sm font-semibold transition-colors hover:shadow-sm">Explore businesses <ArrowRight className="h-4 w-4" /></Link></section>
+          <section className="mt-4 rounded-3xl bg-[var(--store-soft)] p-5"><p className="text-[10px] font-bold uppercase tracking-[.2em] text-[var(--store-accent-ink)]">Need help?</p><p className="mt-2 text-sm text-[var(--store-muted)]">Ask about sizes, delivery or custom orders before you buy.</p><button onClick={message} className="mt-3 inline-flex items-center gap-2 rounded-full bg-[var(--store-panel)] px-4 py-2.5 text-sm font-semibold transition-shadow hover:shadow-sm"><Headphones className="h-4 w-4" />Contact this store</button></section>
         </aside>
       </div>
     </main>
@@ -183,7 +340,13 @@ export function StorefrontPage() {
     <ReviewsSection slug={vendor.slug} isOwner={isOwner} />
 
     <footer className="border-t border-[var(--store-line)] bg-[var(--store-panel)]"><div className="mx-auto flex max-w-[1440px] flex-wrap gap-x-8 gap-y-3 px-5 py-7 text-sm text-[var(--store-muted)] sm:px-8"><Link to="/" className="font-bold text-[var(--store-text)]">BRIDGE</Link><span>Secure payments</span><span>Reliable delivery</span><Link to="/explore" className="transition-colors hover:text-[var(--store-text)]">Explore businesses</Link></div></footer>
-    <div className="pointer-events-none fixed inset-x-0 bottom-5 z-50 flex flex-col items-center gap-2 px-4 sm:inset-x-auto sm:right-5 sm:items-end">{toasts.map((toast) => <AddToCartToast key={toast.key} title={toast.title} imageUrl={toast.imageUrl} onDone={() => setToasts((current) => current.filter((item) => item.key !== toast.key))} />)}</div>
+
+    {/* Below xl the order panel collapses into a bottom bar. */}
+    {visitCount > 0 && !active && <Link to="/cart" className="fixed inset-x-4 bottom-4 z-40 flex h-14 items-center justify-between rounded-2xl bg-[#d6ff57] px-5 text-sm font-bold text-[#11110f] shadow-xl shadow-black/20 xl:hidden"><span className="flex items-center gap-2"><ShoppingCart className="h-4 w-4" />View cart · {visitCount} item{visitCount === 1 ? "" : "s"}</span><span className="tabular-nums">{money(visitTotal, visitCurrency)}</span></Link>}
+
+    {active && <ProductModal item={active} vendorName={vendor.business_name} location={location} inCartQty={visitQty(active.id)} onClose={closeModal} onAdd={(item, qty) => { addToCart(item, qty); closeModal(); }} onMessage={() => { closeModal(); message(); }} />}
+
+    <div className={"pointer-events-none fixed inset-x-0 z-[60] flex flex-col items-center gap-2 px-4 sm:inset-x-auto sm:right-5 sm:items-end " + (visitCount > 0 ? "bottom-24 xl:bottom-5" : "bottom-5")}>{toasts.map((toast) => <AddToCartToast key={toast.key} title={toast.title} imageUrl={toast.imageUrl} onDone={() => setToasts((current) => current.filter((item) => item.key !== toast.key))} />)}</div>
   </div>;
 }
 
