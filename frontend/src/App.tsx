@@ -17,6 +17,7 @@ const Verification = lazy(() => import("./pages/dashboard/Verification").then((m
 const Settings = lazy(() => import("./pages/dashboard/Settings").then((module) => ({ default: module.Settings })));
 const StorefrontPage = lazy(() => import("./pages/StorefrontPage").then((module) => ({ default: module.StorefrontPage })));
 const Explore = lazy(() => import("./pages/Explore").then((module) => ({ default: module.Explore })));
+const Profile = lazy(() => import("./pages/Profile").then((module) => ({ default: module.Profile })));
 const AdminOverview = lazy(() => import("./pages/admin/AdminOverview").then((module) => ({ default: module.AdminOverview })));
 const AdminVerifications = lazy(() => import("./pages/admin/Verifications").then((module) => ({ default: module.AdminVerifications })));
 const AdminVendors = lazy(() => import("./pages/admin/Vendors").then((module) => ({ default: module.AdminVendors })));
@@ -54,11 +55,15 @@ export default function App() {
           <Route path="/buyer-protection" element={<Legal />} />
           <Route path="/store/:slug" element={<StorefrontPage />} />
           <Route path="/explore" element={<Explore />} />
+          <Route path="/stores" element={<Explore />} />
+          <Route path="/category/:slug" element={<Explore />} />
+          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/about" element={<CompanyPage />} />
           <Route path="/how-it-works" element={<CompanyPage />} />
           <Route path="/careers" element={<CompanyPage />} />
           <Route path="/contact" element={<ContactPage />} />
 
+          <Route path="/become-vendor" element={<ProtectedRoute><VendorDashboard /></ProtectedRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute><VendorDashboard /></ProtectedRoute>} />
           <Route path="/dashboard/listings" element={<ProtectedRoute><Listings /></ProtectedRoute>} />
           <Route path="/dashboard/verification" element={<ProtectedRoute><Verification /></ProtectedRoute>} />

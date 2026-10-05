@@ -1,4 +1,4 @@
-import { Link2 } from "lucide-react";
+import { UsersRound } from "lucide-react";
 
 type BridgeLoaderProps = {
   label?: string;
@@ -11,7 +11,7 @@ export function BridgeLoader({ label = "Loading BRIDGE", className = "" }: Bridg
       <span className="absolute inset-0 rounded-full border border-current/15" />
       <span className="bridge-loader-orbit absolute inset-1 rounded-full border-2 border-transparent border-t-[#d6ff57] border-r-[#d6ff57]/45" />
       <span className="bridge-loader-mark grid h-9 w-9 place-items-center rounded-xl bg-[#d6ff57] text-[#11110f] shadow-lg shadow-[#d6ff57]/15">
-        <Link2 className="h-4 w-4" strokeWidth={2.4} />
+        <UsersRound className="h-5 w-5" strokeWidth={1.8} />
       </span>
     </div>
     <div>

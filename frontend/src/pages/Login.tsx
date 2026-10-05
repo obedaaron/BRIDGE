@@ -20,7 +20,7 @@ export function Login() {
     setLoading(true);
     try {
       const user = await login(email, password);
-      navigate(user.role === "admin" ? "/admin/verifications" : "/explore");
+      navigate(user.role === "admin" ? "/admin/verifications" : user.role === "vendor" ? "/dashboard" : window.matchMedia("(max-width: 767px)").matches ? "/stores" : "/explore");
     } catch (err: any) {
       setError(err.message);
     } finally {

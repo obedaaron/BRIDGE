@@ -4,7 +4,7 @@ import { apiFetch } from "../../lib/api";
 import { DashboardLayout } from "../../components/DashboardLayout";
 import { SignboardTag } from "../../components/SignboardTag";
 import { LogoUpload } from "../../components/LogoUpload";
-import { ArrowUpRight, Package, Trash2, Plus, X, Loader2 } from "lucide-react";
+import { ArrowUpRight, Package, Trash2, Plus, X, Loader2, Pencil } from "lucide-react";
 
 interface Listing {
   id: string;
@@ -20,6 +20,7 @@ interface Listing {
 export function Listings() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ title: "", description: "", type: "product", price: "", imageUrl: "", stockQuantity: "" });
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -38,8 +39,8 @@ export function Listings() {
     setError("");
     setSaving(true);
     try {
-      await apiFetch("/listings", {
-        method: "POST",
+      await apiFetch(editingId ? "/listings/" + editingId : "/listings", {
+        method: editingId ? "PATCH" : "POST",
       body: JSON.stringify({ ...form, price: form.price ? Number(form.price) : null, stockQuantity: form.stockQuantity ? Number(form.stockQuantity) : null }),
       });
       setForm({ title: "", description: "", type: "product", price: "", imageUrl: "", stockQuantity: "" });
@@ -52,6 +53,13 @@ export function Listings() {
     }
   }
 
+  function editListing(listing: Listing) {
+    setEditingId(listing.id);
+    setForm({ title: listing.title, description: listing.description || "", type: listing.type, price: listing.price == null ? "" : String(listing.price), imageUrl: listing.image_url || "", stockQuantity: listing.stock_quantity == null ? "" : String(listing.stock_quantity) });
+    setShowForm(true);
+    setError("");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
   async function handleDelete(id: string) {
     if (!confirm("Delete this listing?")) return;
     setError("");
@@ -81,7 +89,7 @@ export function Listings() {
             </p>
           </div>
           <button
-            onClick={() => setShowForm((v) => !v)}
+            onClick={() => { if (showForm) { setEditingId(null); setForm({ title: "", description: "", type: "product", price: "", imageUrl: "", stockQuantity: "" }); } setShowForm((v) => !v); }}
             className={`inline-flex items-center gap-2 font-medium px-5 py-2.5 rounded-full text-sm transition-colors shrink-0 ${
               showForm
                 ? "bg-ink/5 text-ink border border-ink/10 hover:bg-ink/10"
@@ -105,7 +113,7 @@ export function Listings() {
         {/* Form */}
         {showForm && (
           <form onSubmit={handleCreate} className="bg-paper border border-ink/15 rounded-none border border-ink/5 p-6 sm:p-8 mb-8 shadow-sm">
-            <h3 className="font-display text-xl font-semibold text-ink mb-5">New listing</h3>
+            <h3 className="font-display text-xl font-semibold text-ink mb-5">{editingId ? "Edit listing" : "New listing"}</h3>
             {error && (
               <div className="bg-[#dce9df]/10 border border-[#2E8B72]/20 rounded-xl px-4 py-3 mb-5">
                 <p className="text-[#2E8B72] text-sm font-medium">{error}</p>
@@ -127,7 +135,7 @@ export function Listings() {
               <LogoUpload label="Product photo" emptyLabel="No photo" value={form.imageUrl} onChange={(imageUrl) => setForm({ ...form, imageUrl })} />
               <div>
                 <label className="block text-xs uppercase tracking-[0.2em] text-ink/40 mb-2">Stock quantity</label>
-                <input className="w-full bg-ink/5 border border-ink/10 rounded-xl px-5 py-4 text-ink placeholder:text-ink/20 outline-none focus:border-[#2E8B72]/50" placeholder="Leave blank for services" type="number" min="0" value={form.stockQuantity} onChange={(e) => setForm({ ...form, stockQuantity: e.target.value })} />
+                <input className="w-full bg-ink/5 border border-ink/10 rounded-xl px-5 py-4 text-ink placeholder:text-ink/20 outline-none focus:border-[#2E8B72]/50" placeholder="Optional — leave blank for unlimited stock" type="number" min="0" value={form.stockQuantity} onChange={(e) => setForm({ ...form, stockQuantity: e.target.value })} />
               </div>
 
               <div className="sm:col-span-2">
@@ -178,7 +186,7 @@ export function Listings() {
                 </>
               ) : (
                 <>
-                  Save listing <ArrowUpRight className="w-4 h-4" strokeWidth={2} />
+                  {editingId ? "Save changes" : "Save listing"} <ArrowUpRight className="w-4 h-4" strokeWidth={2} />
                 </>
               )}
             </button>
@@ -216,14 +224,14 @@ export function Listings() {
                   <p className="text-sm text-ink/50 line-clamp-2 leading-relaxed mb-4">{l.description}</p>
                 )}
 
-                <button
+                <div className="flex items-center gap-4"><button onClick={() => editListing(l)} className="inline-flex items-center gap-1.5 text-xs text-ink/60 hover:text-[#2E8B72]"><Pencil className="w-3.5 h-3.5" />Edit</button><button
                   onClick={() => handleDelete(l.id)}
                   disabled={deleting === l.id}
                   className="inline-flex items-center gap-1.5 text-xs text-ink/30 hover:text-[#2E8B72] transition-colors"
                 >
                   <Trash2 className="w-3.5 h-3.5" strokeWidth={2} />
                   {deleting === l.id ? "Deleting…" : "Delete"}
-                </button>
+                </button></div>
               </div>
             ))}
           </div>

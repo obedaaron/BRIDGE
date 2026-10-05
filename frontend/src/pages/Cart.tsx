@@ -1,6 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, ArrowRight, Check, ChevronRight, CreditCard, LockKeyhole, Minus, Moon, Plus, ShoppingBag, ShoppingCart, Sun, Trash2, Truck, MapPin } from "lucide-react";
-import { SearchSelect } from "../components/SearchSelect";
+import { ArrowLeft, ArrowRight, Check, ChevronRight, CreditCard, LockKeyhole, Minus, Moon, Plus, ShoppingBag, ShoppingCart, Sun, Trash2, Truck, MapPin, Gift } from "lucide-react";
 import { useCart } from "../context/CartContext";
 import { apiFetch } from "../lib/api";
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
@@ -13,39 +12,35 @@ export function Cart() {
   const dark = theme === "dark";
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [fulfilmentMethod, setFulfilmentMethod] = useState("pickup");
-  const [pickupLocation, setPickupLocation] = useState("");
   const [delivery, setDelivery] = useState({ address: "", city: "", state: "" });
-  const [pricing, setPricing] = useState({ platformFeeBps: 500, processingFeeBps: 150, processingFeeFixedKobo: 0, processingFeeCapKobo: 0 });
-  const [outOfCityDeliveryFee, setOutOfCityDeliveryFee] = useState(0);
+  const [buyer, setBuyer] = useState({ name: "", phone: "" });
+  const [gift, setGift] = useState(false);
+  const [recipient, setRecipient] = useState({ name: "", phone: "", message: "" });
+  const [pricing, setPricing] = useState({ platformFeeBps: 700, processingFeeBps: 150, processingFeeFixedKobo: 10000, processingFeeCapKobo: 0 });
   const style = (dark
     ? { "--cart-page": "#11110f", "--cart-panel": "#171714", "--cart-panel-raised": "#1d1d19", "--cart-text": "#f1eee7", "--cart-muted": "rgba(241,238,231,.66)", "--cart-line": "rgba(241,238,231,.16)", "--cart-soft": "rgba(241,238,231,.06)" }
     : { "--cart-page": "#f6f2ea", "--cart-panel": "#fff", "--cart-panel-raised": "#fbf9f4", "--cart-text": "#171714", "--cart-muted": "rgba(23,23,20,.68)", "--cart-line": "rgba(23,23,20,.14)", "--cart-soft": "rgba(23,23,20,.045)" }) as CSSProperties;
 
   useEffect(() => { apiFetch("/orders/pricing-policy").then(setPricing).catch(() => undefined); }, []);
-  useEffect(() => {
-    const vendorSlug = items[0]?.vendorSlug;
-    if (!vendorSlug) { setOutOfCityDeliveryFee(0); return; }
-    apiFetch(`/store/${vendorSlug}`).then((data) => setOutOfCityDeliveryFee(Number(data.vendor?.out_of_city_delivery_fee_kobo || 0) / 100)).catch(() => setOutOfCityDeliveryFee(0));
-  }, [items]);
-  const deliveryFee = fulfilmentMethod === "local_delivery" ? 1500 : fulfilmentMethod === "outside_delivery" ? outOfCityDeliveryFee : 0;
+  const deliveryFee = 1500;
   const quote = useMemo(() => {
     const sellerAmount = total + deliveryFee;
     const platformFee = Math.round(sellerAmount * pricing.platformFeeBps / 10_000);
     const protectedAmount = sellerAmount + platformFee;
-    const processingFee = Math.min(Math.ceil((protectedAmount + pricing.processingFeeFixedKobo) * pricing.processingFeeBps / (10_000 - pricing.processingFeeBps)) + pricing.processingFeeFixedKobo, pricing.processingFeeCapKobo || Number.MAX_SAFE_INTEGER);
-    return { sellerAmount, platformFee, processingFee, buyerTotal: protectedAmount + processingFee };
+    return { sellerAmount, platformFee, buyerTotal: protectedAmount };
   }, [pricing, total, deliveryFee]);
 
   async function checkout() {
     setError("");
-    if (fulfilmentMethod === "pickup" && !pickupLocation.trim()) { setError("Add a preferred pickup location to continue."); return; }
-    if (fulfilmentMethod !== "pickup" && (!delivery.address.trim() || !delivery.city.trim() || !delivery.state.trim())) { setError("Complete your delivery address, city and state to continue."); return; }
+    if (!buyer.name.trim() || !buyer.phone.trim()) { setError("Add your name and phone number so the store can confirm delivery."); return; }
+    if (!delivery.address.trim() || !delivery.city.trim() || !delivery.state.trim()) { setError("Complete your delivery address, city and state to continue."); return; }
+    if (gift && (!recipient.name.trim() || !recipient.phone.trim())) { setError("Add the recipient name and phone number for this gift."); return; }
+    if (!window.confirm("Confirm this delivery order? You will pay from My Orders after the store confirms it.")) return;
     setLoading(true);
     try {
-      const data = await apiFetch("/orders/catalog-checkout", { method: "POST", body: JSON.stringify({ items: items.map((item) => ({ listingId: item.listingId, quantity: item.quantity })), fulfilmentMethod, pickupLocation, deliveryAddress: delivery.address, deliveryCity: delivery.city, deliveryState: delivery.state }) });
+      await apiFetch("/orders/catalog-checkout", { method: "POST", body: JSON.stringify({ items: items.map((item) => ({ listingId: item.listingId, quantity: item.quantity })), fulfilmentMethod: "local_delivery", buyerContactName: buyer.name, buyerContactPhone: buyer.phone, deliveryAddress: delivery.address, deliveryCity: delivery.city, deliveryState: delivery.state, isGift: gift, giftRecipientName: recipient.name, giftRecipientPhone: recipient.phone, giftMessage: recipient.message }) });
       clear();
-      navigate(`/messages/${data.order.conversation_id}`);
+      navigate("/orders?new=1");
     } catch (err: any) { setError(err.message); }
     finally { setLoading(false); }
   }
@@ -107,12 +102,18 @@ export function Cart() {
             </div>
           </section>
 
-          <section className={`${panelClass} p-4 sm:p-6`}>
-            <div className="flex items-start gap-3"><div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#d6ff57]/30 text-[#2e8b72]"><Truck className="h-5 w-5" /></div><div><h2 className="font-display text-lg font-semibold">Pickup or delivery</h2><p className="mt-1 text-sm leading-5 text-[var(--cart-muted)]">Choose how you would like to receive your order.</p></div></div>
-            <SearchSelect className="mt-5" value={fulfilmentMethod} onChange={setFulfilmentMethod} placeholder="Choose fulfilment" searchable={false} options={[{ value: "pickup", label: "Pickup", detail: "Collect directly from the vendor" }, { value: "local_delivery", label: "Deliver within the vendor's city", detail: "₦1,500 flat delivery" }, { value: "outside_delivery", label: "Deliver outside the vendor's city", detail: outOfCityDeliveryFee ? `₦${outOfCityDeliveryFee.toLocaleString()} vendor delivery rate` : "Vendor delivery rate" }]} />
-            {fulfilmentMethod === "pickup" ? <label className="mt-4 block"><span className="mb-2 block text-sm font-medium">Preferred pickup location</span><div className="relative"><MapPin className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--cart-muted)]" /><input value={pickupLocation} onChange={(e) => setPickupLocation(e.target.value)} placeholder="Add a nearby landmark or address" className={inputClass + " pl-10"} /></div></label> : <div className="mt-4 grid gap-3 sm:grid-cols-2"><label className="sm:col-span-2"><span className="mb-2 block text-sm font-medium">Delivery address</span><input value={delivery.address} onChange={(e) => setDelivery({ ...delivery, address: e.target.value })} placeholder="Street, building or landmark" className={inputClass} /></label><label><span className="mb-2 block text-sm font-medium">City</span><input value={delivery.city} onChange={(e) => setDelivery({ ...delivery, city: e.target.value })} placeholder="Your city" className={inputClass} /></label><label><span className="mb-2 block text-sm font-medium">State</span><input value={delivery.state} onChange={(e) => setDelivery({ ...delivery, state: e.target.value })} placeholder="Your state" className={inputClass} /></label></div>}
-          </section>
-          <div className="flex items-start gap-2.5 rounded-xl border border-[var(--cart-line)] bg-[var(--cart-soft)] p-4 text-xs leading-5 text-[var(--cart-muted)]"><LockKeyhole className="mt-0.5 h-4 w-4 shrink-0 text-[#2e8b72]" /><p>Your payment is protected by BRIDGE. Fees and delivery are shown before you pay.</p></div>
+          <section className={"p-4 sm:p-6 " + panelClass}>
+            <div className="flex items-start gap-3"><div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#d6ff57]/30 text-[#2e8b72]"><Truck className="h-5 w-5" /></div><div><h2 className="font-display text-lg font-semibold">Delivery details</h2><p className="mt-1 text-sm leading-5 text-[var(--cart-muted)]">Tell the store who to deliver to and how to reach you.</p></div></div>
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              <label><span className="mb-2 block text-sm font-medium">Your name</span><input value={buyer.name} onChange={(e) => setBuyer({ ...buyer, name: e.target.value })} placeholder="Full name" className={inputClass} autoComplete="name" /></label>
+              <label><span className="mb-2 block text-sm font-medium">Phone number</span><input value={buyer.phone} onChange={(e) => setBuyer({ ...buyer, phone: e.target.value })} placeholder="Number for delivery updates" className={inputClass} autoComplete="tel" /></label>
+              <label className="sm:col-span-2"><span className="mb-2 block text-sm font-medium">Delivery address</span><div className="relative"><MapPin className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--cart-muted)]" /><input value={delivery.address} onChange={(e) => setDelivery({ ...delivery, address: e.target.value })} placeholder="Street, building or landmark" className={inputClass + " pl-10"} autoComplete="street-address" /></div></label>
+              <label><span className="mb-2 block text-sm font-medium">City</span><input value={delivery.city} onChange={(e) => setDelivery({ ...delivery, city: e.target.value })} placeholder="Your city" className={inputClass} /></label>
+              <label><span className="mb-2 block text-sm font-medium">State</span><input value={delivery.state} onChange={(e) => setDelivery({ ...delivery, state: e.target.value })} placeholder="Your state" className={inputClass} /></label>
+            </div>
+            <label className="mt-5 flex cursor-pointer items-center gap-3 rounded-xl border border-[var(--cart-line)] bg-[var(--cart-soft)] p-4"><input type="checkbox" checked={gift} onChange={(e) => setGift(e.target.checked)} className="h-4 w-4 accent-[#2e8b72]" /><Gift className="h-5 w-5 text-[#2e8b72]" /><span className="text-sm font-semibold">This order is a gift</span></label>
+            {gift && <div className="mt-3 grid gap-3 rounded-xl border border-[var(--cart-line)] p-4 sm:grid-cols-2"><label><span className="mb-2 block text-sm font-medium">Recipient name</span><input value={recipient.name} onChange={(e) => setRecipient({ ...recipient, name: e.target.value })} placeholder="Who is receiving it?" className={inputClass} /></label><label><span className="mb-2 block text-sm font-medium">Recipient phone</span><input value={recipient.phone} onChange={(e) => setRecipient({ ...recipient, phone: e.target.value })} placeholder="Recipient phone" className={inputClass} /></label><label className="sm:col-span-2"><span className="mb-2 block text-sm font-medium">Gift message (optional)</span><textarea value={recipient.message} onChange={(e) => setRecipient({ ...recipient, message: e.target.value })} placeholder="Add a short note" className={inputClass + " min-h-20"} maxLength={300} /></label></div>}
+          </section>          <div className="flex items-start gap-2.5 rounded-xl border border-[var(--cart-line)] bg-[var(--cart-soft)] p-4 text-xs leading-5 text-[var(--cart-muted)]"><LockKeyhole className="mt-0.5 h-4 w-4 shrink-0 text-[#2e8b72]" /><p>Your payment is protected by BRIDGE. Fees and delivery are shown before you pay.</p></div>
         </div>
 
         <aside className="lg:sticky lg:top-24">
@@ -120,14 +121,11 @@ export function Cart() {
             <h2 className="font-display text-xl font-semibold">Order summary</h2>
             <div className="mt-5 space-y-3 text-sm">
               <div className="flex justify-between gap-3"><span className="text-[var(--cart-muted)]">Items subtotal</span><span className="font-medium tabular-nums">₦{total.toLocaleString()}</span></div>
-              {fulfilmentMethod === "local_delivery" && <div className="flex justify-between gap-3"><span className="text-[var(--cart-muted)]">Same-city delivery</span><span className="tabular-nums">₦1,500</span></div>}
-              {fulfilmentMethod === "outside_delivery" && <div className="flex justify-between gap-3"><span className="text-[var(--cart-muted)]">Out-of-city delivery</span><span className="tabular-nums">₦{deliveryFee.toLocaleString()}</span></div>}
-              <div className="flex justify-between gap-3"><span className="text-[var(--cart-muted)]">BRIDGE Buyer Protection (5%)</span><span className="tabular-nums">₦{quote.platformFee.toLocaleString()}</span></div>
-              <div className="flex justify-between gap-3"><span className="text-[var(--cart-muted)]">Payment processing</span><span className="tabular-nums">₦{quote.processingFee.toLocaleString()}</span></div>
-              <div className="border-t border-[var(--cart-line)] pt-4"><div className="flex items-end justify-between gap-3"><span className="font-semibold">Total due</span><span className="font-mono text-xl font-bold tabular-nums">₦{quote.buyerTotal.toLocaleString()}</span></div><p className="mt-1 text-right text-xs text-[var(--cart-muted)]">NGN · inclusive of fees</p></div>
+              <div className="flex justify-between gap-3"><span className="text-[var(--cart-muted)]">Delivery</span><span className="tabular-nums">₦1,500</span></div>
+              <div className="border-t border-[var(--cart-line)] pt-4"><div className="flex items-end justify-between gap-3"><span className="font-semibold">Total</span><span className="font-mono text-xl font-bold tabular-nums">₦{quote.buyerTotal.toLocaleString()}</span></div><p className="mt-1 text-right text-xs text-[var(--cart-muted)]">Delivery and service included</p></div>
             </div>
             {error && <p role="alert" className="mt-4 rounded-xl border border-red-500/25 bg-red-500/10 px-3 py-2.5 text-sm text-red-600">{error}</p>}
-            <button onClick={checkout} disabled={loading || items.length === 0} className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#d6ff57] px-5 py-3.5 font-semibold text-[#11110f] transition hover:brightness-95 disabled:cursor-wait disabled:opacity-60">{loading ? "Preparing secure checkout…" : <><CreditCard className="h-4 w-4" /> Continue to secure payment <ArrowRight className="h-4 w-4" /></>}</button>
+            <button onClick={checkout} disabled={loading || items.length === 0} className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#d6ff57] px-5 py-3.5 font-semibold text-[#11110f] transition hover:brightness-95 disabled:cursor-wait disabled:opacity-60">{loading ? "Preparing your order…" : <><CreditCard className="h-4 w-4" /> Place delivery order <ArrowRight className="h-4 w-4" /></>}</button>
             <p className="mt-3 flex items-center justify-center gap-1.5 text-center text-xs text-[var(--cart-muted)]"><Check className="h-3.5 w-3.5 text-[#2e8b72]" /> You’ll review the order with the store next</p>
           </section>
           <Link to="/explore" className="mt-4 inline-flex w-full items-center justify-center gap-2 py-3 text-sm font-semibold text-[#2e8b72] hover:underline">Continue exploring stores <ArrowRight className="h-4 w-4" /></Link>

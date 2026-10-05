@@ -1,19 +1,13 @@
 import { Router } from "express";
 import { pool } from "../db";
 import { requireAuth } from "../middleware/auth";
-import { initializePaystackSubscription, verifyPaystackPayment } from "../services/paystack";
+import { verifyPaystackPayment } from "../services/paystack";
 import { planFeatures } from "../services/plans";
 
 const router = Router();
-const plans = {
-  free: planFeatures.free,
-  standard: { ...planFeatures.standard, planCode: process.env.PAYSTACK_STANDARD_PLAN_CODE },
-  premium: { ...planFeatures.premium, planCode: process.env.PAYSTACK_PREMIUM_PLAN_CODE },
-} as const;
-
 async function ownVendor(userId: string) { const result = await pool.query("select id, subscription_tier from vendors where user_id = $1", [userId]); return result.rows[0] || null; }
 
-router.get("/plans", (_req, res) => res.json({ plans: Object.values(plans).map((plan) => ({ tier: plan.tier, amountKobo: plan.amountKobo, currency: plan.currency, label: plan.label, listingLimit: plan.listingLimit, promotionLimit: plan.promotionLimit, customization: plan.customization })) }));
+router.get("/plans", (_req, res) => res.json({ plans: [{ tier: "free", amountKobo: 0, currency: "NGN", label: "Free", listingLimit: null, promotionLimit: 0, customization: "Full access to core storefront and listing tools" }] }));
 
 router.get("/mine", requireAuth, async (req, res) => {
   const vendor = await ownVendor(req.user!.userId); if (!vendor) return res.status(404).json({ error: "Create your store first" });
@@ -21,17 +15,8 @@ router.get("/mine", requireAuth, async (req, res) => {
   res.json({ tier: vendor.subscription_tier || "free", subscription: result.rows[0] || null });
 });
 
-router.post("/checkout", requireAuth, async (req, res) => {
-  const tier = req.body.tier as "standard" | "premium";
-  const plan = plans[tier];
-  if (!plan || !plan.planCode) return res.status(503).json({ error: "This plan is not configured yet" });
-  const vendor = await ownVendor(req.user!.userId); if (!vendor) return res.status(404).json({ error: "Create your store first" });
-  const userResult = await pool.query("select email from users where id = $1", [req.user!.userId]);
-  try {
-    const payment = await initializePaystackSubscription({ email: userResult.rows[0].email, amountKobo: plan.amountKobo, planCode: plan.planCode, vendorId: vendor.id });
-    await pool.query("insert into vendor_subscriptions (vendor_id, tier, amount_kobo, currency, payment_reference, provider_plan_code) values ($1, $2, $3, $4, $5, $6)", [vendor.id, tier, plan.amountKobo, plan.currency, payment.reference, plan.planCode]);
-    res.json(payment);
-  } catch (err) { res.status(502).json({ error: err instanceof Error ? err.message : "Could not start subscription checkout" }); }
+router.post("/checkout", requireAuth, async (_req, res) => {
+  res.status(410).json({ error: "Paid store plans are paused. All core listings are free for now." });
 });
 
 router.get("/verify/:reference", requireAuth, async (req, res) => {

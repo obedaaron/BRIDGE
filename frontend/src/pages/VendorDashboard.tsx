@@ -63,9 +63,8 @@ export function VendorDashboard() {
     setError("");
     setSaving(true);
     try {
-      const data = await apiFetch("/vendors", { method: "POST", body: JSON.stringify({ ...form, lat, lng, acceptedVendorTerms }) });
-      setVendor(data.vendor);
-      loadPublishReadiness();
+      await apiFetch("/vendors", { method: "POST", body: JSON.stringify({ ...form, lat, lng, acceptedVendorTerms }) });
+      window.location.assign("/dashboard");
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -110,10 +109,10 @@ export function VendorDashboard() {
           <div className="mb-8 sm:mb-12">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-signal mb-3">Onboarding</p>
             <h1 className="font-display text-4xl sm:text-5xl md:text-6xl font-semibold text-ink tracking-tight leading-[0.95]">
-              Create your store.
+              Become a BRIDGE vendor.
             </h1>
             <p className="mt-3 text-ink/40 max-w-md text-base sm:text-lg">
-              This is what customers will see. You can edit everything later.
+              Add your business details and apply. Once submitted, you can finish setting up your dashboard.
             </p>
           </div>
 
@@ -203,11 +202,11 @@ export function VendorDashboard() {
               {saving ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" strokeWidth={2} />
-                  Creating...
+                  Submitting application...
                 </>
               ) : (
                 <>
-                  Create store <ArrowUpRight className="w-4 h-4" strokeWidth={2} />
+                  Apply and open dashboard <ArrowUpRight className="w-4 h-4" strokeWidth={2} />
                 </>
               )}
             </button>

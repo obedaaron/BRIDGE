@@ -25,7 +25,7 @@ export function Signup() {
     setLoading(true);
     try {
       await signup(email, password, fullName, agreed);
-      navigate("/explore");
+      navigate(window.matchMedia("(max-width: 767px)").matches ? "/stores" : "/explore");
     } catch (err: any) {
       setError(err.message);
     } finally {

@@ -45,17 +45,20 @@ router.post("/", requireAuth, async (req, res) => {
 
 router.patch("/:id", requireAuth, async (req, res) => {
   const vendorId = await getOwnVendorId(req.user!.userId);
-  const { title, description, price, isActive } = req.body;
+  const { title, description, price, type, isActive, imageUrl, stockQuantity } = req.body;
 
   const result = await pool.query(
     `update listings set
       title = coalesce($1, title),
       description = coalesce($2, description),
       price = coalesce($3, price),
-      is_active = coalesce($4, is_active)
-     where id = $5 and vendor_id = $6
+      type = coalesce($4, type),
+      is_active = coalesce($5, is_active),
+      image_url = coalesce($6, image_url),
+      stock_quantity = case when $7::boolean then $8 else stock_quantity end
+     where id = $9 and vendor_id = $10
      returning *`,
-    [title, description, price, isActive, req.params.id, vendorId]
+    [title, description, price, type, isActive, imageUrl, stockQuantity !== undefined, stockQuantity ?? null, req.params.id, vendorId]
   );
   if (result.rows.length === 0) return res.status(404).json({ error: "Listing not found" });
   res.json({ listing: result.rows[0] });

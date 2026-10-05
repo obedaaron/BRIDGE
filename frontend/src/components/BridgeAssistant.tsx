@@ -6,32 +6,6 @@ import { useAuth } from "../context/AuthContext";
 
 type Action = { label: string; kind: "go" | "publish" | "delivery" | "support"; target?: string; fee?: number };
 type Message = { from: "bot" | "user"; text: string; action?: Action; done?: boolean };
-const clean = (v: string) => v.toLowerCase().replace(/[^a-z0-9₦ ]/g, " ").replace(/\s+/g, " ").trim();
-
-function respond(input: string, vendor: boolean): { text: string; action?: Action } {
-  const q = clean(input);
-  const match = q.match(/(?:delivery fee|delivery).{0,20}?(\d[\d,]*)/);
-  if (vendor && match) {
-    const fee = Number(match[1].replace(/,/g, ""));
-    return { text: "I found a request to set your out of city delivery fee to ₦" + fee.toLocaleString() + ". Confirm to apply it.", action: { label: "Confirm delivery fee", kind: "delivery", fee } };
-  }
-  if (vendor && q.includes("publish")) return { text: "Publishing makes your store visible to customers. Confirm when ready.", action: { label: "Publish my store", kind: "publish" } };
-  if (q.includes("analytic") || q.includes("performance") || q.includes("sales report")) return { text: "I can open your analytics for views, orders, revenue and conversion.", action: { label: "Open analytics", kind: "go", target: "/dashboard/analytics" } };
-  if (q.includes("add product") || q.includes("new product") || q.includes("add listing")) return { text: "Open Listings to add a product or service, price, image and availability.", action: { label: "Add a listing", kind: "go", target: "/dashboard/listings" } };
-  if (q.includes("gallery") || q.includes("cover") || q.includes("edit store") || q.includes("store setting")) return { text: "Store Settings lets you update delivery, gallery, cover, colour and store details.", action: { label: "Open store settings", kind: "go", target: "/dashboard/settings" } };
-  if (q.includes("verification") || q.includes("kyc")) return { text: "Verification shows the requirements that protect customers and let you publish.", action: { label: "Open verification", kind: "go", target: "/dashboard/verification" } };
-  if (q.includes("wallet") || q.includes("payout") || q.includes("earning")) return { text: "Your wallet contains earnings, withdrawals and payout activity.", action: { label: "Open wallet", kind: "go", target: "/dashboard/wallet" } };
-  if (q.includes("plan") || q.includes("upgrade") || q.includes("subscription")) return { text: "Plans control listings and advanced storefront features.", action: { label: "View plans", kind: "go", target: "/dashboard/plans" } };
-  if (q.includes("order") || q.includes("delivery")) return { text: vendor ? "Order tools help you fulfil protected orders and update customers." : "Your orders page shows protected checkout status and next steps.", action: { label: "Open orders", kind: "go", target: vendor ? "/dashboard/orders" : "/orders" } };
-  if (q.includes("message") || q.includes("contact vendor")) return { text: "Messages are the safest way to discuss a BRIDGE order or store.", action: { label: "Open messages", kind: "go", target: "/messages" } };
-  if (q.includes("cart") || q.includes("checkout")) return { text: "Your cart shows seller price, delivery and all buyer fees before payment.", action: { label: "Open cart", kind: "go", target: "/cart" } };
-  if (q.includes("find") || q.includes("search") || q.includes("recommend")) {
-    const term = input.replace(/^(find|search for|recommend|show me)\s+/i, "").trim();
-    return { text: "I can take you to Explore. Search by store, category or city to find a good match.", action: { label: "Search Explore", kind: "go", target: "/explore" + (term ? "?q=" + encodeURIComponent(term) : "") } };
-  }
-  if (q.includes("support") || q.includes("help") || q.includes("problem")) return { text: "For account-specific help, contact the BRIDGE support team.", action: { label: "Contact support", kind: "support" } };
-  return { text: vendor ? "I can help with listings, store settings, analytics, orders, delivery fees, publishing, plans or your wallet." : "I can help you find local businesses, check orders, open your cart, message a seller or contact support." };
-}
 
 function tip(path: string, vendor: boolean) {
   if (vendor) return path.includes("listings") ? "Clear photos and up-to-date prices help customers choose with confidence." : path.includes("orders") ? "Keep order updates in BRIDGE Messages so both sides can find the details later." : "A complete storefront with clear delivery details is easier for customers to trust.";
@@ -68,11 +42,22 @@ export function BridgeAssistant() {
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
 
-  const sendPrompt = (prompt: string) => {
+  const sendPrompt = async (prompt: string) => {
     const text = prompt.trim();
-    if (!text) return;
-    setMessages((list) => [...list, { from: "user", text }, { from: "bot", ...respond(text, vendor) }]);
+    if (!text || busy) return;
+    const history = messages.slice(-10).map((message) => ({ role: message.from === "bot" ? "assistant" : "user", content: message.text }));
+    setMessages((list) => [...list, { from: "user", text }]);
     setValue("");
+    setBusy(true);
+    try {
+      const data = await apiFetch("/assistant/chat", { method: "POST", body: JSON.stringify({ message: text, page: location.pathname, history }) });
+      setMessages((list) => [...list, { from: "bot", text: data.reply }]);
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : "Please try again in a moment.";
+      setMessages((list) => [...list, { from: "bot", text: "I couldn’t reach BRIDGE just now. " + reason }]);
+    } finally {
+      setBusy(false);
+    }
   };
   const run = async (index: number, action: Action) => {
     if (action.kind === "go" && action.target) { nav(action.target); setOpen(false); return; }
@@ -108,13 +93,13 @@ export function BridgeAssistant() {
             <div className="rounded-2xl border border-white/10 bg-white/[.04] p-3.5"><p className="mb-1.5 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[.16em] text-[#d6ff57]"><Sparkles className="h-3.5 w-3.5" />A quick tip</p><p className="text-xs leading-relaxed text-white/65">{tip(location.pathname, vendor)}</p></div>
             <div><p className="mb-2 text-xs font-medium text-white/45">Try one of these</p><div className="flex flex-wrap gap-2">{chips.map((s) => <button key={s} type="button" onClick={() => sendPrompt(s)} className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-white/12 bg-white/[.04] px-3 py-2 text-left text-xs font-medium text-white/80 transition hover:border-[#d6ff57]/45 hover:bg-[#d6ff57]/10 hover:text-[#e4ff9b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#d6ff57]">{s}<ArrowUpRight className="h-3 w-3" /></button>)}</div></div>
           </div> : messages.map((m, i) => <div key={i} className={m.from === "user" ? "ml-auto max-w-[88%]" : "max-w-[92%]"}><p className={"rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed " + (m.from === "user" ? "rounded-br-md bg-[#d6ff57] text-[#11110f]" : "rounded-bl-md border border-white/[.06] bg-white/[.07] text-white/90")}>{m.text}</p>{m.action && !m.done && <button type="button" disabled={busy} onClick={() => run(i, m.action!)} className="mt-2 inline-flex min-h-10 items-center gap-2 rounded-xl border border-[#d6ff57]/35 bg-[#d6ff57]/[.07] px-3 py-2 text-xs font-semibold text-[#d6ff57] hover:bg-[#d6ff57]/15 disabled:opacity-50">{m.action.kind === "publish" ? <CheckCircle2 className="h-3.5 w-3.5" /> : m.action.kind === "go" ? <ChevronRight className="h-3.5 w-3.5" /> : <ExternalLink className="h-3.5 w-3.5" />}{busy ? "Working..." : m.action.label}</button>}</div>)}
-          <div ref={endRef} />
+          {busy && <p className="w-fit rounded-2xl rounded-bl-md border border-white/[.06] bg-white/[.07] px-3.5 py-2.5 text-xs text-white/60">Thinking…</p>}<div ref={endRef} />
         </div>
         <footer className="border-t border-white/10 bg-[#171814] p-3 sm:p-4">
           <div className="mb-2.5 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{chips.map((s) => <button key={s} type="button" onClick={() => sendPrompt(s)} className="min-h-9 shrink-0 rounded-full border border-white/12 px-3 py-1.5 text-xs text-white/65 hover:border-[#d6ff57]/40 hover:text-[#e4ff9b]">{s}</button>)}</div>
           <form className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[.06] p-1.5 focus-within:border-[#d6ff57]/50 focus-within:ring-2 focus-within:ring-[#d6ff57]/10" onSubmit={(e) => { e.preventDefault(); sendPrompt(value); }}>
             <label className="sr-only" htmlFor="bridge-assistant-input">Ask BRIDGE for help</label><input id="bridge-assistant-input" value={value} onChange={(e) => setValue(e.target.value)} placeholder={vendor ? "Ask about your store..." : "Find a store or get help..."} className="min-w-0 flex-1 bg-transparent px-2 py-2 text-sm text-white outline-none placeholder:text-white/40" />
-            <button type="submit" disabled={!value.trim()} aria-label="Send message" className="grid h-10 w-10 place-items-center rounded-xl bg-[#d6ff57] text-[#11110f] hover:bg-[#e2ff8a] disabled:opacity-40"><Send className="h-4 w-4" /></button>
+            <button type="submit" disabled={!value.trim() || busy} aria-label="Send message" className="grid h-10 w-10 place-items-center rounded-xl bg-[#d6ff57] text-[#11110f] hover:bg-[#e2ff8a] disabled:opacity-40"><Send className="h-4 w-4" /></button>
           </form>
           <div className="mt-2 flex items-center justify-between gap-2 px-1"><span className="text-[10px] text-white/35">BRIDGE shortcuts · review before changes</span><button type="button" onClick={() => setMessages([])} className="inline-flex items-center gap-1 text-[10px] text-white/45 hover:text-white/75"><CircleHelp className="h-3 w-3" />Reset</button></div>
         </footer>
