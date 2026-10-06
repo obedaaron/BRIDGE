@@ -252,15 +252,15 @@ export function Explore() {
     <ExploreNavigation theme={theme} onThemeChange={toggleTheme} query={q} onQueryChange={setQ} city={city} onCityChange={setCity} onSubmit={handleSubmit} suggestions={suggestions} suggestionsOpen={suggestionsOpen} onSuggestionsOpenChange={setSuggestionsOpen} onSuggestionSelect={selectSuggestion} />
 
     <main className="mx-auto max-w-[1440px] px-4 pb-28 pt-[calc(9rem+env(safe-area-inset-top))] sm:px-6 sm:pt-28 lg:px-10">
-      <header className="relative mb-6 overflow-hidden rounded-[2rem] bg-[#d6ff57] px-4 py-6 text-[#11110f] sm:px-10 sm:py-10">
-        <span aria-hidden="true" className="bridge-blob absolute -right-10 -top-14 h-60 w-60 bg-white/40" style={blobVars(0)} />
-        <span aria-hidden="true" className="bridge-blob absolute -bottom-10 right-40 hidden h-32 w-32 bg-[#11110f]/10 sm:block" style={blobVars(1)} />
+      <header className="relative mb-6 overflow-hidden rounded-[2rem] border border-white/15 bg-gradient-to-br from-[#263a31] via-[#192b24] to-[#111a16] px-5 py-6 text-[#f4f0e6] shadow-[0_24px_70px_rgba(7,15,11,.22)] sm:px-10 sm:py-10">
+        <span aria-hidden="true" className="bridge-blob absolute -right-10 -top-14 h-60 w-60 bg-white/10 blur-2xl" style={blobVars(0)} />
+        <span aria-hidden="true" className="bridge-blob absolute -bottom-10 right-40 hidden h-32 w-32 border border-white/10 bg-[#c6aa74]/10 backdrop-blur-xl sm:block" style={blobVars(1)} />
         <div className="relative flex flex-wrap items-center justify-between gap-3">
           <div className="min-w-0">
-            <nav aria-label="Breadcrumb" className="mb-3 flex items-center gap-2 text-sm text-[#11110f]/70"><Link to="/explore" className="font-semibold text-[#11110f] hover:underline">{city || "Explore"}</Link><span aria-hidden="true">›</span><span>{activeName || "Stores"}</span></nav>
+            <nav aria-label="Breadcrumb" className="mb-3 flex items-center gap-2 text-sm text-[#f4f0e6]/65"><Link to="/explore" className="font-semibold text-[#f4f0e6] hover:underline">{city || "Explore"}</Link><span aria-hidden="true">›</span><span>{activeName || "Stores"}</span></nav>
             <h1 className="font-display text-3xl font-semibold tracking-[-.05em] sm:text-5xl">{activeName || "All stores"}</h1>
           </div>
-          <p className="rounded-full border-2 border-[#11110f] bg-white px-4 py-1.5 text-sm font-semibold">{loading ? "Finding stores…" : filteredVendors.length + (filteredVendors.length === 1 ? " store" : " stores")}</p>
+          <p className="rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-sm font-semibold text-white shadow-sm backdrop-blur-xl">{loading ? "Finding stores…" : filteredVendors.length + (filteredVendors.length === 1 ? " store" : " stores")}</p>
         </div>
       </header>
 

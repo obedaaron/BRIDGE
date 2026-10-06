@@ -18,6 +18,7 @@ import {
 interface Vendor {
   id: string;
   business_name: string;
+  logo_url: string | null;
   slug: string;
   verification_status: string;
   subscription_tier: string;
@@ -233,19 +234,19 @@ export function VendorDashboard() {
 
         {/* Hero */}
         <section className="relative overflow-hidden rounded-3xl bg-ink text-paper">
-          <div aria-hidden="true" className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-[#d6ff57]/15 blur-3xl" />
-          <div aria-hidden="true" className="pointer-events-none absolute -bottom-28 left-1/3 h-64 w-64 rounded-full bg-[#2E8B72]/25 blur-3xl" />
+          <div aria-hidden="true" className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-[#9fbea8]/12 blur-3xl" />
+          <div aria-hidden="true" className="pointer-events-none absolute -bottom-28 left-1/3 h-64 w-64 rounded-full bg-[#2E8B72]/18 blur-3xl" />
           <div className="relative p-6 sm:p-9">
             <div className="flex flex-wrap items-center gap-2">
-              <span className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${vendor.is_published ? "bg-[#d6ff57] text-[#11110f]" : "bg-paper/12 text-paper"}`}>
-                <span className={`h-1.5 w-1.5 rounded-full ${vendor.is_published ? "bg-[#11110f] animate-pulse" : "bg-paper/60"}`} />
+              <span className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${vendor.is_published ? "bg-[#dce9df] text-[#214b3b]" : "bg-paper/12 text-paper"}`}>
+                <span className={`h-1.5 w-1.5 rounded-full ${vendor.is_published ? "bg-[#2E8B72]" : "bg-paper/60"}`} />
                 {vendor.is_published ? "Live" : "Draft"}
               </span>
               <SignboardTag color={vendor.verification_status === "unverified" ? "signal" : "gold"}>{vendor.verification_status.replace("_", " ")}</SignboardTag>
             </div>
 
             <div className="mt-5 flex items-center gap-4">
-              <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-[#d6ff57] font-display text-2xl font-bold text-[#11110f] sm:h-16 sm:w-16 sm:text-3xl">{vendor.business_name.charAt(0).toUpperCase()}</div>
+              <div className="grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-2xl border border-paper/15 bg-paper/10 text-paper/80 shadow-inner sm:h-16 sm:w-16">{vendor.logo_url ? <img src={vendor.logo_url} alt={vendor.business_name + ' logo'} className="h-full w-full object-cover" onError={(event) => { event.currentTarget.style.display = "none"; }} /> : <span className="font-display text-2xl font-semibold sm:text-3xl">{vendor.business_name.charAt(0).toUpperCase()}</span>}</div>
               <div className="min-w-0">
                 <p className="text-xs font-medium text-paper/55">Store control centre</p>
                 <h1 className="break-words font-display text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">{vendor.business_name}</h1>
@@ -259,7 +260,7 @@ export function VendorDashboard() {
             </button>
 
             <div className="mt-6 flex flex-wrap items-center gap-3">
-              <button onClick={handleTogglePublish} disabled={toggling} className={`inline-flex min-h-12 items-center gap-2 rounded-full px-6 text-sm font-semibold transition-colors disabled:opacity-50 ${vendor.is_published ? "border border-paper/25 text-paper hover:bg-paper/10" : "bg-[#d6ff57] text-[#11110f] hover:bg-[#e9ff9c]"}`}>
+              <button onClick={handleTogglePublish} disabled={toggling} className={`inline-flex min-h-12 items-center gap-2 rounded-full px-6 text-sm font-semibold transition-colors disabled:opacity-50 ${vendor.is_published ? "border border-paper/25 text-paper hover:bg-paper/10" : "bg-[#c5d9c8] text-[#17251d] hover:bg-[#d5e4d7]"}`}>
                 {toggling ? <Loader2 className="h-4 w-4 animate-spin" /> : <Power className="h-4 w-4" />}
                 {toggling ? "Updating" : vendor.is_published ? "Unpublish" : "Publish store"}
               </button>
@@ -339,13 +340,13 @@ export function VendorDashboard() {
             </div>
           </div>
 
-          <div className="relative overflow-hidden rounded-3xl bg-[#d6ff57] p-6 text-[#11110f] sm:p-7">
-            <div aria-hidden="true" className="pointer-events-none absolute -bottom-16 -right-16 h-52 w-52 rounded-full bg-white/35 blur-2xl" />
+          <div className="relative overflow-hidden rounded-3xl bg-[#dce8dd] p-6 text-[#18241c] sm:p-7">
+            <div aria-hidden="true" className="pointer-events-none absolute -bottom-16 -right-16 h-52 w-52 rounded-full bg-white/45 blur-2xl" />
             <div className="relative flex h-full flex-col">
-              <span className="grid h-11 w-11 place-items-center rounded-xl bg-[#11110f] text-[#d6ff57]"><Share2 className="h-5 w-5" /></span>
+              <span className="grid h-11 w-11 place-items-center rounded-xl bg-[#294a3a] text-[#e4eee5]"><Share2 className="h-5 w-5" /></span>
               <h2 className="mt-6 font-display text-2xl font-semibold leading-tight tracking-tight">Share one clear address.</h2>
-              <p className="mt-3 break-all rounded-xl bg-[#11110f]/8 px-3 py-2 text-sm font-medium">bridge.com/store/{vendor.slug}</p>
-              <button onClick={handleCopyLink} className="mt-auto inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#11110f] px-5 text-sm font-semibold text-[#d6ff57] transition-colors hover:bg-black" style={{ marginTop: "1.75rem" }}>
+              <p className="mt-3 break-all rounded-xl bg-[#294a3a]/8 px-3 py-2 text-sm font-medium">bridge.com/store/{vendor.slug}</p>
+              <button onClick={handleCopyLink} className="mt-auto inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#294a3a] px-5 text-sm font-semibold text-white transition-colors hover:bg-[#203b2e]" style={{ marginTop: "1.75rem" }}>
                 {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}{copied ? "Link copied" : "Copy store link"}
               </button>
             </div>

@@ -36,8 +36,11 @@ export function Profile() {
   const [passwordError, setPasswordError] = useState("");
 
   useEffect(() => {
-    Promise.all([apiFetch("/auth/me"), apiFetch("/vendors/me")])
-      .then(([accountData, vendorData]) => { setAccount(accountData.user); setVendor(vendorData.vendor); })
+    apiFetch("/auth/me")
+      .then((accountData) => {
+        setAccount(accountData.user);
+        apiFetch("/vendors/me").then((vendorData) => setVendor(vendorData.vendor)).catch(() => setVendor(null));
+      })
       .catch(() => { setAccount({ full_name: user?.full_name || null, username: null, personalized_ads_enabled: false, email: user?.email || "", phone: null, email_verified_at: null, phone_verified_at: null }); })
       .finally(() => setLoading(false));
   }, [user]);
