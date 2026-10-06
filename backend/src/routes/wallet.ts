@@ -20,6 +20,14 @@ router.get("/mine", requireAuth, async (req, res) => {
   res.json({ wallet: walletResult.rows[0] || { available_kobo: 0, pending_withdrawal_kobo: 0 }, transactions: entriesResult.rows, withdrawals: withdrawalsResult.rows });
 });
 
+router.get("/customer/mine", requireAuth, async (req, res) => {
+  const [wallet, entries] = await Promise.all([
+    pool.query("select available_kobo, updated_at from customer_wallets where user_id = $1", [req.user!.userId]),
+    pool.query("select entry_type, amount_kobo, created_at, order_id from customer_wallet_transactions where user_id = $1 order by created_at desc limit 30", [req.user!.userId]),
+  ]);
+  res.json({ wallet: wallet.rows[0] || { available_kobo: 0 }, transactions: entries.rows });
+});
+
 router.post("/withdrawals", requireAuth, async (req, res) => {
   const vendorId = await ownVendor(req.user!.userId);
   const amountKobo = Number(req.body.amountKobo);

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { FileCheck2, LayoutDashboard, LogOut, Menu, Search, Settings, ShieldAlert, Store, X } from "lucide-react";
+import { FileCheck2, LayoutDashboard, LogOut, Menu, Search, Settings, ShieldAlert, Store, X, RotateCcw } from "lucide-react";
 import { useEffect, useState } from "react";
 import { BrandLink } from "./BrandLink";
 
@@ -10,6 +10,7 @@ const navItems = [
   { label: "Verifications", path: "/admin/verifications", icon: FileCheck2 },
   { label: "Vendors", path: "/admin/vendors", icon: Store },
   { label: "Fraud alerts", path: "/admin/fraud-alerts", icon: ShieldAlert },
+  { label: "Returns & refunds", path: "/admin/returns", icon: RotateCcw },
   { label: "Settings", path: "/admin/settings", icon: Settings },
 ];
 

@@ -62,3 +62,7 @@ export async function sendVerificationSms(input: { destination: string; code: st
   if (!response.ok || data.code !== "ok") throw new Error(data.message || "Could not send verification SMS");
   return data.message_id_str || data.message_id || null;
 }
+
+export async function sendOrderUpdateEmail(input: { destination: string; subject: string; text: string }) {
+  return sendEmail({ to: input.destination, subject: input.subject, text: input.text });
+}

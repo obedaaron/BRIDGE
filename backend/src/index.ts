@@ -21,6 +21,7 @@ import promotionRoutes from "./routes/promotions";
 import analyticsRoutes from "./routes/analytics";
 import recommendationRoutes from "./routes/recommendations";
 import assistantRoutes from "./routes/assistant";
+import notificationRoutes from "./routes/notifications";
 
 const app = express();
 app.use(cors());
@@ -50,6 +51,7 @@ app.use("/promotions", promotionRoutes);
 app.use("/analytics", analyticsRoutes);
 app.use("/recommendations", recommendationRoutes);
 app.use("/assistant", assistantRoutes);
+app.use("/notifications", notificationRoutes);
 
 app.use((_req, res) => res.status(404).json({ error: "API route not found" }));
 

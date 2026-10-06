@@ -4,6 +4,7 @@ import { requireAdmin } from "../middleware/admin";
 import { createPaystackRefund } from "../services/paystack";
 import { initiatePaystackTransfer } from "../services/paystack";
 import { hasPayoutBlockingAlert } from "../services/fraud";
+import { notifyOrderParties, notifyUser } from "../services/orderNotifications";
 
 const router = Router();
 
@@ -220,6 +221,45 @@ router.post("/orders/:id/release-payout", requireAdmin, async (req, res) => {
     await pool.query("insert into marketplace_order_events (order_id, actor_id, event_type, note) values ($1, $2, 'payout_released', $3)", [order.id, req.user!.userId, `Paystack transfer ${transfer.transferCode || transfer.reference}`]);
     res.json({ order: updated.rows[0], transfer });
   } catch (err) { await pool.query("update marketplace_orders set payout_status = 'on_hold', updated_at = now() where id = $1 and payout_status = 'processing'", [order.id]); res.status(502).json({ error: "Payout needs manual reconciliation before it can be retried" }); }
+});
+
+router.get("/return-requests", requireAdmin, async (_req, res) => {
+  const result = await pool.query(
+    `select r.*, o.title as order_title, o.buyer_total_kobo, o.status as order_status,
+            buyer.full_name as buyer_name, buyer.email as buyer_email, v.business_name as vendor_name
+     from marketplace_return_requests r join marketplace_orders o on o.id = r.order_id
+     join users buyer on buyer.id = r.buyer_id join vendors v on v.id = o.vendor_id
+     order by case r.status when 'requested' then 0 else 1 end, r.created_at desc`
+  );
+  res.json({ requests: result.rows });
+});
+
+router.patch("/return-requests/:id", requireAdmin, async (req, res) => {
+  const decision = req.body.decision;
+  const reviewNote = typeof req.body.reviewNote === "string" ? req.body.reviewNote.trim().slice(0, 1000) : "";
+  if (!["approve", "reject"].includes(decision)) return res.status(400).json({ error: "Choose approve or reject" });
+  const client = await pool.connect();
+  try {
+    await client.query("begin");
+    const found = await client.query("select r.*, o.status as order_status, o.buyer_total_kobo, o.id as order_id from marketplace_return_requests r join marketplace_orders o on o.id = r.order_id where r.id = $1 for update of r, o", [req.params.id]);
+    const request = found.rows[0];
+    if (!request || request.status !== "requested") throw new Error("This return request has already been reviewed");
+    if (decision === "approve") {
+      if (!["paid", "in_progress", "delivered"].includes(request.order_status)) throw new Error("This order is no longer eligible for a wallet refund");
+      const amount = Number(request.buyer_total_kobo);
+      await client.query("insert into customer_wallets (user_id) values ($1) on conflict (user_id) do nothing", [request.buyer_id]);
+      const credit = await client.query("insert into customer_wallet_transactions (user_id, order_id, entry_type, amount_kobo) values ($1,$2,'order_refund',$3) on conflict (order_id,entry_type) do nothing returning id", [request.buyer_id, request.order_id, amount]);
+      if (credit.rows[0]) await client.query("update customer_wallets set available_kobo = available_kobo + $1, updated_at = now() where user_id = $2", [amount, request.buyer_id]);
+      await client.query("update marketplace_orders set status = 'refunded', refunded_at = now(), refund_reference = $1, payout_status = 'not_ready', updated_at = now() where id = $2", [credit.rows[0]?.id || "wallet-credited", request.order_id]);
+    }
+    const updated = await client.query("update marketplace_return_requests set status = $1, review_note = $2, reviewed_by = $3, reviewed_at = now() where id = $4 returning *", [decision === "approve" ? "approved" : "rejected", reviewNote || null, req.user!.userId, request.id]);
+    await client.query("insert into marketplace_order_events (order_id, actor_id, event_type, note) values ($1,$2,$3,$4)", [request.order_id, req.user!.userId, decision === "approve" ? "refunded" : "return_rejected", decision === "approve" ? `Refund of ₦${(Number(request.buyer_total_kobo) / 100).toLocaleString()} credited to BRIDGE customer wallet` : `Return request declined. ${reviewNote}`]);
+    await client.query("commit");
+    if (decision === "approve") void notifyOrderParties(request.order_id, "refunded", "The refund is now available in your BRIDGE wallet.").catch((error) => console.error("Refund notice failed", error));
+    else void notifyUser({ userId: request.buyer_id, orderId: request.order_id, kind: "return_rejected", title: "Return request reviewed", body: reviewNote || "The store return request was declined after review.", href: "/orders" }).catch((error) => console.error("Return response notice failed", error));
+    res.json({ request: updated.rows[0] });
+  } catch (error) { await client.query("rollback"); res.status(409).json({ error: error instanceof Error ? error.message : "Could not review return request" }); }
+  finally { client.release(); }
 });
 
 export default router;

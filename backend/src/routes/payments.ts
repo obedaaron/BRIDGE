@@ -5,6 +5,7 @@ import { initializePaystackPayment, isPaystackConfigured, isValidPaystackSignatu
 import { activateSubscriptionByReference } from "./subscriptions";
 import { assessOrderRisk, hasPaymentBlockingAlert } from "../services/fraud";
 import { settleWalletWithdrawal } from "../services/wallet";
+import { notifyOrderParties } from "../services/orderNotifications";
 
 const router = Router();
 
@@ -30,6 +31,7 @@ async function recordSuccessfulPayment(reference: string) {
       "insert into marketplace_order_events (order_id, event_type, note) values ($1, 'paid', 'Paystack payment verified')",
       [result.rows[0].id]
     );
+    void notifyOrderParties(result.rows[0].id, "paid").catch((error) => console.error("Payment notification failed", error));
   }
   if (result.rows[0]) return result.rows[0];
   const existing = await pool.query("select * from marketplace_orders where id = $1 and payment_reference = $2", [verification.metadata.order_id, reference]);

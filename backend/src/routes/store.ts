@@ -3,6 +3,21 @@ import { pool } from "../db";
 
 const router = Router();
 
+router.get("/:slug/share-preview", async (req, res) => {
+  const result = await pool.query(
+    `select v.business_name, v.slug, v.description, v.logo_url, v.cover_image_url, v.storefront_cover_url, v.city, v.state,
+            c.name as category_name
+     from vendors v left join categories c on c.id = v.category_id
+     where v.slug = $1 and v.is_published = true`,
+    [req.params.slug]
+  );
+  const store = result.rows[0];
+  if (!store) return res.status(404).json({ error: "Store not found" });
+  res.setHeader("Cache-Control", "public, max-age=300, stale-while-revalidate=600");
+  res.json({ store });
+});
+
+
 router.get("/:slug", async (req, res) => {
   const vendorResult = await pool.query(
     `select id, user_id, business_name, slug, description, logo_url, cover_image_url, phone, whatsapp,

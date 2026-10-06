@@ -4,6 +4,7 @@ import { requireAuth } from "../middleware/auth";
 import { calculateCheckoutAmounts, checkoutPricingPolicy } from "../utils/pricing";
 import { createFraudAlert } from "../services/fraud";
 import { creditVendorWalletForOrder } from "../services/wallet";
+import { notifyNewOrder, notifyOrderParties, notifyUser } from "../services/orderNotifications";
 
 const router = Router();
 
@@ -22,7 +23,7 @@ async function getConversationForUser(conversationId: string, userId: string) {
 }
 
 function orderSelect(where: string) {
-  return `select o.*, v.business_name as vendor_name, u.full_name as buyer_name
+  return `select o.*, v.business_name as vendor_name, u.full_name as buyer_name, (select r.status from marketplace_return_requests r where r.order_id = o.id) as return_request_status
     from marketplace_orders o
     join vendors v on v.id = o.vendor_id
     join users u on u.id = o.buyer_id
@@ -122,6 +123,7 @@ router.post("/catalog-checkout", requireAuth, async (req, res) => {
     }
     await client.query("insert into marketplace_order_events (order_id, actor_id, event_type, note) values ($1,$2,'accepted','Buyer created a delivery checkout')", [order.id, req.user!.userId]);
     await client.query("commit");
+    void notifyNewOrder(order.id).catch((error) => console.error("New order notification failed", error));
     res.status(201).json({ order });
   } catch (err) {
     await client.query("rollback");
@@ -228,20 +230,36 @@ router.patch("/:id/start", requireAuth, async (req, res) => {
   if (!order) return res.status(404).json({ error: "Order not found" });
   if (order.vendor_id !== vendorId) return res.status(403).json({ error: "Only the seller can start fulfilment" });
   if (order.status !== "paid") return res.status(409).json({ error: "Only a paid order can be started" });
-  res.json({ order: await transitionOrder(order.id, "in_progress", req.user!.userId, "in_progress", "Seller started fulfilment") });
+  if (order.return_request_status === "requested") return res.status(409).json({ error: "A return request is under review" });
+  const updated = await transitionOrder(order.id, "in_progress", req.user!.userId, "in_progress", "Seller started fulfilment");
+  void notifyOrderParties(order.id, "processing").catch((error) => console.error("Order update notification failed", error));
+  res.json({ order: updated });
+});
+
+router.patch("/:id/dispatch", requireAuth, async (req, res) => {
+  const { order, vendorId } = await getOrderForParticipant(req.params.id as string, req.user!.userId);
+  if (!order) return res.status(404).json({ error: "Order not found" });
+  if (order.vendor_id !== vendorId) return res.status(403).json({ error: "Only the seller can dispatch this order" });
+  if (order.status !== "in_progress") return res.status(409).json({ error: "Only a processing order can be dispatched" });
+  if (order.return_request_status === "requested") return res.status(409).json({ error: "A return request is under review" });
+  const updated = await transitionOrder(order.id, "out_for_delivery", req.user!.userId, "out_for_delivery", "Seller dispatched the order for delivery");
+  void notifyOrderParties(order.id, "out_for_delivery").catch((error) => console.error("Dispatch notification failed", error));
+  res.json({ order: updated });
 });
 
 router.patch("/:id/deliver", requireAuth, async (req, res) => {
   const { order, vendorId } = await getOrderForParticipant(req.params.id as string, req.user!.userId);
   if (!order) return res.status(404).json({ error: "Order not found" });
   if (order.vendor_id !== vendorId) return res.status(403).json({ error: "Only the seller can mark delivery" });
-  if (!["paid", "in_progress"].includes(order.status)) return res.status(409).json({ error: "This order cannot be marked delivered" });
+  if (order.status !== "out_for_delivery") return res.status(409).json({ error: "Only an out-for-delivery order can be marked delivered" });
+  if (order.return_request_status === "requested") return res.status(409).json({ error: "A return request is under review" });
   const proof = typeof req.body.deliveryProofUrl === "string" ? req.body.deliveryProofUrl.trim() : "";
   const result = await pool.query(
     "update marketplace_orders set status = 'delivered', delivered_at = now(), delivery_proof_url = $1, updated_at = now() where id = $2 returning *",
     [proof || null, order.id]
   );
   await pool.query("insert into marketplace_order_events (order_id, actor_id, event_type, note) values ($1, $2, 'delivered', 'Seller marked the order delivered')", [order.id, req.user!.userId]);
+  void notifyOrderParties(order.id, "delivered").catch((error) => console.error("Delivery notification failed", error));
   res.json({ order: result.rows[0] });
 });
 
@@ -260,6 +278,7 @@ router.patch("/:id/complete", requireAuth, async (req, res) => {
     if (!result.rows[0]) throw new Error("This order has already been completed or changed status");
     await creditVendorWalletForOrder(client, result.rows[0]);
     await client.query("insert into marketplace_order_events (order_id, actor_id, event_type, note) values ($1, $2, 'completed', 'Buyer confirmed delivery; seller earnings credited to BRIDGE wallet')", [order.id, req.user!.userId]);
+    void notifyOrderParties(order.id, "completed").catch((error) => console.error("Completion notification failed", error));
     await client.query("commit");
     res.json({ order: result.rows[0] });
   } catch (err) { await client.query("rollback"); res.status(409).json({ error: err instanceof Error ? err.message : "Could not complete order" }); } finally { client.release(); }
@@ -268,13 +287,36 @@ router.patch("/:id/complete", requireAuth, async (req, res) => {
 router.post("/:id/disputes", requireAuth, async (req, res) => {
   const { order } = await getOrderForParticipant(req.params.id as string, req.user!.userId);
   if (!order) return res.status(404).json({ error: "Order not found" });
-  if (!["paid", "in_progress", "delivered"].includes(order.status)) return res.status(409).json({ error: "This order cannot be disputed" });
+  if (!["paid", "in_progress", "out_for_delivery", "delivered"].includes(order.status)) return res.status(409).json({ error: "This order cannot be disputed" });
   const reason = typeof req.body.reason === "string" ? req.body.reason.trim() : "";
   if (reason.length < 10 || reason.length > 2000) return res.status(400).json({ error: "Provide a dispute reason between 10 and 2,000 characters" });
   const result = await pool.query("update marketplace_orders set status = 'disputed', disputed_at = now(), payout_status = 'on_hold', updated_at = now() where id = $1 returning *", [order.id]);
   await createFraudAlert(order.id, "buyer_dispute", "high", { reason });
   await pool.query("insert into marketplace_order_events (order_id, actor_id, event_type, note) values ($1, $2, 'disputed', $3)", [order.id, req.user!.userId, reason]);
   res.status(201).json({ order: result.rows[0] });
+});
+
+router.post("/:id/returns", requireAuth, async (req, res) => {
+  const { order } = await getOrderForParticipant(req.params.id as string, req.user!.userId);
+  if (!order) return res.status(404).json({ error: "Order not found" });
+  if (order.buyer_id !== req.user!.userId) return res.status(403).json({ error: "Only the buyer can request a return" });
+  if (!["paid", "in_progress", "out_for_delivery", "delivered"].includes(order.status)) return res.status(409).json({ error: "A return or refund can only be requested before order completion" });
+  const reason = typeof req.body.reason === "string" ? req.body.reason.trim() : "";
+  const details = typeof req.body.details === "string" ? req.body.details.trim() : "";
+  if (reason.length < 3 || reason.length > 120 || details.length < 10 || details.length > 2000) return res.status(400).json({ error: "Choose a return reason and describe the issue (10 to 2,000 characters)" });
+  const client = await pool.connect();
+  try {
+    await client.query("begin");
+    const locked = await client.query("select id, status from marketplace_orders where id = $1 for update", [order.id]);
+    if (!["paid", "in_progress", "delivered"].includes(locked.rows[0]?.status)) throw new Error("This order can no longer be returned");
+    const request = await client.query("insert into marketplace_return_requests (order_id, buyer_id, reason, details) values ($1,$2,$3,$4) returning *", [order.id, req.user!.userId, reason, details]);
+    await client.query("update marketplace_orders set payout_status = 'on_hold', updated_at = now() where id = $1", [order.id]);
+    await client.query("insert into marketplace_order_events (order_id, actor_id, event_type, note) values ($1,$2,'return_requested',$3)", [order.id, req.user!.userId, `${reason}: ${details}`]);
+    await client.query("commit");
+    void notifyOrderParties(order.id, "return_requested", `${reason}. ${details}`).catch((error) => console.error("Return request notification failed", error));
+    res.status(201).json({ request: request.rows[0] });
+  } catch (error) { await client.query("rollback"); res.status(409).json({ error: error instanceof Error ? error.message : "Could not submit return request" }); }
+  finally { client.release(); }
 });
 
 router.post("/:id/contact", requireAuth, async (req, res) => {

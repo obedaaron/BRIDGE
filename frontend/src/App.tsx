@@ -23,6 +23,7 @@ const AdminVerifications = lazy(() => import("./pages/admin/Verifications").then
 const AdminVendors = lazy(() => import("./pages/admin/Vendors").then((module) => ({ default: module.AdminVendors })));
 const FraudAlerts = lazy(() => import("./pages/admin/FraudAlerts").then((module) => ({ default: module.FraudAlerts })));
 const AdminSettings = lazy(() => import("./pages/admin/Settings").then((module) => ({ default: module.AdminSettings })));
+const ReturnRequests = lazy(() => import("./pages/admin/ReturnRequests").then((module) => ({ default: module.ReturnRequests })));
 const Messages = lazy(() => import("./pages/Messages").then((module) => ({ default: module.Messages })));
 const Conversation = lazy(() => import("./pages/Conversation").then((module) => ({ default: module.Conversation })));
 const VendorOrders = lazy(() => import("./pages/dashboard/Orders").then((module) => ({ default: module.Orders })));
@@ -83,6 +84,7 @@ export default function App() {
           <Route path="/admin/verifications" element={<AdminRoute><AdminVerifications /></AdminRoute>} />
           <Route path="/admin/vendors" element={<AdminRoute><AdminVendors /></AdminRoute>} />
           <Route path="/admin/fraud-alerts" element={<AdminRoute><FraudAlerts /></AdminRoute>} />
+          <Route path="/admin/returns" element={<AdminRoute><ReturnRequests /></AdminRoute>} />
           <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>

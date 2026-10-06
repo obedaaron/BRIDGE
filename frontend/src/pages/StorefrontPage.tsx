@@ -4,7 +4,7 @@ import { apiFetch } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 import { ReviewsSection } from "../components/ReviewsSection";
-import { ArrowLeft, ArrowRight, Check, ChevronRight, Headphones, Home, MapPin, MessageCircle, Minus, Moon, Package, Plus, Search, ShieldCheck, ShoppingCart, Star, Sun, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, ChevronRight, Headphones, Home, MapPin, MessageCircle, Minus, Moon, Package, Plus, Search, ShieldCheck, ShoppingCart, Share2, Download, Star, Sun, X } from "lucide-react";
 import { useBridgeTheme } from "../lib/theme";
 import { BridgeLoader } from "../components/BridgeLoader";
 
@@ -137,6 +137,7 @@ export function StorefrontPage() {
   const [items, setItems] = useState<Item[]>([]);
   const [gallery, setGallery] = useState<GalleryImage[]>([]);
   const [messaging, setMessaging] = useState(false);
+  const [shareMessage, setShareMessage] = useState("");
   const [addedId, setAddedId] = useState<string | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [showFullDescription, setShowFullDescription] = useState(false);
@@ -197,6 +198,54 @@ export function StorefrontPage() {
     } finally { setMessaging(false); }
   }
 
+  async function shareStore() {
+    if (!vendor) return;
+    const url = window.location.href;
+    try {
+      if (navigator.share) await navigator.share({ title: vendor.business_name + " on BRIDGE", text: [vendor.description, formatPlace(vendor.city, vendor.state)].filter(Boolean).join(" · "), url });
+      else { await navigator.clipboard.writeText(url); setShareMessage("Store link copied"); window.setTimeout(() => setShareMessage(""), 2500); }
+    } catch (error) { if (error instanceof Error && error.name !== "AbortError") setShareMessage("Could not share this store. Copy the link from your browser."); }
+  }
+  async function downloadMarketingCard() {
+    if (!vendor) return;
+    const canvas = document.createElement("canvas");
+    canvas.width = 1200; canvas.height = 630;
+    const context = canvas.getContext("2d");
+    if (!context) return;
+    const background = context.createLinearGradient(0, 0, 1200, 630);
+    background.addColorStop(0, "#2c4337"); background.addColorStop(1, "#101915");
+    context.fillStyle = background; context.fillRect(0, 0, 1200, 630);
+    context.fillStyle = "rgba(201,183,131,.10)"; context.beginPath(); context.arc(1020, 180, 210, 0, Math.PI * 2); context.fill();
+    const loadImage = (src: string | null) => new Promise<HTMLImageElement | null>((resolve) => {
+      if (!src) return resolve(null);
+      const image = new Image(); image.crossOrigin = "anonymous"; image.onload = () => resolve(image); image.onerror = () => resolve(null); image.src = src;
+    });
+    const [cover, logo] = await Promise.all([loadImage(vendor.storefront_cover_url || vendor.cover_image_url), loadImage(vendor.logo_url)]);
+    if (cover) {
+      context.save(); context.beginPath(); context.rect(700, 0, 500, 630); context.clip();
+      const scale = Math.max(500 / cover.width, 630 / cover.height); const width = cover.width * scale; const height = cover.height * scale;
+      context.drawImage(cover, 700 + (500 - width) / 2, (630 - height) / 2, width, height); context.restore();
+      const veil = context.createLinearGradient(600, 0, 1200, 0); veil.addColorStop(0, "#101915"); veil.addColorStop(.75, "rgba(16,25,21,.78)"); veil.addColorStop(1, "rgba(16,25,21,.1)"); context.fillStyle = veil; context.fillRect(600, 0, 600, 630);
+    }
+    context.fillStyle = "#e7eee6"; context.font = "700 20px Arial"; context.letterSpacing = "5px"; context.fillText("BRIDGE  ·  LOCAL, CONNECTED", 76, 90);
+    context.fillStyle = "#496653"; context.beginPath(); context.roundRect(76, 156, 92, 92, 26); context.fill();
+    if (logo) { context.save(); context.beginPath(); context.roundRect(76, 156, 92, 92, 26); context.clip(); context.drawImage(logo, 76, 156, 92, 92); context.restore(); }
+    else { context.fillStyle = "#f4f0e6"; context.font = "700 42px Arial"; context.textAlign = "center"; context.fillText(vendor.business_name.slice(0, 1).toUpperCase(), 122, 216); context.textAlign = "left"; }
+    context.fillStyle = "#c9b783"; context.font = "700 17px Arial"; context.letterSpacing = "2px"; context.fillText((vendor.category_name || "LOCAL BUSINESS").toUpperCase(), 190, 180);
+    let titleSize = 54; context.font = `700 ${titleSize}px Arial`; while (context.measureText(vendor.business_name).width > 620 && titleSize > 34) { titleSize -= 2; context.font = `700 ${titleSize}px Arial`; }
+    context.fillStyle = "#f4f0e6"; context.fillText(vendor.business_name, 76, 328, 620);
+    context.fillStyle = "#d5dfd5"; context.font = "24px Arial"; context.fillText(formatPlace(vendor.city, vendor.state), 76, 378);
+    context.font = "20px Arial";
+    const words = (vendor.description || "Discover this local business on BRIDGE.").replace(/\s+/g, " ").split(" ");
+    let line = "", y = 428; for (const word of words) { const next = line ? line + " " + word : word; if (context.measureText(next).width > 620 && line) { context.fillText(line, 76, y); y += 27; line = word; if (y > 482) break; } else line = next; } if (line && y <= 482) context.fillText(line, 76, y);
+    context.fillStyle = "#c9b783"; context.beginPath(); context.roundRect(76, 514, 250, 56, 28); context.fill();
+    context.fillStyle = "#17241c"; context.font = "700 17px Arial"; context.letterSpacing = "1px"; context.fillText("VISIT THIS STORE  ↗", 101, 550);
+    context.fillStyle = "rgba(231,238,230,.8)"; context.font = "15px Arial"; context.textAlign = "right"; context.fillText("bridge.com/store/" + vendor.slug, 1120, 578); context.textAlign = "left";
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
+    if (!blob) { setShareMessage("Could not create the promo image."); return; }
+    const imageUrl = URL.createObjectURL(blob); const link = document.createElement("a"); link.href = imageUrl; link.download = vendor.slug + "-bridge-card.png"; link.click(); window.setTimeout(() => URL.revokeObjectURL(imageUrl), 1000);
+    setShareMessage("Promo card downloaded"); window.setTimeout(() => setShareMessage(""), 2500);
+  }
   /* Quantity is applied by calling add() once per unit, so it works with the existing CartContext. */
   function addToCart(item: Item, qty = 1) {
     if (!vendor) return;
@@ -276,6 +325,7 @@ export function StorefrontPage() {
           {vendor.reliability_score > 0 && <div className="mt-4"><div className="flex justify-between text-xs text-[var(--store-muted)]"><span>Reliability</span><span className="font-semibold text-[var(--store-text)]">{vendor.reliability_score}%</span></div><div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[var(--store-soft)]"><div className="h-full rounded-full bg-[#d6ff57]" style={{ width: Math.min(100, vendor.reliability_score) + "%" }} /></div></div>}
 
           <button onClick={message} disabled={messaging} className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full border border-[var(--store-line)] px-5 py-3 text-sm font-semibold transition-colors hover:bg-[var(--store-soft)] disabled:opacity-60"><MessageCircle className="h-4 w-4" />{messaging ? "Opening…" : "Message store"}</button>
+          <div className="mt-2 grid grid-cols-2 gap-2"><button type="button" onClick={shareStore} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[#dce8dd] px-3 text-sm font-semibold text-[#18241c] transition-colors hover:bg-[#c9d9cc]"><Share2 className="h-4 w-4" />Share store</button><button type="button" onClick={downloadMarketingCard} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-[var(--store-line)] px-3 text-sm font-semibold transition-colors hover:bg-[var(--store-soft)]"><Download className="h-4 w-4" />Promo card</button></div>{shareMessage && <p role="status" className="mt-2 text-center text-xs text-[var(--store-muted)]">{shareMessage}</p>}
         </aside>
 
         {/* ── Centre: menu ── */}

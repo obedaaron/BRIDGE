@@ -371,7 +371,7 @@ export function Landing() {
               </div>
               <div className="border-b border-white/15 px-5 py-4 sm:border-b-0 sm:border-r">
                 <span className="block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">In</span>
-                <SearchSelect value={city} onChange={setCity} options={[...new Set([...NIGERIAN_STATES, ...cities])].map((name) => ({ value: name, label: name }))} placeholder="Select location" className="mt-1" />
+                <SearchSelect value={city} onChange={setCity} options={[...new Set([...NIGERIAN_STATES, ...cities])].map((name) => ({ value: name, label: name }))} placeholder="Select location" className="mt-1" tone="dark" />
               </div>
               <button
                 type="submit"

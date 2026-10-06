@@ -15,6 +15,7 @@ export interface MarketplaceOrder {
   created_at: string;
   vendor_name: string;
   buyer_name: string | null;
+  return_request_status?: string | null;
 }
 
 const statusClasses: Record<string, string> = {
@@ -23,6 +24,7 @@ const statusClasses: Record<string, string> = {
   payment_pending: "bg-gold/15 text-ink",
   paid: "bg-signal/15 text-ink",
   in_progress: "bg-ink/10 text-ink",
+  out_for_delivery: "bg-signal/15 text-ink",
   delivered: "bg-signal/15 text-ink",
   completed: "bg-signal/20 text-ink",
   refunded: "bg-ink/5 text-ink/70",
@@ -36,6 +38,7 @@ const darkStatusClasses: Record<string, string> = {
   payment_pending: "bg-[#C99A3C]/20 text-[#f1d28f]",
   paid: "bg-[#2E8B72]/25 text-[#9de0c4]",
   in_progress: "bg-white/10 text-white/85",
+  out_for_delivery: "bg-[#C99A3C]/20 text-[#f1d28f]",
   delivered: "bg-[#2E8B72]/25 text-[#9de0c4]",
   completed: "bg-[#2E8B72]/30 text-[#a9ebce]",
   refunded: "bg-white/10 text-white/65",

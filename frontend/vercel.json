@@ -1,5 +1,10 @@
 {
   "rewrites": [
+    {
+      "source": "/store/:slug",
+      "has": [{ "type": "header", "key": "user-agent", "value": ".*(WhatsApp|facebookexternalhit|Facebot|Twitterbot|Slackbot|TelegramBot|LinkedInBot|Discordbot|Pinterestbot|Applebot|Googlebot|Bingbot).*" }],
+      "destination": "/api/store-preview?slug=:slug"
+    },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
