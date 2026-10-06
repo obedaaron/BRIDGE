@@ -22,18 +22,11 @@ export function BridgeAssistant() {
   const location = useLocation();
   const vendor = user?.role === "vendor";
   const [open, setOpen] = useState(false);
-  const [nudge, setNudge] = useState(false);
   const [value, setValue] = useState("");
   const [busy, setBusy] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const endRef = useRef<HTMLDivElement>(null);
   const chips = prompts(location.pathname, vendor);
-  useEffect(() => {
-    if (open || window.sessionStorage.getItem("bridge-assistant-hint-seen")) return;
-    const show = window.setTimeout(() => { window.sessionStorage.setItem("bridge-assistant-hint-seen", "true"); setNudge(true); }, 5000);
-    const hide = window.setTimeout(() => setNudge(false), 13500);
-    return () => { window.clearTimeout(show); window.clearTimeout(hide); };
-  }, [open]);
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" }); }, [messages]);
   useEffect(() => {
     if (!open) return;
@@ -72,7 +65,6 @@ export function BridgeAssistant() {
       setMessages((list) => list.map((m, i) => i === index ? { ...m, done: true, text: "I could not complete that change. " + reason } : m));
     } finally { setBusy(false); }
   };
-  const dismissHint = () => { window.sessionStorage.setItem("bridge-assistant-hint-seen", "true"); setNudge(false); };
 
   return (
     <div className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] right-3 z-[70] flex max-w-[calc(100vw-1.5rem)] flex-col items-end font-body sm:bottom-5 sm:right-5">
@@ -81,7 +73,7 @@ export function BridgeAssistant() {
           <div className="absolute -right-5 -top-9 h-28 w-28 rounded-full bg-[#d6ff57]/10 blur-2xl" />
           <div className="relative flex items-start justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">
-              <span className="relative grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-[#d6ff57]/35 bg-[#d6ff57]/10 text-[#d6ff57]"><Bot className="h-6 w-6" /><Sparkles className="absolute -right-1 -top-1 h-3.5 w-3.5" /></span>
+              <span className="relative grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-[#d6ff57]/35 bg-[#d6ff57]/10 text-[#d6ff57]"><Bot className="h-5 w-5" /><Sparkles className="absolute -right-1 -top-1 h-3.5 w-3.5" /></span>
               <div><p id="bridge-assistant-title" className="flex items-center gap-2 font-semibold">BRIDGE assistant</p><p className="mt-0.5 text-xs text-white/55">Quick help for your next step</p></div>
             </div>
             <button type="button" onClick={() => setOpen(false)} aria-label="Close BRIDGE assistant" className="grid h-9 w-9 place-items-center rounded-xl text-white/60 hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#d6ff57]"><X className="h-4 w-4" /></button>
@@ -105,14 +97,8 @@ export function BridgeAssistant() {
         </footer>
       </section>}
 
-      {!open && nudge && <div className="mb-3 flex max-w-[min(19rem,calc(100vw-2rem))] items-start gap-2 rounded-2xl border border-white/10 bg-[#171814] px-3.5 py-3 text-white shadow-xl ring-1 ring-black/20">
-        <span className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-[#d6ff57]/12 text-[#d6ff57]"><Sparkles className="h-4 w-4" /></span>
-        <button type="button" onClick={() => { setOpen(true); dismissHint(); }} className="min-w-0 flex-1 text-left text-xs leading-relaxed text-white/80">Need a hand? I can suggest your next step.</button>
-        <button type="button" onClick={dismissHint} aria-label="Dismiss assistant greeting" className="grid h-7 w-7 place-items-center rounded-lg text-white/45 hover:bg-white/10 hover:text-white"><X className="h-3.5 w-3.5" /></button>
-      </div>}
-
-      <button type="button" onClick={() => { setOpen((v) => !v); setNudge(false); }} aria-label={open ? "Close BRIDGE assistant" : "Open BRIDGE assistant"} aria-expanded={open} className="group relative grid h-14 w-14 place-items-center rounded-[1.35rem] border border-[#e9ff9f]/50 bg-[#d6ff57] text-[#11110f] shadow-[0_10px_35px_rgba(0,0,0,.28),0_0_30px_rgba(214,255,87,.18)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_14px_42px_rgba(0,0,0,.32),0_0_38px_rgba(214,255,87,.25)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-white focus-visible:outline-offset-4">
-        {open ? <X className="h-6 w-6" /> : <span className="relative grid place-items-center"><Bot className="h-6 w-6" /><Sparkles className="absolute -right-2 -top-2 h-3.5 w-3.5" /></span>}
+      <button type="button" onClick={() => setOpen((v) => !v)} aria-label={open ? "Close BRIDGE assistant" : "Open BRIDGE assistant"} aria-expanded={open} className="group relative grid h-12 w-12 place-items-center rounded-2xl border border-[#e9ff9f]/50 bg-[#d6ff57] text-[#11110f] shadow-[0_10px_35px_rgba(0,0,0,.28),0_0_30px_rgba(214,255,87,.18)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_14px_42px_rgba(0,0,0,.32),0_0_38px_rgba(214,255,87,.25)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-white focus-visible:outline-offset-4">
+        {open ? <X className="h-5 w-5" /> : <span className="relative grid place-items-center"><Bot className="h-5 w-5" /><Sparkles className="absolute -right-2 -top-2 h-3.5 w-3.5" /></span>}
       </button>
     </div>
   );

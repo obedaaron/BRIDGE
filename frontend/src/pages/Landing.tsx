@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { useBridgeTheme } from "../lib/theme";
 import { SearchSelect } from "../components/SearchSelect";
 import { NIGERIAN_STATES } from "../lib/states";
 import { apiFetch } from "../lib/api";
@@ -15,7 +14,7 @@ import {
   HeartPulse,
   House,
   Laptop,
-  LayoutDashboard,
+  UserRound,
   LogOut,
   Menu,
   PartyPopper,
@@ -23,8 +22,6 @@ import {
   Search as SearchIcon,
   Shirt,
   Sparkles,
-  Sun,
-  Moon,
   Truck,
   UtensilsCrossed,
   Wrench,
@@ -110,8 +107,6 @@ const footerColumns = [
 export function Landing() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const { theme, toggleTheme } = useBridgeTheme();
-  const dark = theme === "dark";
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<Array<{ id: string; business_name: string; slug: string; city: string | null; state: string | null; logo_url: string | null; category_name: string | null }>>([]);
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
@@ -220,7 +215,7 @@ export function Landing() {
             </Link>
           </nav>
           <div className="hidden items-center gap-4 text-sm md:flex">
-            {user ? <><Link to="/dashboard" className="inline-flex items-center gap-2 text-white/70 transition-colors hover:text-white"><LayoutDashboard className="h-4 w-4" />Dashboard</Link><button onClick={logout} className="inline-flex items-center gap-2 text-white/70 transition-colors hover:text-white"><LogOut className="h-4 w-4" />Log out</button><button onClick={toggleTheme} className="grid h-9 w-9 place-items-center rounded-full border border-white/15 text-[#d6ff57] hover:border-[#d6ff57]/60" aria-label={`Switch to ${dark ? "light" : "dark"} theme`}>{dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}</button></> : <><Link to="/login" className="text-white/70 transition-colors hover:text-white">Sign in</Link><Link to="/signup" className="rounded-full bg-[#d6ff57] px-4 py-2 font-semibold text-[#11110f] transition-colors hover:bg-[#ecffad]">Create a store</Link></>}
+            {user ? <><Link to="/profile" aria-label="Your profile" title="Your profile" className="grid h-9 w-9 place-items-center rounded-full border border-white/15 text-white/70 transition-colors hover:border-[#d6ff57]/60 hover:text-white"><UserRound className="h-4 w-4" /></Link><button onClick={logout} className="inline-flex items-center gap-2 text-white/70 transition-colors hover:text-white"><LogOut className="h-4 w-4" />Log out</button></> : <><Link to="/login" className="text-white/70 transition-colors hover:text-white">Sign in</Link><Link to="/signup" className="rounded-full bg-[#d6ff57] px-4 py-2 font-semibold text-[#11110f] transition-colors hover:bg-[#ecffad]">Create a store</Link></>}
           </div>
           <button
             onClick={() => setMobileOpen((open) => !open)}
@@ -244,7 +239,7 @@ export function Landing() {
                 About BRIDGE
               </Link>
               <div className="mt-2 flex items-center gap-4 border-t border-white/10 pt-4">
-                {user ? <><Link to="/dashboard" onClick={() => setMobileOpen(false)} className="inline-flex items-center gap-2 text-white/70"><LayoutDashboard className="h-4 w-4" />Dashboard</Link><button onClick={logout} className="inline-flex items-center gap-2 text-white/70"><LogOut className="h-4 w-4" />Log out</button><button onClick={toggleTheme} className="grid h-9 w-9 place-items-center rounded-full border border-white/15 text-[#d6ff57]" aria-label={`Switch to ${dark ? "light" : "dark"} theme`}>{dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}</button></> : <><Link to="/login" className="text-white/70">Sign in</Link><Link to="/signup" className="rounded-full bg-[#d6ff57] px-4 py-2 font-semibold text-[#11110f]">Create a store</Link></>}
+                {user ? <><Link to="/profile" aria-label="Your profile" title="Your profile" onClick={() => setMobileOpen(false)} className="grid h-9 w-9 place-items-center rounded-full border border-white/15 text-white/70"><UserRound className="h-4 w-4" /></Link><button onClick={logout} className="inline-flex items-center gap-2 text-white/70"><LogOut className="h-4 w-4" />Log out</button></> : <><Link to="/login" className="text-white/70">Sign in</Link><Link to="/signup" className="rounded-full bg-[#d6ff57] px-4 py-2 font-semibold text-[#11110f]">Create a store</Link></>}
               </div>
             </div>
           </div>

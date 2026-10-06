@@ -1,4 +1,4 @@
-import nodemailer from "nodemailer";
+type EmailMessage = { to: string; subject: string; text: string };
 
 export class ContactDeliveryNotConfiguredError extends Error {}
 
@@ -8,52 +8,20 @@ function required(name: string, message: string) {
   return value;
 }
 
-let cachedEmailTransport: { from: string; transporter: ReturnType<typeof nodemailer.createTransport> } | null = null;
-
-function createEmailTransport() {
-  const host = required("SMTP_HOST", "Email verification is not configured yet");
-  const user = required("SMTP_USER", "Email verification is not configured yet");
-  const pass = required("SMTP_PASS", "Email verification is not configured yet");
-  const from = required("SMTP_FROM", "Email verification is not configured yet");
-  const port = Number(process.env.SMTP_PORT || 587);
-  if (!Number.isInteger(port) || port < 1 || port > 65535) throw new ContactDeliveryNotConfiguredError("Email verification is not configured yet");
-
-  if (!cachedEmailTransport) {
-    cachedEmailTransport = {
-      from,
-      transporter: nodemailer.createTransport({
-        host,
-        port,
-        secure: process.env.SMTP_SECURE === "true",
-        auth: { user, pass },
-        pool: true,
-        maxConnections: 2,
-        maxMessages: 100,
-        connectionTimeout: 10_000,
-        greetingTimeout: 10_000,
-        socketTimeout: 20_000,
-      }),
-    };
-  }
-  return cachedEmailTransport;
-}
-
-type EmailMessage = { to: string; subject: string; text: string };
-
-function isTemporaryEmailError(error: unknown) {
-  const code = error && typeof error === "object" && "code" in error ? String(error.code) : "";
-  return ["ECONNECTION", "ETIMEDOUT", "ECONNRESET", "ESOCKET", "EAI_AGAIN"].includes(code);
-}
-
 async function sendEmail(message: EmailMessage) {
-  const { from, transporter } = createEmailTransport();
-  try {
-    return await transporter.sendMail({ from, ...message });
-  } catch (error) {
-    if (!isTemporaryEmailError(error)) throw error;
-    await new Promise((resolve) => setTimeout(resolve, 350));
-    return transporter.sendMail({ from, ...message });
-  }
+  const apiKey = required("RESEND_API_KEY", "Email verification is not configured yet");
+  const from = required("RESEND_FROM", "Email verification is not configured yet");
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ from, to: [message.to], subject: message.subject, text: message.text }),
+  });
+  const result = await response.json().catch(() => ({})) as { id?: string; message?: string };
+  if (!response.ok) throw new Error(result.message || "Could not send email");
+  return { messageId: result.id || null };
 }
 
 export async function sendVerificationEmail(input: { destination: string; code: string }) {
@@ -62,7 +30,7 @@ export async function sendVerificationEmail(input: { destination: string; code: 
     subject: "Your BRIDGE verification code",
     text: `Your BRIDGE email verification code is ${input.code}. It expires in 10 minutes. If you did not request this, you can ignore this email.`,
   });
-  return result.messageId || null;
+  return result.messageId;
 }
 
 export async function sendPasswordResetEmail(input: { destination: string; resetUrl: string }) {
@@ -71,7 +39,7 @@ export async function sendPasswordResetEmail(input: { destination: string; reset
     subject: "Reset your BRIDGE password",
     text: `Use this link to reset your BRIDGE password: ${input.resetUrl}\n\nThis link expires in 30 minutes. If you did not request a password reset, you can ignore this email.`,
   });
-  return result.messageId || null;
+  return result.messageId;
 }
 export async function sendVerificationSms(input: { destination: string; code: string }) {
   const baseUrl = required("TERMII_BASE_URL", "Phone verification is not configured yet").replace(/\/$/, "");

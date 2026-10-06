@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { Landing } from "./pages/Landing";
 import { ProtectedRoute } from "./components/ProtectedRoute";
@@ -54,7 +54,7 @@ export default function App() {
           <Route path="/privacy" element={<Legal />} />
           <Route path="/buyer-protection" element={<Legal />} />
           <Route path="/store/:slug" element={<StorefrontPage />} />
-          <Route path="/explore" element={<Explore />} />
+          <Route path="/explore" element={<Navigate to={"/stores" + window.location.search} replace />} />
           <Route path="/stores" element={<Explore />} />
           <Route path="/category/:slug" element={<Explore />} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
