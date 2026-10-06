@@ -59,7 +59,6 @@ function categoryVisual(category: Category) {
   const label = (category.name + " " + category.slug).toLowerCase();
   return categoryVisuals.find((visual) => visual.match.test(label)) || { emoji: "🏪", tint: "#7a7458", photo: flickr("market,shop", 25) };
 }
-const heroPhotos = [pexels(3814588), pexels(10490611), flickr("rice,stew,food", 13)];
 
 /* Cleans up messy city/state input: splits on , or /, trims, dedupes, drops "state". */
 function formatPlace(city?: string | null, state?: string | null) {
@@ -80,23 +79,6 @@ function formatPlace(city?: string | null, state?: string | null) {
 const blobRadii = ["58% 42% 55% 45% / 48% 56% 44% 52%", "45% 55% 42% 58% / 55% 45% 55% 45%", "52% 48% 60% 40% / 42% 58% 42% 58%", "40% 60% 48% 52% / 56% 44% 58% 42%"];
 const blobVars = (i: number, j = i + 2) => ({ "--r1": blobRadii[i % 4], "--r2": blobRadii[j % 4] }) as CSSProperties;
 
-
-function FeatureCard({ emoji, tint, title, text, to, cta }: { emoji: string; tint: string; title: string; text: string; to: string; cta: string }) {
-  return <Link to={to} className="flex min-w-0 flex-col overflow-hidden rounded-[1.6rem] border border-[var(--line)] bg-[var(--panel)] p-2 transition-colors hover:border-[#9abf31]/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d6ff57]">
-    <div className="relative isolate grid h-40 place-items-center overflow-hidden rounded-[1.2rem]" style={{ background: "linear-gradient(135deg, " + tint + "55, " + tint + "20)" }}>
-      <span aria-hidden="true" className="absolute -right-2 -top-3 text-8xl opacity-20">{emoji}</span>
-      <span aria-hidden="true" className="text-6xl">{emoji}</span>
-    </div>
-    <div className="flex flex-1 flex-col px-1.5 pb-3 pt-3 sm:px-3 sm:pb-3 sm:pt-3.5">
-      <h3 className="font-display text-lg font-semibold leading-tight tracking-[-.03em]">{title}</h3>
-      <p className="mt-3 min-h-[2.75rem] text-sm leading-relaxed text-[var(--muted)]">{text}</p>
-      <div className="mt-auto flex items-center justify-between border-t border-[var(--line)] pt-3.5">
-        <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--accent-ink)]">{cta}</span>
-        <ArrowUpRight className="h-4 w-4 text-[var(--muted)]" />
-      </div>
-    </div>
-  </Link>;
-}
 
 function ExploreBottomNav() {
   const location = useLocation();
