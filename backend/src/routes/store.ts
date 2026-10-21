@@ -6,7 +6,9 @@ const router = Router();
 router.get("/:slug/share-preview", async (req, res) => {
   const result = await pool.query(
     `select v.business_name, v.slug, v.description, v.logo_url, v.cover_image_url, v.storefront_cover_url, v.city, v.state,
-            c.name as category_name
+            c.name as category_name,
+            (select image_url from vendor_storefront_gallery_images where vendor_id = v.id order by position asc limit 1) as gallery_image_url,
+            (select image_url from listings where vendor_id = v.id and is_active = true and image_url is not null order by created_at desc limit 1) as listing_image_url
      from vendors v left join categories c on c.id = v.category_id
      where v.slug = $1 and v.is_published = true`,
     [req.params.slug]

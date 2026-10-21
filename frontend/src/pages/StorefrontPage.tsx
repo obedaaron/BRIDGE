@@ -7,9 +7,10 @@ import { ReviewsSection } from "../components/ReviewsSection";
 import { ArrowLeft, ArrowRight, Check, ChevronRight, Headphones, Home, MapPin, MessageCircle, Minus, Moon, Package, Plus, Search, ShieldCheck, ShoppingCart, Share2, Download, Star, Sun, X } from "lucide-react";
 import { useBridgeTheme } from "../lib/theme";
 import { BridgeLoader } from "../components/BridgeLoader";
+import QRCode from "qrcode";
 
 type Item = { id: string; title: string; description: string | null; type: string; price: number | null; currency: string; image_url: string | null; stock_quantity: number };
-type GalleryImage = { id: string; image_url: string; position: number };
+  type GalleryImage = { id: string; image_url: string; position: number };
 type Vendor = {
   id: string; user_id: string; business_name: string; slug: string; description: string | null;
   city: string | null; state: string | null; logo_url: string | null; cover_image_url: string | null;
@@ -220,14 +221,22 @@ export function StorefrontPage() {
       if (!src) return resolve(null);
       const image = new Image(); image.crossOrigin = "anonymous"; image.onload = () => resolve(image); image.onerror = () => resolve(null); image.src = src;
     });
-    const [cover, logo] = await Promise.all([loadImage(vendor.storefront_cover_url || vendor.cover_image_url), loadImage(vendor.logo_url)]);
+    const shareUrl = `${window.location.origin}/store/${encodeURIComponent(vendor.slug)}`;
+    const photoSources = [...new Set([vendor.storefront_cover_url, vendor.cover_image_url, ...gallery.map((image) => image.image_url), ...items.map((item) => item.image_url)].filter((src): src is string => Boolean(src)))].slice(0, 2);
+    const [photos, logo, bridgeLogo, qrDataUrl] = await Promise.all([
+      Promise.all(photoSources.map(loadImage)), loadImage(vendor.logo_url), loadImage(`${window.location.origin}/logo.png`),
+      QRCode.toDataURL(shareUrl, { width: 240, margin: 1, errorCorrectionLevel: "M", color: { dark: "#17241c", light: "#ffffff" } }),
+    ]);
+    const cover = photos[0] || null;
     if (cover) {
       context.save(); context.beginPath(); context.rect(700, 0, 500, 630); context.clip();
       const scale = Math.max(500 / cover.width, 630 / cover.height); const width = cover.width * scale; const height = cover.height * scale;
       context.drawImage(cover, 700 + (500 - width) / 2, (630 - height) / 2, width, height); context.restore();
       const veil = context.createLinearGradient(600, 0, 1200, 0); veil.addColorStop(0, "#101915"); veil.addColorStop(.75, "rgba(16,25,21,.78)"); veil.addColorStop(1, "rgba(16,25,21,.1)"); context.fillStyle = veil; context.fillRect(600, 0, 600, 630);
     }
-    context.fillStyle = "#e7eee6"; context.font = "700 20px Arial"; context.letterSpacing = "5px"; context.fillText("BRIDGE  ·  LOCAL, CONNECTED", 76, 90);
+    if (photos[1] && photos[1] !== cover) { context.save(); context.beginPath(); context.roundRect(890, 370, 245, 170, 20); context.clip(); const scale = Math.max(245 / photos[1].width, 170 / photos[1].height); context.drawImage(photos[1], 890 + (245 - photos[1].width * scale) / 2, 370 + (170 - photos[1].height * scale) / 2, photos[1].width * scale, photos[1].height * scale); context.restore(); }
+    if (bridgeLogo) context.drawImage(bridgeLogo, 76, 54, 32, 32);
+    context.fillStyle = "#e7eee6"; context.font = "700 20px Arial"; context.letterSpacing = "5px"; context.fillText("BRIDGE  ·  LOCAL, CONNECTED", 120, 78);
     context.fillStyle = "#496653"; context.beginPath(); context.roundRect(76, 156, 92, 92, 26); context.fill();
     if (logo) { context.save(); context.beginPath(); context.roundRect(76, 156, 92, 92, 26); context.clip(); context.drawImage(logo, 76, 156, 92, 92); context.restore(); }
     else { context.fillStyle = "#f4f0e6"; context.font = "700 42px Arial"; context.textAlign = "center"; context.fillText(vendor.business_name.slice(0, 1).toUpperCase(), 122, 216); context.textAlign = "left"; }
@@ -238,9 +247,10 @@ export function StorefrontPage() {
     context.font = "20px Arial";
     const words = (vendor.description || "Discover this local business on BRIDGE.").replace(/\s+/g, " ").split(" ");
     let line = "", y = 428; for (const word of words) { const next = line ? line + " " + word : word; if (context.measureText(next).width > 620 && line) { context.fillText(line, 76, y); y += 27; line = word; if (y > 482) break; } else line = next; } if (line && y <= 482) context.fillText(line, 76, y);
-    context.fillStyle = "#c9b783"; context.beginPath(); context.roundRect(76, 514, 250, 56, 28); context.fill();
-    context.fillStyle = "#17241c"; context.font = "700 17px Arial"; context.letterSpacing = "1px"; context.fillText("VISIT THIS STORE  ↗", 101, 550);
-    context.fillStyle = "rgba(231,238,230,.8)"; context.font = "15px Arial"; context.textAlign = "right"; context.fillText("bridge.com/store/" + vendor.slug, 1120, 578); context.textAlign = "left";
+    context.fillStyle = "#f5f5ed"; context.beginPath(); context.roundRect(76, 508, 92, 92, 12); context.fill();
+    const qr = await loadImage(qrDataUrl); if (qr) context.drawImage(qr, 82, 514, 80, 80);
+    context.fillStyle = "#e7eee6"; context.font = "700 16px Arial"; context.fillText("SCAN TO OPEN STORE", 184, 548);
+    context.fillStyle = "rgba(231,238,230,.8)"; context.font = "15px Arial"; context.textAlign = "right"; context.fillText("bridge.com/store/" + vendor.slug, 1120, 600); context.textAlign = "left";
     const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
     if (!blob) { setShareMessage("Could not create the promo image."); return; }
     const imageUrl = URL.createObjectURL(blob); const link = document.createElement("a"); link.href = imageUrl; link.download = vendor.slug + "-bridge-card.png"; link.click(); window.setTimeout(() => URL.revokeObjectURL(imageUrl), 1000);
