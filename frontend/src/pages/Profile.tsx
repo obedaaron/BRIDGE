@@ -14,6 +14,8 @@ type AccountDetails = {
   phone: string | null;
   email_verified_at: string | null;
   phone_verified_at: string | null;
+  deletion_requested_at?: string | null;
+  deletion_scheduled_for?: string | null;
 };
 type VendorSummary = { id: string; business_name: string; slug: string } | null;
 
@@ -36,6 +38,11 @@ export function Profile() {
   const [savingPassword, setSavingPassword] = useState(false);
   const [passwordMessage, setPasswordMessage] = useState("");
   const [passwordError, setPasswordError] = useState("");
+  const [showDeleteAccount, setShowDeleteAccount] = useState(false);
+  const [deletionPassword, setDeletionPassword] = useState("");
+  const [confirmDeletion, setConfirmDeletion] = useState(false);
+  const [savingDeletion, setSavingDeletion] = useState(false);
+  const [deletionError, setDeletionError] = useState("");
 
   useEffect(() => {
     apiFetch("/auth/me")
@@ -43,7 +50,7 @@ export function Profile() {
         setAccount(accountData.user);
         apiFetch("/vendors/me").then((vendorData) => setVendor(vendorData.vendor)).catch(() => setVendor(null));
       })
-      .catch(() => { setAccount({ full_name: user?.full_name || null, username: null, personalized_ads_enabled: false, email: user?.email || "", phone: null, email_verified_at: null, phone_verified_at: null }); })
+      .catch(() => { setAccount({ full_name: user?.full_name || null, username: null, personalized_ads_enabled: false, email: user?.email || "", phone: null, email_verified_at: null, phone_verified_at: null, deletion_scheduled_for: null }); })
       .finally(() => setLoading(false));
   }, [user]);
 
@@ -88,6 +95,28 @@ export function Profile() {
     finally { setSavingPassword(false); }
   }
 
+  async function scheduleAccountDeletion(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault(); setDeletionError("");
+    if (!confirmDeletion) { setDeletionError("Confirm that you understand the 60-day grace period."); return; }
+    setSavingDeletion(true);
+    try {
+      const result = await apiFetch("/auth/me", { method: "DELETE", body: JSON.stringify({ currentPassword: deletionPassword }) });
+      setAccount((current) => current ? { ...current, deletion_requested_at: result.deletion_requested_at, deletion_scheduled_for: result.deletion_scheduled_for } : current);
+      setDeletionPassword(""); setConfirmDeletion(false); setShowDeleteAccount(false);
+    } catch (error) { setDeletionError(error instanceof Error ? error.message : "Could not schedule account deletion."); }
+    finally { setSavingDeletion(false); }
+  }
+
+  async function cancelAccountDeletion() {
+    setDeletionError(""); setSavingDeletion(true);
+    try {
+      const result = await apiFetch("/auth/me/delete/cancel", { method: "POST", body: JSON.stringify({ currentPassword: deletionPassword }) });
+      setAccount((current) => current ? { ...current, deletion_requested_at: null, deletion_scheduled_for: null } : current);
+      setDeletionPassword(""); setProfileMessage(result.message || "Account deletion cancelled.");
+    } catch (error) { setDeletionError(error instanceof Error ? error.message : "Could not cancel account deletion."); }
+    finally { setSavingDeletion(false); }
+  }
+
   return <div style={themeStyle} className="min-h-screen bg-[var(--profile-page)] font-body text-[var(--profile-text)] transition-colors duration-300">
     <header className="sticky top-0 z-30 border-b border-[var(--profile-line)] bg-[var(--profile-page)]/95 backdrop-blur-xl">
       <nav className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4 sm:px-6">
@@ -96,6 +125,7 @@ export function Profile() {
       </nav>
     </header>
     <main className="mx-auto max-w-3xl px-4 pb-28 pt-5 sm:px-6 sm:py-10">
+      {account?.deletion_scheduled_for && <section role="status" className="mb-6 rounded-2xl border border-red-500/35 bg-red-500/10 p-5"><h2 className="font-semibold text-red-600">Account deletion is scheduled</h2><p className="mt-1 text-sm text-[var(--profile-muted)]">Your account and storefront are scheduled for deletion on {new Date(account.deletion_scheduled_for).toLocaleDateString()}. You can cancel before that date.</p><div className="mt-4 flex flex-wrap items-center gap-3"><input type="password" autoComplete="current-password" value={deletionPassword} onChange={(event) => setDeletionPassword(event.target.value)} placeholder="Current password" aria-label="Current password to cancel deletion" className="min-h-11 rounded-xl border border-[var(--profile-line)] bg-[var(--profile-panel)] px-4" /><button type="button" disabled={savingDeletion || !deletionPassword} onClick={cancelAccountDeletion} className="min-h-11 rounded-xl bg-[var(--profile-panel)] px-4 text-sm font-semibold disabled:opacity-50">{savingDeletion ? "Please wait…" : "Cancel deletion"}</button></div>{deletionError && <p role="alert" className="mt-2 text-sm text-red-600">{deletionError}</p>}</section>}
       <section className="relative mb-8 overflow-hidden rounded-[2rem] border border-[var(--profile-line)] bg-[var(--profile-panel)] shadow-[0_18px_50px_rgba(17,17,15,.08)]">
         <div aria-hidden="true" className="pointer-events-none absolute -right-12 -top-20 h-56 w-56 rounded-full bg-[#d6ff57]/20 blur-3xl" />
         <div className="relative flex items-center gap-4 p-5 sm:gap-6 sm:p-8">
@@ -133,6 +163,18 @@ export function Profile() {
           <label className="block text-sm font-semibold">Confirm new password<input required minLength={8} type="password" autoComplete="new-password" value={password.confirmPassword} onChange={(e) => setPassword({ ...password, confirmPassword: e.target.value })} className="mt-2 min-h-12 w-full rounded-xl border border-[var(--profile-line)] bg-[var(--profile-page)] px-4 outline-none focus:border-[var(--profile-accent)]" /></label>
           {passwordError && <p role="alert" className="text-sm text-red-500">{passwordError}</p>}
           <div className="flex flex-wrap gap-2"><button disabled={savingPassword} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#d6ff57] px-5 font-semibold text-[#171714] disabled:opacity-60"><LockKeyhole className="h-4 w-4" />{savingPassword ? "Updating…" : "Save new password"}</button><button type="button" onClick={() => { setEditingPassword(false); setPasswordError(""); setPassword({ currentPassword: "", newPassword: "", confirmPassword: "" }); }} className="min-h-11 rounded-xl border border-[var(--profile-line)] px-5 font-semibold hover:bg-[var(--profile-page)]">Cancel</button></div>
+        </form>}
+      </section>
+      <section className="mt-9 rounded-2xl border border-red-500/30 bg-red-500/[.04] p-5 sm:p-6" aria-labelledby="delete-account-title">
+        <h2 id="delete-account-title" className="font-display text-xl font-semibold text-red-600">Delete account</h2>
+        <p className="mt-2 text-sm leading-relaxed text-[var(--profile-muted)]">Deletion is delayed for 60 days. You can cancel during that period. At the deadline, your personal account details are removed and your storefront is unpublished. Before requesting, withdraw any wallet balance and finish open orders. Order and payment records needed for transaction history may be retained.</p>
+        {deletionError && !account?.deletion_scheduled_for && <p role="alert" className="mt-3 text-sm text-red-600">{deletionError}</p>}
+        {!account?.deletion_scheduled_for && !showDeleteAccount && <button type="button" onClick={() => { setShowDeleteAccount(true); setDeletionError(""); }} className="mt-4 min-h-11 rounded-xl border border-red-500/40 px-5 text-sm font-semibold text-red-600 hover:bg-red-500/10">Delete my account</button>}
+        {!account?.deletion_scheduled_for && showDeleteAccount && <form onSubmit={scheduleAccountDeletion} className="mt-4 space-y-3">
+          <label className="block text-sm font-semibold">Current password<input required type="password" autoComplete="current-password" value={deletionPassword} onChange={(event) => setDeletionPassword(event.target.value)} className="mt-2 min-h-12 w-full rounded-xl border border-[var(--profile-line)] bg-[var(--profile-panel)] px-4 outline-none focus:border-red-500" /></label>
+          <label className="flex items-start gap-3 text-sm"><input type="checkbox" checked={confirmDeletion} onChange={(event) => setConfirmDeletion(event.target.checked)} className="mt-1 h-4 w-4 accent-red-600" /><span>I understand deletion is scheduled 60 days from my request, and I can cancel it before the deadline.</span></label>
+          {deletionError && <p role="alert" className="text-sm text-red-600">{deletionError}</p>}
+          <div className="flex flex-wrap gap-2"><button disabled={savingDeletion || !confirmDeletion} className="min-h-11 rounded-xl bg-red-600 px-5 text-sm font-semibold text-white disabled:opacity-50">{savingDeletion ? "Scheduling…" : "Schedule deletion"}</button><button type="button" onClick={() => { setShowDeleteAccount(false); setDeletionPassword(""); setConfirmDeletion(false); setDeletionError(""); }} className="min-h-11 rounded-xl border border-[var(--profile-line)] px-5 text-sm font-semibold">Cancel</button></div>
         </form>}
       </section>
       <section className="mt-9" aria-labelledby="payments-title"><div className="mb-3 flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-2xl bg-[#d6ff57]/25 text-[var(--profile-accent)]"><CreditCard className="h-5 w-5" /></span><h2 id="payments-title" className="font-display text-xl font-semibold">Payment methods</h2></div><div className="flex gap-4 rounded-2xl border border-[var(--profile-line)] bg-[var(--profile-panel)] p-5 sm:p-6"><span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[#d6ff57]/20 text-[var(--profile-accent)]"><CreditCard className="h-5 w-5" /></span><div><h3 className="font-semibold">Pay securely at checkout</h3><p className="mt-1 text-sm leading-relaxed text-[var(--profile-muted)]">Payments are handled securely by Paystack when you place an order. BRIDGE does not save your card details here.</p><Link to="/orders" className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-[var(--profile-accent)]">View your orders<ArrowUpRight className="h-4 w-4" /></Link></div></div></section>

@@ -227,6 +227,11 @@ CREATE TABLE "users" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"email_verified_at" timestamp with time zone,
 	"phone_verified_at" timestamp with time zone,
+	"username" text,
+	"personalized_ads_enabled" boolean DEFAULT false NOT NULL,
+	"deletion_requested_at" timestamp with time zone,
+	"deletion_scheduled_for" timestamp with time zone,
+	"account_deletion_completed_at" timestamp with time zone,
 	CONSTRAINT "users_role_check" CHECK ((role = ANY (ARRAY['customer'::text, 'vendor'::text, 'admin'::text])))
 );
 CREATE TABLE "vendor_payout_accounts" (

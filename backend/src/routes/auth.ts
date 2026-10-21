@@ -5,6 +5,7 @@ import { signToken } from "../utils/jwt";
 import { requireAuth } from "../middleware/auth";
 import crypto from "crypto";
 import { ContactDeliveryNotConfiguredError, sendPasswordResetEmail, sendVerificationEmail, sendVerificationSms } from "../services/contactDelivery";
+import { ACCOUNT_DELETION_GRACE_DAYS } from "../services/accountDeletion";
 
 const router = Router();
 
@@ -57,7 +58,11 @@ router.post("/login", async (req, res) => {
 
 router.get("/me", requireAuth, async (req, res) => {
   const result = await pool.query(
-    "select id, email, full_name, username, personalized_ads_enabled, role, phone, email_verified_at, phone_verified_at, created_at from users where id = $1",
+    `select id, email, full_name, username, personalized_ads_enabled, role, phone,
+            email_verified_at, phone_verified_at,
+            to_jsonb(u)->>'deletion_requested_at' as deletion_requested_at,
+            to_jsonb(u)->>'deletion_scheduled_for' as deletion_scheduled_for, created_at
+     from users u where id = $1`,
     [req.user!.userId]
   );
   res.json({ user: result.rows[0] });
@@ -103,6 +108,48 @@ router.patch("/me/password", requireAuth, async (req, res) => {
     res.status(500).json({ error: "Could not update your password" });
   }
 });
+
+router.delete("/me", requireAuth, async (req, res) => {
+  const currentPassword = typeof req.body.currentPassword === "string" ? req.body.currentPassword : "";
+  if (!currentPassword) return res.status(400).json({ error: "Enter your current password to schedule account deletion" });
+  try {
+    const result = await pool.query("select password_hash, deletion_scheduled_for from users where id = $1", [req.user!.userId]);
+    const account = result.rows[0];
+    if (!account || !(await bcrypt.compare(currentPassword, account.password_hash))) return res.status(401).json({ error: "Your current password is incorrect" });
+    const scheduled = await pool.query(
+      `update users set
+         deletion_requested_at = coalesce(deletion_requested_at, now()),
+         deletion_scheduled_for = coalesce(deletion_scheduled_for, now() + ($2 * interval '1 day'))
+       where id = $1
+       returning deletion_requested_at, deletion_scheduled_for`,
+      [req.user!.userId, ACCOUNT_DELETION_GRACE_DAYS]
+    );
+    res.json({ ...scheduled.rows[0], gracePeriodDays: ACCOUNT_DELETION_GRACE_DAYS, message: "Account deletion is scheduled. You can cancel it before the scheduled date." });
+  } catch (error) {
+    console.error("Account deletion scheduling failed", error);
+    res.status(500).json({ error: "Could not schedule account deletion. Please try again." });
+  }
+});
+
+router.post("/me/delete/cancel", requireAuth, async (req, res) => {
+  const currentPassword = typeof req.body.currentPassword === "string" ? req.body.currentPassword : "";
+  if (!currentPassword) return res.status(400).json({ error: "Enter your current password to cancel account deletion" });
+  try {
+    const result = await pool.query("select password_hash from users where id = $1", [req.user!.userId]);
+    const account = result.rows[0];
+    if (!account || !(await bcrypt.compare(currentPassword, account.password_hash))) return res.status(401).json({ error: "Your current password is incorrect" });
+    const cancelled = await pool.query(
+      "update users set deletion_requested_at = null, deletion_scheduled_for = null where id = $1 and deletion_scheduled_for > now() returning id",
+      [req.user!.userId]
+    );
+    if (!cancelled.rowCount) return res.status(409).json({ error: "The deletion deadline has passed. This account can no longer be restored." });
+    res.json({ message: "Account deletion cancelled. Your account is active." });
+  } catch (error) {
+    console.error("Account deletion cancellation failed", error);
+    res.status(500).json({ error: "Could not cancel account deletion. Please try again." });
+  }
+});
+
 router.post("/password-reset/request", async (req, res) => {
   const email = typeof req.body.email === "string" ? req.body.email.trim().toLowerCase() : "";
   if (!/^\S+@\S+\.\S+$/.test(email)) return res.status(400).json({ error: "Enter a valid email address" });

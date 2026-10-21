@@ -84,14 +84,22 @@ function ExploreBottomNav() {
   const location = useLocation();
   const { items } = useCart();
   const [openMenu, setOpenMenu] = useState<"store" | "cart" | "profile" | null>(null);
+  const [hasStore, setHasStore] = useState(false);
+  const { user } = useAuth();
   useEffect(() => setOpenMenu(null), [location.pathname]);
+  useEffect(() => {
+    if (!user) { setHasStore(false); return; }
+    apiFetch("/vendors/me").then((data) => setHasStore(Boolean(data.vendor))).catch(() => setHasStore(false));
+  }, [user]);
 
   const isActive = (paths: string[]) => paths.some((path) => location.pathname === path || location.pathname.startsWith(path + "/"));
   const menuItems = openMenu === "store"
-    ? [{ label: "Vendor dashboard", to: "/dashboard" }, { label: "Create a storefront", to: "/become-vendor" }, { label: "Manage listings", to: "/dashboard/listings" }]
+    ? hasStore
+      ? [{ label: "Vendor dashboard", to: "/dashboard" }, { label: "Manage listings", to: "/dashboard/listings" }]
+      : [{ label: "Create a storefront", to: "/become-vendor" }]
     : openMenu === "cart"
       ? [{ label: "Shopping cart", to: "/cart" }, { label: "My orders", to: "/orders" }]
-      : [{ label: "Profile", to: "/profile" }, { label: "Wallet", to: "/dashboard/wallet" }, { label: "Verification", to: "/dashboard/verification" }, { label: "Account settings", to: "/dashboard/settings" }];
+      : [{ label: "Account settings", to: "/profile" }, ...(hasStore ? [{ label: "Store settings", to: "/dashboard/settings" }] : [])];
 
   const actionClass = "relative flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-1 py-2 text-[10px] font-semibold transition-colors";
   const inactiveClass = "text-[var(--muted)] hover:bg-[var(--soft)] hover:text-[var(--text)]";

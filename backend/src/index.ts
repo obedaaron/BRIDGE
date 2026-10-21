@@ -22,6 +22,7 @@ import analyticsRoutes from "./routes/analytics";
 import recommendationRoutes from "./routes/recommendations";
 import assistantRoutes from "./routes/assistant";
 import notificationRoutes from "./routes/notifications";
+import { expireScheduledAccountDeletions } from "./services/accountDeletion";
 
 const app = express();
 app.use(cors());
@@ -67,3 +68,11 @@ app.use(apiErrorHandler);
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => console.log(`BRIDGE server running on http://localhost:${PORT}`));
+
+const runAccountDeletionSweep = () => {
+  expireScheduledAccountDeletions()
+    .then((count) => { if (count) console.log(`Anonymized ${count} account(s) whose deletion grace period expired.`); })
+    .catch((error) => console.error("Scheduled account deletion sweep failed", error));
+};
+runAccountDeletionSweep();
+setInterval(runAccountDeletionSweep, 60 * 60 * 1000);

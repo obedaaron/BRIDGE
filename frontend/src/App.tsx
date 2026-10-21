@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { Landing } from "./pages/Landing";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { VendorOnlyRoute } from "./components/VendorOnlyRoute";
 import { AdminRoute } from "./components/AdminRoute";
 import { CartProvider } from "./context/CartContext";
 import { BridgeAssistant } from "./components/BridgeAssistant";
@@ -65,19 +66,19 @@ export default function App() {
           <Route path="/contact" element={<ContactPage />} />
 
           <Route path="/become-vendor" element={<ProtectedRoute><VendorDashboard /></ProtectedRoute>} />
-          <Route path="/dashboard" element={<ProtectedRoute><VendorDashboard /></ProtectedRoute>} />
-          <Route path="/dashboard/listings" element={<ProtectedRoute><Listings /></ProtectedRoute>} />
-          <Route path="/dashboard/verification" element={<ProtectedRoute><Verification /></ProtectedRoute>} />
-          <Route path="/dashboard/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+          <Route path="/dashboard" element={<ProtectedRoute><VendorOnlyRoute><VendorDashboard /></VendorOnlyRoute></ProtectedRoute>} />
+          <Route path="/dashboard/listings" element={<ProtectedRoute><VendorOnlyRoute><Listings /></VendorOnlyRoute></ProtectedRoute>} />
+          <Route path="/dashboard/verification" element={<ProtectedRoute><VendorOnlyRoute><Verification /></VendorOnlyRoute></ProtectedRoute>} />
+          <Route path="/dashboard/settings" element={<ProtectedRoute><VendorOnlyRoute><Settings /></VendorOnlyRoute></ProtectedRoute>} />
           <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
           <Route path="/messages/:id" element={<ProtectedRoute><Conversation /></ProtectedRoute>} />
           <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
           <Route path="/cart" element={<ProtectedRoute><Cart /></ProtectedRoute>} />
-          <Route path="/dashboard/orders" element={<ProtectedRoute><VendorOrders /></ProtectedRoute>} />
-          <Route path="/dashboard/plans" element={<ProtectedRoute><Plans /></ProtectedRoute>} />
-          <Route path="/dashboard/wallet" element={<ProtectedRoute><Wallet /></ProtectedRoute>} />
-          <Route path="/dashboard/promotions" element={<ProtectedRoute><Promotions /></ProtectedRoute>} />
-          <Route path="/dashboard/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
+          <Route path="/dashboard/orders" element={<ProtectedRoute><VendorOnlyRoute><VendorOrders /></VendorOnlyRoute></ProtectedRoute>} />
+          <Route path="/dashboard/plans" element={<ProtectedRoute><VendorOnlyRoute><Plans /></VendorOnlyRoute></ProtectedRoute>} />
+          <Route path="/dashboard/wallet" element={<ProtectedRoute><VendorOnlyRoute><Wallet /></VendorOnlyRoute></ProtectedRoute>} />
+          <Route path="/dashboard/promotions" element={<ProtectedRoute><VendorOnlyRoute><Promotions /></VendorOnlyRoute></ProtectedRoute>} />
+          <Route path="/dashboard/analytics" element={<ProtectedRoute><VendorOnlyRoute><Analytics /></VendorOnlyRoute></ProtectedRoute>} />
 
           <Route path="/admin" element={<AdminRoute><AdminOverview /></AdminRoute>} />
           <Route path="/admin/overview" element={<AdminRoute><AdminOverview /></AdminRoute>} />
